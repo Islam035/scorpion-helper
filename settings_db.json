@@ -1,0 +1,63 @@
+{
+  "appName": "مساعد بهجة دمج الحيوان القتالي",
+  "logoUrl": "",
+  "geminiApiKey": "AIzaSyB3nwUUVMWiFVM6GJNIig4mg-UoB7bg4bU",
+  "termsTitle": "المساعد عقروب",
+  "termsText": "أهلاً بك يا بطل في مساعد اللعبة!\nهذا البرنامج تم تصميمه بذكاء اصطناعي متقدم ليقوم بتحليل شبكة اللعبة وحساب أفضل التكتيكات لضمان وصولك إلى أعلى المستويات.\n\nكيف يعمل البرنامج؟\n- يقوم بمحاكاة اللعبة لحساب أفضل حركة.\n- كل عملية دمج ناجحة تستهلك نقطة طاقة ⚡ واحدة.\n- يتم حفظ تقدمك تلقائياً.\n\nشروط الاستخدام:\nدخولك يعني موافقتك على اللعب النظيف وحفظ نقاطك في خوادمنا.",
+  "colors": {
+    "bodyBg": "#09090b",
+    "panelBg": "#18181b",
+    "primary": "#ea580c",
+    "text": "#f8fafc"
+  },
+  "animals": {
+    "0": {
+      "icon": "",
+      "name": "فارغ"
+    },
+    "1": {
+      "icon": "/uploads/d4b0f6bda070995355aff37a8f44d47e.png",
+      "name": "جمل"
+    },
+    "2": {
+      "icon": "/uploads/5bde54276e52bf3d08211a5675913375.png",
+      "name": "نسر"
+    },
+    "3": {
+      "icon": "/uploads/5d1e4a537d824531f172fb9eaeccf9d5.png",
+      "name": "فهد"
+    },
+    "4": {
+      "icon": "/uploads/9657a95c66b5b2ce25b39e37555aa9bc.png",
+      "name": "اسد"
+    },
+    "5": {
+      "icon": "🐾",
+      "name": "ذئب"
+    },
+    "6": {
+      "icon": "/uploads/c1d386199a8943413620cf5eddade118.png",
+      "name": "تنين "
+    },
+    "7": {
+      "icon": "/uploads/1134ef794f32f5eb5e21f1f3f869eecd.png",
+      "name": "حصان"
+    },
+    "8": {
+      "icon": "/uploads/6319091efb52b964229bd037659b7c3a.png",
+      "name": "سحليه"
+    },
+    "9": {
+      "icon": "/uploads/4a08d007e8e7d36c32d8fa8f8b8d620a.png",
+      "name": "فيل"
+    },
+    "10": {
+      "icon": "/uploads/efc567ae00a03b032b8f04fcf73a9dd1.png",
+      "name": "تمساح"
+    },
+    "11": {
+      "icon": "/uploads/d27d2303192bdceafde8cbdfd8fb4cfd.png",
+      "name": "دب"
+    }
+  }
+}
