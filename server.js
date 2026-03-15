@@ -1,8 +1,7 @@
 /**
  * ============================================
- * 🦂 مساعد عقروب V12 - السيرفر المحسّن
+ * 🦂 مساعد عقروب V12 - السيرفر
  * ============================================
- * تحسينات أمنية وأداء
  */
 
 const express = require('express');
@@ -15,29 +14,32 @@ const multer = require('multer');
 const crypto = require('crypto');
 
 // ============================================
-// الإعدادات والمتغيرات البيئية
+// الإعدادات الأساسية
 // ============================================
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io مع إعدادات محسّنة
+// المنفذ - مهم لـ Render
+const PORT = process.env.PORT || 3000;
+
+// Socket.io
 const io = new Server(server, { 
     cors: { 
         origin: "*", 
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     },
-    maxHttpBufferSize: 1e8 // 100MB
+    maxHttpBufferSize: 1e8
 });
 
 // ============================================
-// Middleware الأساسي
+// Middleware
 // ============================================
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// إضافة Security Headers
+// Security Headers
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -47,7 +49,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================
-// إدارة الملفات والرفع
+// رفع الصور
 // ============================================
 const uploadDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -55,7 +57,6 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
-        // اسم ملف آمن
         const safeName = crypto.randomBytes(16).toString('hex') + path.extname(file.originalname);
         cb(null, safeName);
     }
@@ -63,7 +64,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (allowedTypes.includes(file.mimetype)) {
@@ -75,13 +76,12 @@ const upload = multer({
 });
 
 // ============================================
-// قاعدة البيانات (JSON Files)
+// قاعدة البيانات
 // ============================================
 const DB_FILE = './users_db.json';
 const SETTINGS_FILE = './settings_db.json';
 const REVIEWS_FILE = './reviews_db.json';
 
-// دالة قراءة آمنة
 function safeReadFile(filePath, defaultValue) {
     try {
         if (!fs.existsSync(filePath)) return defaultValue;
@@ -93,7 +93,6 @@ function safeReadFile(filePath, defaultValue) {
     }
 }
 
-// دالة كتابة آمنة
 function safeWriteFile(filePath, data) {
     try {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
@@ -104,9 +103,6 @@ function safeWriteFile(filePath, data) {
     }
 }
 
-// ============================================
-// إدارة المستخدمين
-// ============================================
 function getDB() {
     return safeReadFile(DB_FILE, { users: {} });
 }
@@ -141,7 +137,6 @@ const defaultSettings = {
     animals: { 0: { icon: '', name: 'فارغ' } }
 };
 
-// إنشاء الحيوانات الافتراضية
 for (let i = 1; i <= 11; i++) {
     defaultSettings.animals[i] = { icon: '🐾', name: `مستوى ${i}` };
 }
@@ -160,23 +155,19 @@ getSettings();
 getReviews();
 
 // ============================================
-// بيانات الأدمن الافتراضي (من متغيرات البيئة)
+// بيانات الأدمن
 // ============================================
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
+const ADMIN_PASS = process.env.ADMIN_PASS || process.env.ADMIN_PASSWORD || 'admin123';
 
 // ============================================
 // دوال التحقق
 // ============================================
-
-// التحقق من صلاحيات الأدمن
 function checkAdmin(db, adminUser, adminPass) {
-    // التحقق من الأدمن الافتراضي
     if (adminUser === ADMIN_USER && adminPass === ADMIN_PASS) {
         return true;
     }
     
-    // التحقق من الأدمن من قاعدة البيانات
     const user = db.users[adminUser];
     if (user && user.isAdmin) {
         if (user.password === adminPass) return true;
@@ -185,7 +176,6 @@ function checkAdmin(db, adminUser, adminPass) {
     return false;
 }
 
-// التحقق من صحة اسم المستخدم
 function validateUsername(username) {
     if (!username || typeof username !== 'string') return false;
     if (username.length < 3 || username.length > 20) return false;
@@ -193,7 +183,6 @@ function validateUsername(username) {
     return true;
 }
 
-// التحقق من صحة كلمة المرور
 function validatePassword(password) {
     if (!password || typeof password !== 'string') return false;
     if (password.length < 4 || password.length > 50) return false;
@@ -207,7 +196,6 @@ app.post('/api/login', (req, res) => {
     try {
         const { username, password, deviceId } = req.body;
         
-        // التحقق من المدخلات
         if (!validateUsername(username) || !validatePassword(password)) {
             return res.json({ 
                 success: false, 
@@ -217,12 +205,11 @@ app.post('/api/login', (req, res) => {
 
         const db = getDB();
         
-        // إنشاء حساب الأدمن الافتراضي إذا لم يكن موجوداً
         if (username === ADMIN_USER && password === ADMIN_PASS) {
             if (!db.users[ADMIN_USER]) {
                 db.users[ADMIN_USER] = { 
                     password: ADMIN_PASS,
-                    deviceId: deviceId, 
+                    deviceId: null, 
                     isAdmin: true, 
                     highScore: 0, 
                     energy: 200, 
@@ -238,7 +225,6 @@ app.post('/api/login', (req, res) => {
 
         const user = db.users[username];
         if (user) {
-            // التحقق من كلمة المرور
             if (user.password !== password) {
                 return res.json({ 
                     success: false, 
@@ -246,12 +232,8 @@ app.post('/api/login', (req, res) => {
                 });
             }
             
-            // التحقق من ربط الجهاز
-           git add server.js
-git commit -m "إزالة نظام ربط الجهاز"
-git push origin main
+            // ✅ تم إزالة نظام ربط الجهاز - يمكن الدخول من أي جهاز
             
-            // إرجاع بيانات المستخدم
             return res.json({ 
                 success: true, 
                 isAdmin: user.isAdmin || false, 
@@ -281,7 +263,7 @@ git push origin main
 });
 
 // ============================================
-// API Routes - تحديث الملف الشخصي
+// API Routes - الملف الشخصي
 // ============================================
 app.post('/api/profile/update', (req, res) => {
     try {
@@ -321,7 +303,7 @@ app.post('/api/profile/update', (req, res) => {
 });
 
 // ============================================
-// API Routes - حفظ بيانات اللعبة
+// API Routes - حفظ اللعبة
 // ============================================
 app.post('/api/user/save', (req, res) => {
     try {
@@ -382,7 +364,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 });
 
 // ============================================
-// API Routes - إدارة المستخدمين (Admin)
+// API Routes - إدارة المستخدمين
 // ============================================
 app.post('/api/users/add', (req, res) => {
     try {
@@ -447,7 +429,7 @@ app.post('/api/users/add', (req, res) => {
 });
 
 // ============================================
-// API Routes - تصفير نقاط اللاعب
+// API Routes - تصفير النقاط
 // ============================================
 app.post('/api/admin/reset_score', (req, res) => {
     try {
@@ -521,7 +503,6 @@ app.post('/api/admin/users', (req, res) => {
 // ============================================
 app.get('/api/settings', (req, res) => {
     const settings = getSettings();
-    // إخفاء API Key من الإعدادات العامة
     const publicSettings = { ...settings };
     delete publicSettings.geminiApiKey;
     res.json(publicSettings);
@@ -638,7 +619,7 @@ app.get('/api/leaderboard', (req, res) => {
 });
 
 // ============================================
-// API Route - Gemini AI (من السيرفر فقط)
+// API Route - AI Chat
 // ============================================
 app.post('/api/ai/chat', async (req, res) => {
     try {
@@ -697,7 +678,7 @@ app.post('/api/ai/chat', async (req, res) => {
 });
 
 // ============================================
-// Socket.io - الوقت الحقيقي
+// Socket.io
 // ============================================
 let onlineUsers = {};
 
@@ -739,7 +720,7 @@ io.on('connection', (socket) => {
 });
 
 // ============================================
-// معالجة الأخطاء العامة
+// معالجة الأخطاء
 // ============================================
 app.use((err, req, res, next) => {
     console.error('خطأ غير معالج:', err);
@@ -752,9 +733,7 @@ app.use((err, req, res, next) => {
 // ============================================
 // تشغيل السيرفر
 // ============================================
-const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🦂 السيرفر شغال ومستعد لاستقبال الأجهزة على المنفذ ${PORT}`);
+    console.log(`🦂 السيرفر شغال على المنفذ ${PORT}`);
     console.log(`📍 الرابط: http://localhost:${PORT}`);
-    console.log(`🔒 وضع التشغيل: ${process.env.NODE_ENV || 'development'}`);
 });
