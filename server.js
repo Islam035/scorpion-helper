@@ -1,6 +1,6 @@
 /**
  * ============================================
- * 🦂 مساعد عقروب V12 - السيرفر (MongoDB)
+ * 🦂 مساعد عقروب V12 - السيرفر (MongoDB) - مُصحح
  * ============================================
  */
 
@@ -89,6 +89,10 @@ const connectDB = async () => {
         
         await mongoose.connect(MONGODB_URI);
         console.log('✅ متصل بقاعدة بيانات MongoDB');
+        
+        // تهيئة الإعدادات الافتراضية
+        await initDefaultSettings();
+        
         return true;
     } catch (error) {
         console.error('❌ خطأ في الاتصال بـ MongoDB:', error.message);
@@ -119,22 +123,22 @@ const userSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-// Schema الإعدادات
+// Schema الإعدادات - تم تعديله لاستخدام Object بدلاً من Map
 const settingsSchema = new mongoose.Schema({
     key: { type: String, default: 'main', unique: true },
     appName: { type: String, default: "مساعد عقروب V12" },
     logoUrl: { type: String, default: "" },
     geminiApiKey: { type: String, default: "" },
     termsTitle: { type: String, default: "ميثاق الشرف" },
-    termsText: { type: String, default: "أهلاً بك يا بطل...\n\n1. احترم اللاعبين الآخرين\n2. لا تشارك معلوماتك الحساسة\n3. استمتع وتعلم!" },
+    termsText: { type: String, default: "أهلاً بك يا بطل..." },
     colors: {
         bodyBg: { type: String, default: "#09090b" },
         panelBg: { type: String, default: "#18181b" },
         primary: { type: String, default: "#ea580c" },
         text: { type: String, default: "#f8fafc" }
     },
-    animals: { type: Map, of: { icon: String, name: String }, default: {} }
-});
+    animals: { type: Object, default: {} }
+}, { minimize: false });
 
 // Schema التقييمات
 const reviewSchema = new mongoose.Schema({
@@ -154,6 +158,55 @@ const Review = mongoose.model('Review', reviewSchema);
 // ============================================
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || process.env.ADMIN_PASSWORD || 'admin123';
+
+// ============================================
+// الإعدادات الافتراضية
+// ============================================
+function getDefaultAnimals() {
+    const animals = {};
+    animals['0'] = { icon: '', name: 'فارغ' };
+    animals['1'] = { icon: '🐾', name: 'ذئب' };
+    animals['2'] = { icon: '🦊', name: 'ثعلب' };
+    animals['3'] = { icon: '🐺', name: 'ذئب رمادي' };
+    animals['4'] = { icon: '🦁', name: 'أسد' };
+    animals['5'] = { icon: '🐯', name: 'نمر' };
+    animals['6'] = { icon: '🦅', name: 'نسر' };
+    animals['7'] = { icon: '🐉', name: 'تنين' };
+    animals['8'] = { icon: '🦖', name: 'ديناصور' };
+    animals['9'] = { icon: '🔥', name: 'عنقاء' };
+    animals['10'] = { icon: '⚡', name: 'برق' };
+    animals['11'] = { icon: '👑', name: 'ملك' };
+    return animals;
+}
+
+async function initDefaultSettings() {
+    try {
+        let settings = await Settings.findOne({ key: 'main' });
+        if (!settings) {
+            console.log('📝 إنشاء إعدادات افتراضية...');
+            settings = await Settings.create({
+                key: 'main',
+                appName: "مساعد عقروب V12",
+                logoUrl: "",
+                geminiApiKey: "",
+                termsTitle: "ميثاق الشرف",
+                termsText: "أهلاً بك يا بطل...\n\n1. احترم اللاعبين الآخرين\n2. لا تشارك معلوماتك الحساسة\n3. استمتع وتعلم!",
+                colors: { bodyBg: "#09090b", panelBg: "#18181b", primary: "#ea580c", text: "#f8fafc" },
+                animals: getDefaultAnimals()
+            });
+            console.log('✅ تم إنشاء الإعدادات الافتراضية');
+        } else {
+            // تحديث animals إذا كانت فارغة
+            if (!settings.animals || Object.keys(settings.animals).length === 0) {
+                settings.animals = getDefaultAnimals();
+                await settings.save();
+                console.log('✅ تم تحديث الحيوانات الافتراضية');
+            }
+        }
+    } catch (error) {
+        console.error('خطأ في تهيئة الإعدادات:', error.message);
+    }
+}
 
 // ============================================
 // دوال التحقق
@@ -181,22 +234,39 @@ function validatePassword(password) {
     return true;
 }
 
-// دالة للحصول على الإعدادات الافتراضية
-function getDefaultSettings() {
-    const animals = { 0: { icon: '', name: 'فارغ' } };
-    for (let i = 1; i <= 11; i++) {
-        animals[i] = { icon: '🐾', name: `مستوى ${i}` };
+// ============================================
+// API Routes - الإعدادات
+// ============================================
+app.get('/api/settings', async (req, res) => {
+    try {
+        let settings = await Settings.findOne({ key: 'main' });
+        if (!settings) {
+            settings = { 
+                appName: "مساعد عقروب V12", 
+                animals: getDefaultAnimals(),
+                colors: { bodyBg: "#09090b", panelBg: "#18181b", primary: "#ea580c", text: "#f8fafc" },
+                termsTitle: "ميثاق الشرف",
+                termsText: "أهلاً بك..."
+            };
+        }
+        
+        const publicSettings = settings.toObject ? settings.toObject() : settings;
+        delete publicSettings.geminiApiKey;
+        delete publicSettings._id;
+        delete publicSettings.__v;
+        delete publicSettings.key;
+        
+        console.log('📤 إرسال الإعدادات:', JSON.stringify(publicSettings.animals));
+        res.json(publicSettings);
+    } catch (error) {
+        console.error('خطأ في جلب الإعدادات:', error.message);
+        res.json({ 
+            appName: "مساعد عقروب", 
+            animals: getDefaultAnimals(),
+            colors: { bodyBg: "#09090b", panelBg: "#18181b", primary: "#ea580c", text: "#f8fafc" }
+        });
     }
-    return {
-        appName: "مساعد عقروب V12",
-        logoUrl: "",
-        geminiApiKey: "",
-        termsTitle: "ميثاق الشرف",
-        termsText: "أهلاً بك يا بطل...\n\n1. احترم اللاعبين الآخرين\n2. لا تشارك معلوماتك الحساسة\n3. استمتع وتعلم!",
-        colors: { bodyBg: "#09090b", panelBg: "#18181b", primary: "#ea580c", text: "#f8fafc" },
-        animals: animals
-    };
-}
+});
 
 // ============================================
 // API Routes - تسجيل الدخول
@@ -235,8 +305,6 @@ app.post('/api/login', async (req, res) => {
                     message: "كلمة المرور غير صحيحة!" 
                 });
             }
-            
-            // ✅ تم إزالة نظام ربط الجهاز - يمكن الدخول من أي جهاز
             
             return res.json({ 
                 success: true, 
@@ -373,7 +441,6 @@ app.post('/api/users/add', async (req, res) => {
     try {
         const { adminUser, adminPass, newUsername, newPassword, isAdmin: makeAdmin } = req.body;
         
-        // التحقق من صلاحيات الأدمن
         const admin = await User.findOne({ username: adminUser });
         if (!admin || !checkAdmin(admin, adminPass)) {
             return res.json({ 
@@ -503,25 +570,8 @@ app.post('/api/admin/users', async (req, res) => {
 });
 
 // ============================================
-// API Routes - الإعدادات
+// API Routes - حفظ الإعدادات
 // ============================================
-app.get('/api/settings', async (req, res) => {
-    try {
-        let settings = await Settings.findOne({ key: 'main' });
-        if (!settings) {
-            const defaults = getDefaultSettings();
-            settings = await Settings.create({ key: 'main', ...defaults });
-        }
-        
-        const publicSettings = settings.toObject();
-        delete publicSettings.geminiApiKey;
-        res.json(publicSettings);
-    } catch (error) {
-        console.error('خطأ في جلب الإعدادات:', error);
-        res.json(getDefaultSettings());
-    }
-});
-
 app.post('/api/settings', async (req, res) => {
     try {
         const { adminUser, adminPass, newSettings } = req.body;
@@ -536,7 +586,7 @@ app.post('/api/settings', async (req, res) => {
         
         let settings = await Settings.findOne({ key: 'main' });
         if (!settings) {
-            settings = await Settings.create({ key: 'main', ...getDefaultSettings() });
+            settings = new Settings({ key: 'main' });
         }
         
         // تحديث الإعدادات
@@ -546,13 +596,7 @@ app.post('/api/settings', async (req, res) => {
         if (newSettings.termsTitle !== undefined) settings.termsTitle = newSettings.termsTitle;
         if (newSettings.termsText !== undefined) settings.termsText = newSettings.termsText;
         if (newSettings.colors !== undefined) settings.colors = newSettings.colors;
-        if (newSettings.animals !== undefined) {
-            const animalsMap = new Map();
-            for (const [key, value] of Object.entries(newSettings.animals)) {
-                animalsMap.set(key, value);
-            }
-            settings.animals = animalsMap;
-        }
+        if (newSettings.animals !== undefined) settings.animals = newSettings.animals;
         
         await settings.save();
         
