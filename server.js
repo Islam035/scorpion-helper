@@ -247,18 +247,9 @@ app.post('/api/login', (req, res) => {
             }
             
             // التحقق من ربط الجهاز
-            if (user.deviceId && user.deviceId !== deviceId) {
-                return res.json({ 
-                    success: false, 
-                    message: "الحساب مربوط بجهاز آخر!" 
-                });
-            }
-            
-            // ربط الجهاز إذا لم يكن مربوطاً
-            if (!user.deviceId) { 
-                user.deviceId = deviceId; 
-                saveDB(db); 
-            }
+           git add server.js
+git commit -m "إزالة نظام ربط الجهاز"
+git push origin main
             
             // إرجاع بيانات المستخدم
             return res.json({ 
