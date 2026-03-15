@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="pageTitle">البرنامج المساعد عقروب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        :root { --bg-body: #09090b; --bg-panel: #18181b; --color-primary: #ea580c; --color-secondary: #dc2626; --color-text: #f8fafc; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--bg-body); 
+            color: var(--color-text); 
+            font-family: system-ui, -apple-system, sans-serif; 
+            touch-action: manipulation; 
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        
+        .theme-panel { background-color: var(--bg-panel) !important; border: 1px solid rgba(234, 88, 12, 0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+        .theme-primary-bg { background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)) !important; color: white !important; border: none !important; }
+        .theme-primary-text { color: var(--color-primary) !important; }
+        
+        /* Tabs Container */
+        .app-container { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+        
+        .tab-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 70px; }
+        
+        .tab-page { display: none; padding: 8px; animation: fadeIn 0.3s ease; }
+        .tab-page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Bottom Navigation */
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: linear-gradient(180deg, rgba(24,24,27,0.98), rgba(9,9,11,1)); 
+            border-top: 1px solid rgba(234, 88, 12, 0.3);
+            padding: 8px 0;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            z-index: 100;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 6px 12px; 
+            cursor: pointer;
+            color: #71717a;
+            transition: all 0.3s;
+            border-radius: 12px;
+            min-width: 60px;
+        }
+        
+        .nav-item.active { color: var(--color-primary); }
+        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+        .nav-item span { font-size: 10px; font-weight: bold; }
+        
+        /* Game Grid */
+        .grid-container { border-radius: 12px; padding: 6px; background: #121212; border: 1px solid rgba(234, 88, 12, 0.1); }
+        .cell { border-radius: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; user-select: none; position: relative; overflow: hidden; background-color: #27272a; }
+        .cell:active { transform: scale(0.92); }
+        
+        #gameGrid .cell { height: clamp(55px, 18vw, 75px); font-size: clamp(1.2rem, 5vw, 1.8rem); border: 1px solid rgba(255,255,255,0.05); }
+        #palette .cell { height: clamp(40px, 12vw, 55px); font-size: clamp(1rem, 4vw, 1.5rem); }
+        
+        .lvl-badge { position: absolute; bottom: 1px; right: 2px; font-size: 8px; font-weight: bold; background: rgba(0,0,0,0.8); padding: 0 4px; border-radius: 3px; color: white; z-index: 5; }
+        .cell-img { width: 80%; height: 80%; object-fit: contain; z-index: 2; pointer-events: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        
+        /* Level Colors */
+        .lvl-0 { background-color: #18181b; } 
+        .lvl-1 { background: radial-gradient(circle, #4ade80, #14532d); } 
+        .lvl-2 { background: radial-gradient(circle, #38bdf8, #0c4a6e); } 
+        .lvl-3 { background: radial-gradient(circle, #60a5fa, #1e3a8a); } 
+        .lvl-4 { background: radial-gradient(circle, #a78bfa, #4c1d95); } 
+        .lvl-5 { background: radial-gradient(circle, #d946ef, #701a75); } 
+        .lvl-6 { background: radial-gradient(circle, #f472b6, #831843); } 
+        .lvl-7 { background: radial-gradient(circle, #fbbf24, #78350f); } 
+        .lvl-8 { background: radial-gradient(circle, #ea580c, #7c2d12); } 
+        .lvl-9 { background: radial-gradient(circle, #ef4444, #7f1d1d); } 
+        .lvl-10 { background: radial-gradient(circle, #dc2626, #450a0a); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); } 
+        .lvl-11 { background: radial-gradient(circle, #fcd34d, #b45309); box-shadow: 0 0 15px #f59e0b, inset 0 0 20px #78350f; border: 1px solid #fef08a; animation: pulse-max 2s infinite; }
+        @keyframes pulse-max { 0% { box-shadow: 0 0 10px #f59e0b; } 50% { box-shadow: 0 0 25px #f59e0b, inset 0 0 20px #78350f; } 100% { box-shadow: 0 0 10px #f59e0b; } }
+
+        .palette-btn.selected { border: 2px solid var(--color-primary); transform: scale(1.1); box-shadow: 0 0 12px var(--color-primary); }
+        .waiting-input { border: 2px solid var(--color-primary); animation: pulse-border 1.5s infinite; }
+        @keyframes pulse-border { 0%, 100% { border-color: var(--color-primary); box-shadow: 0 0 5px var(--color-primary); } 50% { border-color: transparent; box-shadow: none; } }
+        
+        /* Overlays */
+        .overlay-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px; overflow-y: auto;}
+        
+        /* Chat Widget */
+        #chatWidget { position: fixed; bottom: 80px; left: 12px; z-index: 150; }
+        #chatBtn { width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 20px rgba(234, 88, 12, 0.4); font-size: 22px; }
+        #chatBtn:hover { transform: scale(1.1); }
+        #chatBox { position: absolute; bottom: 60px; left: 0; width: calc(100vw - 32px); max-width: 340px; height: 60vh; max-height: 450px; border-radius: 16px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8); border: 1px solid rgba(234,88,12,0.3); }
+        .chat-area { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
+        .msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; line-height: 1.4; }
+        .msg.user { background: linear-gradient(135deg, var(--color-primary), #b45309); color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg.bot, .msg.other { background: #27272a; border: 1px solid #3f3f46; align-self: flex-end; border-bottom-right-radius: 2px; }
+        
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-primary); border-radius: 10px; }
+        
+        /* Avatar */
+        .avatar-circle { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primary); background: #27272a; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; flex-shrink: 0;}
+        
+        .swap-highlight { border: 3px dashed #3b82f6 !important; transform: scale(0.85); opacity: 0.8; }
+        .star-rating i { color: #52525b; cursor: pointer; font-size: 1.3rem; transition: color 0.2s; }
+        .star-rating i.active { color: #f59e0b; }
+        
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        
+        /* Admin Tabs */
+        .admin-section { display: none; }
+        .admin-section.active { display: block; animation: fadeIn 0.3s ease-out; }
+        
+        /* Sound Toggle */
+        #soundToggleBtn { position: fixed; top: 8px; left: 8px; z-index: 150; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- زر الصوت -->
+        <button id="soundToggleBtn" class="text-white/70 hover:text-white transition">
+            <i class="fas fa-volume-up text-sm"></i>
+        </button>
+
+        <!-- شاشة تسجيل الدخول -->
+        <div id="loginOverlay" class="overlay-screen">
+            <div class="theme-panel p-6 rounded-3xl shadow-2xl w-full max-w-sm text-center">
+                <img id="loginAppLogo" src="" class="h-20 mx-auto mb-3 object-contain hidden">
+                <i id="loginDefaultIcon" class="fas fa-spider text-5xl theme-primary-text mb-3"></i>
+                <h2 id="loginAppTitle" class="text-xl font-black mb-1 text-white">مساعد بهجة الحيوانات</h2>
+                <p class="text-[10px] text-slate-400 mb-4 font-bold">أدخل بيانات حسابك للدخول</p>
+                <div class="space-y-3">
+                    <input type="text" id="usernameInput" class="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-center outline-none focus:border-[var(--color-primary)] text-white font-bold text-sm" placeholder="اسم اللاعب">
+                    <input type="password" id="passwordInput" class="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-center outline-none focus:border-[var(--color-primary)] text-white font-bold text-sm" placeholder="كلمة المرور">
+                    <button id="enterAppBtn" class="w-full theme-primary-bg font-black py-3 rounded-xl shadow-lg text-base"><span>دخول السيرفر</span> <i class="fas fa-sign-in-alt mr-1"></i></button>
+                </div>
+                <p id="loginError" class="text-red-400 text-xs mt-3 hidden font-bold animate-pulse bg-red-900/20 p-2 rounded-xl"></p>
+            </div>
+        </div>
+
+        <!-- شاشة الشروط -->
+        <div id="termsOverlay" class="overlay-screen hidden z-[250]">
+            <div class="theme-panel p-5 rounded-3xl shadow-2xl w-full max-w-sm border border-white/10 flex flex-col max-h-[80vh]">
+                <h2 id="termsTitleDisplay" class="text-lg font-black mb-3 theme-primary-text text-center border-b border-white/10 pb-2"></h2>
+                <div id="termsTextDisplay" class="text-xs text-white/90 text-right space-y-3 overflow-y-auto custom-scrollbar pr-2 mb-3 leading-relaxed"></div>
+                <div class="pt-2 border-t border-white/10">
+                    <label class="flex items-center gap-2 text-xs text-white cursor-pointer mb-3 bg-black/40 p-2 rounded-xl">
+                        <input type="checkbox" id="agreeTermsCheckbox" class="w-4 h-4 accent-[var(--color-primary)]">
+                        <span class="font-bold">أوافق على الشروط والأحكام</span>
+                    </label>
+                    <button id="acceptTermsBtn" class="w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-xl cursor-not-allowed flex justify-center items-center gap-2 text-sm" disabled>دخول اللعبة <i class="fas fa-arrow-left"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlays للنوافذ المنبثقة -->
+        <div id="profileOverlay" class="overlay-screen hidden z-[260]">
+            <div class="theme-panel p-5 rounded-3xl shadow-2xl w-full max-w-sm">
+                <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
+                    <h2 class="text-base font-black theme-primary-text"><i class="fas fa-id-badge ml-1"></i> بيانات اللاعب</h2>
+                    <button onclick="document.getElementById('profileOverlay').classList.add('hidden')" class="text-slate-400 hover:text-white text-xl">×</button>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex flex-col items-center gap-2">
+                        <img id="profileAvatarPreview" src="" class="w-16 h-16 rounded-full border-4 border-[var(--color-primary)] object-cover bg-black/50 hidden">
+                        <div id="profileAvatarFallback" class="w-16 h-16 rounded-full border-4 border-[var(--color-primary)] bg-black/50 flex justify-center items-center text-xl font-bold">؟</div>
+                        <input type="file" id="profileAvatarInput" accept="image/*" class="text-[9px] file:bg-[var(--color-primary)] file:text-white file:border-none file:rounded file:px-2 file:py-1 cursor-pointer">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] opacity-60 mb-1 block">رقم المملكة</label>
+                            <input type="text" id="profileKingdomInput" placeholder="123" class="w-full bg-black/40 border border-white/10 p-2 rounded-xl text-center text-white outline-none text-xs font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[9px] opacity-60 mb-1 block">اسم التحالف</label>
+                            <input type="text" id="profileAllianceInput" placeholder="الأبطال" class="w-full bg-black/40 border border-white/10 p-2 rounded-xl text-center text-white outline-none text-xs font-bold">
+                        </div>
+                    </div>
+                    <button id="saveProfileBtn" class="w-full theme-primary-bg py-2 rounded-xl font-bold text-sm">حفظ التغييرات <i class="fas fa-save mr-1"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="reviewOverlay" class="overlay-screen hidden z-[260]">
+            <div class="theme-panel p-5 rounded-3xl shadow-2xl w-full max-w-sm">
+                <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
+                    <h2 class="text-base font-black text-yellow-400"><i class="fas fa-star ml-1"></i> تقييم واقتراحات</h2>
+                    <button onclick="document.getElementById('reviewOverlay').classList.add('hidden')" class="text-slate-400 hover:text-white text-xl">×</button>
+                </div>
+                <div class="space-y-3 flex flex-col items-center">
+                    <p class="text-[10px] text-center opacity-80">رأيك يهمنا في تطوير البرنامج!</p>
+                    <div class="star-rating flex gap-2" id="starRatingContainer">
+                        <i class="fas fa-star" data-rating="1"></i>
+                        <i class="fas fa-star" data-rating="2"></i>
+                        <i class="fas fa-star" data-rating="3"></i>
+                        <i class="fas fa-star" data-rating="4"></i>
+                        <i class="fas fa-star" data-rating="5"></i>
+                    </div>
+                    <textarea id="reviewTextInput" rows="3" placeholder="لديك اقتراح؟ اكتبه هنا..." class="w-full bg-black/40 border border-white/10 p-2 rounded-xl text-white outline-none text-xs custom-scrollbar"></textarea>
+                    <button id="submitReviewBtn" class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-xl font-bold text-sm text-white">إرسال التقييم <i class="fas fa-paper-plane mr-1"></i></button>
+                    <div id="reviewMsg" class="text-[9px] hidden font-bold p-1 rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="toolsOverlay" class="overlay-screen hidden z-[260]">
+            <div class="theme-panel p-5 rounded-3xl shadow-2xl w-full max-w-sm">
+                <h2 class="text-lg font-black mb-3 text-purple-400 text-center border-b border-white/10 pb-2"><i class="fas fa-toolbox ml-1"></i> حقيبة الأدوات</h2>
+                <div class="text-[10px] text-slate-300 text-center mb-3">استخدم هذه الأدوات لتعديل الشبكة:</div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <button id="useHammerBtn" class="flex flex-col items-center justify-center bg-black/30 hover:bg-black/50 border border-red-500/20 p-3 rounded-xl transition-all">
+                        <i class="fas fa-gavel text-3xl text-red-400 mb-1"></i>
+                        <span class="text-white font-bold text-xs">المطرقة</span>
+                        <span class="text-[8px] text-slate-400">حذف أي عنصر</span>
+                    </button>
+                    <button id="useSwapBtn" class="flex flex-col items-center justify-center bg-black/30 hover:bg-black/50 border border-blue-500/20 p-3 rounded-xl transition-all">
+                        <i class="fas fa-exchange-alt text-3xl text-blue-400 mb-1"></i>
+                        <span class="text-white font-bold text-xs">التبديل</span>
+                        <span class="text-[8px] text-slate-400">تبديل عنصرين</span>
+                    </button>
+                </div>
+                <button onclick="document.getElementById('toolsOverlay').classList.add('hidden')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm">إغلاق <i class="fas fa-times mr-1"></i></button>
+            </div>
+        </div>
+
+        <div id="adminPanelOverlay" class="overlay-screen hidden z-[270]">
+            <div class="theme-panel p-4 rounded-3xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+                <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
+                    <h2 class="text-lg font-black text-[var(--color-secondary)]"><i class="fas fa-crown ml-1"></i> لوحة الإدارة</h2>
+                    <button onclick="document.getElementById('adminPanelOverlay').classList.add('hidden')" class="bg-white/10 w-7 h-7 rounded-full text-white hover:bg-red-500 transition text-sm">×</button>
+                </div>
+                <div class="grid grid-cols-4 gap-1 mb-3 bg-black/30 p-1 rounded-xl">
+                    <button onclick="switchAdminTab('users')" id="tabUsers" class="py-2 bg-[var(--color-secondary)] rounded-lg text-[9px] font-bold text-white">اللاعبين</button>
+                    <button onclick="switchAdminTab('settings')" id="tabSettings" class="py-2 rounded-lg text-[9px] font-bold opacity-60 text-white">الإعدادات</button>
+                    <button onclick="switchAdminTab('reviews')" id="tabReviews" class="py-2 rounded-lg text-[9px] font-bold opacity-60 text-white">التقييمات</button>
+                    <button onclick="switchAdminTab('online')" id="tabOnline" class="py-2 rounded-lg text-[9px] font-bold opacity-60 text-white">اللايف</button>
+                </div>
+                <div class="overflow-y-auto flex-1 custom-scrollbar">
+                    <div id="sectionUsers" class="admin-section active space-y-3">
+                        <div class="bg-black/30 p-3 rounded-xl space-y-2 border border-white/5">
+                            <input type="text" id="newUsername" placeholder="اسم اللاعب الجديد" class="w-full bg-black/40 p-2 rounded-lg text-xs outline-none text-white">
+                            <input type="text" id="newPassword" placeholder="كلمة السر" class="w-full bg-black/40 p-2 rounded-lg text-xs outline-none text-white">
+                            <label class="flex items-center gap-2 text-xs text-white"><input type="checkbox" id="newIsAdmin" class="w-4 h-4 accent-[var(--color-secondary)]"> صلاحيات مدير</label>
+                            <button id="addUserBtn" class="w-full bg-[var(--color-secondary)] py-2 rounded-lg font-bold text-white text-xs">إضافة لاعب جديد</button>
+                            <div id="addUserMsg" class="text-[10px] text-center mt-1 hidden font-bold"></div>
+                        </div>
+                        <div class="bg-black/30 p-3 rounded-xl border border-white/5">
+                            <h3 class="text-[10px] font-bold text-blue-400 border-b border-white/10 pb-1 mb-2">سجل اللاعبين <button id="refreshUsersList" class="hover:text-white mr-1"><i class="fas fa-sync-alt"></i></button></h3>
+                            <div id="adminUsersDatabaseList" class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar"></div>
+                        </div>
+                    </div>
+                    <div id="sectionSettings" class="admin-section space-y-3">
+                        <div class="space-y-2 text-white bg-black/20 p-3 rounded-xl border border-white/5">
+                            <input type="text" id="settingAppName" class="w-full bg-black/30 p-2 rounded-lg text-xs border border-white/10 text-white" placeholder="اسم المنصة">
+                            <input type="text" id="settingGeminiKey" class="w-full bg-black/30 p-2 rounded-lg text-[10px] border border-white/10 text-white" placeholder="Gemini API Key">
+                            <input type="text" id="settingTermsTitle" class="w-full bg-black/30 p-2 rounded-lg text-[10px] border border-white/10 text-white" placeholder="عنوان الشروط">
+                            <textarea id="settingTermsText" rows="2" class="w-full bg-black/30 p-2 rounded-lg text-[10px] border border-white/10 text-white" placeholder="نص الشروط..."></textarea>
+                        </div>
+                        <div class="text-white bg-black/20 p-3 rounded-xl border border-white/5">
+                            <h3 class="text-[10px] font-bold text-[var(--color-secondary)] border-b border-white/10 pb-1 mb-2">مستويات الحيوانات</h3>
+                            <div id="animalsSettingsList" class="space-y-2"></div>
+                        </div>
+                        <button id="saveSettingsBtn" class="w-full theme-primary-bg py-3 rounded-xl font-bold text-sm">نشر التحديثات 📡</button>
+                        <div id="saveSettingsMsg" class="text-[10px] text-center hidden font-bold"></div>
+                    </div>
+                    <div id="sectionReviews" class="admin-section">
+                        <div class="bg-black/30 p-3 rounded-xl border border-white/5">
+                            <h3 class="text-[10px] font-bold text-yellow-400 border-b border-white/10 pb-1 mb-2">صندوق الاقتراحات</h3>
+                            <div id="adminReviewsList" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar"></div>
+                        </div>
+                    </div>
+                    <div id="sectionOnline" class="admin-section">
+                        <ul id="adminUsersUl" class="space-y-2 text-white bg-black/30 p-3 rounded-xl border border-white/5"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 1: اللعب ==================== -->
+        <div class="tab-content">
+            <div id="tabGame" class="tab-page active">
+                <!-- Header -->
+                <header class="text-center mb-2 flex flex-col items-center">
+                    <img id="mainHeaderLogo" src="" class="h-12 mb-1 object-contain hidden">
+                    <h1 id="mainHeaderTitle" class="text-lg font-black theme-primary-text tracking-widest">...</h1>
+                </header>
+
+                <!-- إحصائيات مدمجة -->
+                <div class="w-full flex gap-2 mb-2">
+                    <div class="theme-panel p-2 rounded-xl flex-1 cursor-pointer hover:bg-white/5 transition" onclick="openProfile()">
+                        <div class="flex items-center gap-2">
+                            <img id="playerAvatar" src="" class="avatar-circle hidden">
+                            <div id="playerAvatarFallback" class="avatar-circle">؟</div>
+                            <div class="flex flex-col flex-1 overflow-hidden">
+                                <div class="text-[8px] opacity-60 font-bold">اللاعب</div>
+                                <div id="playerNameDisplay" class="font-black text-xs text-white truncate">---</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="theme-panel p-2 rounded-xl flex-1 text-center">
+                        <div class="text-[8px] opacity-60 font-bold">أعلى سكور</div>
+                        <div id="highScoreDisplay" class="font-black text-sm text-[var(--color-primary)]">0</div>
+                    </div>
+                    <div class="theme-panel p-2 rounded-xl flex-1 text-center bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-full h-1 bg-black/50"><div id="energyProgressBar" class="h-full bg-[var(--color-primary)] w-full transition-all"></div></div>
+                        <div class="flex items-center justify-center gap-1 text-[var(--color-primary)] font-black text-base mt-1">
+                            <i class="fas fa-bolt text-[10px]"></i>
+                            <input type="number" id="liveEnergy" class="w-10 bg-transparent text-center font-black outline-none text-sm" value="200" max="200" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- إحصائيات سريعة -->
+                <div class="theme-panel p-2 rounded-xl mb-2 flex justify-around text-[9px] font-bold">
+                    <span>التحركات: <b id="statMoves" class="theme-primary-text">0</b></span>
+                    <span>أعلى مستوى: <b id="statMaxLvl" class="text-[var(--color-secondary)]">0</b></span>
+                    <span class="text-emerald-400"><i class="fas fa-circle text-[5px] animate-pulse"></i> نشط</span>
+                </div>
+
+                <!-- منطقة اللعب -->
+                <div id="captureArea" class="w-full flex flex-col gap-2">
+                    <div class="theme-panel p-2 rounded-xl">
+                        <div class="grid grid-cols-6 gap-1 mb-2" id="palette"></div>
+                        <div class="flex items-end gap-2">
+                            <div class="flex flex-col gap-1 w-1/2">
+                                <button id="undoBtn" class="w-full py-1.5 bg-black/60 hover:bg-black/80 rounded-lg text-[9px] font-bold border border-white/10 text-white"><i class="fas fa-undo"></i> تراجع</button>
+                                <button id="clearBtn" class="w-full py-1.5 bg-[var(--color-secondary)]/20 text-[var(--color-secondary)] rounded-lg text-[9px] font-bold border border-[var(--color-secondary)]/30"><i class="fas fa-sync"></i> تصفير</button>
+                            </div>
+                            <div class="w-1/2">
+                                <label class="text-[8px] font-bold text-slate-400 mb-1 block">مستوى التفكير:</label>
+                                <select id="aiDepth" class="w-full bg-black/60 rounded-lg text-[9px] py-1.5 font-bold outline-none px-1 text-[var(--color-primary)] border border-white/10">
+                                    <option value="1">1- سريع</option>
+                                    <option value="2">2- متوسط</option>
+                                    <option value="3" selected>3- تكتيكي</option>
+                                    <option value="4">4- عميق</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="statusMsg" class="text-center text-[10px] font-black theme-primary-text">...</div>
+                    
+                    <div class="grid-container grid grid-cols-4 gap-1.5" id="gameGrid" dir="ltr"></div>
+
+                    <!-- أزرار الدمج -->
+                    <div class="theme-panel p-2 rounded-xl bg-black/30">
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button onclick="manualMove('UP')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg text-sm active:scale-95"><i class="fas fa-arrow-up"></i></button>
+                            <button onclick="manualMove('DOWN')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg text-sm active:scale-95"><i class="fas fa-arrow-down"></i></button>
+                            <button onclick="manualMove('LEFT')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg text-sm active:scale-95"><i class="fas fa-arrow-left"></i></button>
+                            <button onclick="manualMove('RIGHT')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg text-sm active:scale-95"><i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <button id="calcMoveBtn" class="w-full py-3 theme-primary-bg font-black rounded-xl shadow-lg flex justify-center items-center gap-2 text-lg active:scale-95 text-white">
+                        <span>دمـــج</span> <i class="fas fa-magic"></i>
+                    </button>
+                    
+                    <div id="resultArea" class="hidden theme-panel p-3 rounded-xl text-center border-t-4 border-[var(--color-primary)]">
+                        <div id="moveResult" class="text-2xl font-black text-white tracking-widest flex items-center justify-center gap-3"></div>
+                        <div id="statsBox" class="mt-2 text-[9px] text-slate-300 bg-black/40 p-2 rounded-lg"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 2: المتصدرين ==================== -->
+            <div id="tabLeaderboard" class="tab-page">
+                <header class="text-center mb-3">
+                    <h1 class="text-xl font-black theme-primary-text"><i class="fas fa-trophy ml-1"></i> أبطال اللعبة</h1>
+                    <p class="text-[10px] text-slate-400">أفضل 10 لاعبين</p>
+                </header>
+                <div id="leaderboardList" class="space-y-2 text-[11px] font-bold"></div>
+            </div>
+
+            <!-- ==================== TAB 3: المزيد ==================== -->
+            <div id="tabMore" class="tab-page">
+                <header class="text-center mb-3">
+                    <h1 class="text-xl font-black theme-primary-text"><i class="fas fa-th-large ml-1"></i> المزيد</h1>
+                </header>
+                
+                <div class="space-y-3">
+                    <!-- إحصائياتي -->
+                    <div class="theme-panel p-4 rounded-xl">
+                        <h3 class="text-sm font-black text-white mb-3 border-b border-white/10 pb-2"><i class="fas fa-chart-bar ml-1 text-blue-400"></i> إحصائياتي</h3>
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div>
+                                <div class="text-2xl font-black text-[var(--color-primary)]" id="myScore">0</div>
+                                <div class="text-[9px] opacity-60">النقاط</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-[var(--color-secondary)]" id="myMaxLvl">0</div>
+                                <div class="text-[9px] opacity-60">أعلى مستوى</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-emerald-400" id="myMoves">0</div>
+                                <div class="text-[9px] opacity-60">التحركات</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- أزرار الإجراءات -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="document.getElementById('profileOverlay').classList.remove('hidden')" class="theme-panel p-3 rounded-xl text-center hover:bg-white/5 transition">
+                            <i class="fas fa-user-edit text-2xl text-blue-400 mb-1 block"></i>
+                            <span class="text-[10px] font-bold">تعديل الملف</span>
+                        </button>
+                        <button onclick="document.getElementById('toolsOverlay').classList.remove('hidden')" class="theme-panel p-3 rounded-xl text-center hover:bg-white/5 transition">
+                            <i class="fas fa-toolbox text-2xl text-purple-400 mb-1 block"></i>
+                            <span class="text-[10px] font-bold">الأدوات</span>
+                        </button>
+                        <button onclick="document.getElementById('reviewOverlay').classList.remove('hidden')" class="theme-panel p-3 rounded-xl text-center hover:bg-white/5 transition">
+                            <i class="fas fa-star text-2xl text-yellow-400 mb-1 block"></i>
+                            <span class="text-[10px] font-bold">تقييم البرنامج</span>
+                        </button>
+                        <button id="shareBtn" class="theme-panel p-3 rounded-xl text-center hover:bg-white/5 transition">
+                            <i class="fas fa-share-alt text-2xl text-green-400 mb-1 block"></i>
+                            <span class="text-[10px] font-bold">شارك المجد</span>
+                        </button>
+                    </div>
+
+                    <!-- زر الإدارة -->
+                    <button id="openAdminBtn" onclick="document.getElementById('adminPanelOverlay').classList.remove('hidden')" class="hidden w-full theme-panel p-3 rounded-xl text-center bg-[var(--color-secondary)]/20 border-[var(--color-secondary)]/30 hover:bg-[var(--color-secondary)]/30 transition">
+                        <i class="fas fa-cog text-2xl text-[var(--color-secondary)] mb-1 block"></i>
+                        <span class="text-xs font-bold">لوحة الإدارة</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('Game')">
+                <i class="fas fa-gamepad"></i>
+                <span>اللعب</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('Leaderboard')">
+                <i class="fas fa-trophy"></i>
+                <span>المتصدرين</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('More')">
+                <i class="fas fa-th-large"></i>
+                <span>المزيد</span>
+            </div>
+        </nav>
+
+        <!-- الشات -->
+        <div id="chatWidget" class="hidden">
+            <div id="chatBox" class="theme-panel">
+                <div class="bg-black/40 p-2 flex justify-between items-center text-xs text-white border-b border-white/10">
+                    <div class="flex gap-1 bg-black/50 p-1 rounded-lg">
+                        <button id="tabAiChat" class="bg-[var(--color-primary)] text-white px-2 py-1 rounded font-bold text-[10px]">المستشار</button>
+                        <button id="tabGlobalChat" class="text-slate-400 px-2 py-1 rounded font-bold text-[10px]">التحالفات</button>
+                    </div>
+                    <button id="closeChatBtn" class="text-lg font-bold opacity-60 hover:text-red-400 px-2">×</button>
+                </div>
+                <div id="aiChatMessages" class="chat-area custom-scrollbar"></div>
+                <div id="globalChatMessages" class="chat-area custom-scrollbar hidden">
+                    <div class="text-[8px] text-center text-[var(--color-primary)] mb-1 font-bold">--- غرفة تواصل جميع اللاعبين ---</div>
+                </div>
+                <div class="p-2 bg-black/40 flex gap-2 border-t border-white/5">
+                    <input type="text" id="chatInput" placeholder="تحدث..." class="flex-1 bg-black/60 border border-white/10 p-2 rounded-xl text-white outline-none text-xs">
+                    <button id="sendChatBtn" class="bg-[var(--color-primary)] text-white text-sm w-9 h-9 rounded-xl"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+            <div id="chatBtn" class="theme-primary-bg rounded-full flex justify-center items-center shadow-lg cursor-pointer border-2 border-white/20">
+                <i class="fas fa-comment-alt text-white text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // نظام التنقل بين التبويبات
+        // ============================================
+        function switchTab(tabName) {
+            // إخفاء كل الصفحات
+            document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            // إظهار الصفحة المطلوبة
+            document.getElementById('tab' + tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            // تحديث البيانات عند الانتقال
+            if (tabName === 'Leaderboard') fetchLeaderboard();
+            if (tabName === 'More') updateMyStats();
+        }
+
+        function updateMyStats() {
+            document.getElementById('myScore').innerText = uData.highScore.toLocaleString();
+            document.getElementById('myMaxLvl').innerText = uData.stats?.maxLvl || 0;
+            document.getElementById('myMoves').innerText = uData.stats?.moves || 0;
+        }
+
+        // ============================================
+        // الإعدادات الأساسية
+        // ============================================
+        let API_BASE = '';
+        if (window.location.protocol === 'file:' || window.location.protocol === 'blob:') {
+            API_BASE = 'http://localhost:3000';
+        }
+
+        let uData = { username: "", password: "", energy: 200, highScore: 0, stats: { moves: 0, maxLvl: 0 }, grid: null, avatarUrl: "", kingdom: "", alliance: "" };
+        let isAdmin = false;
+        let socket = null;
+        let grid = Array(4).fill().map(() => Array(4).fill(0));
+        let history = [];
+        let selectedLvl = 1;
+        let waitingInput = false;
+        let memo = new Map();
+        let currentChatTab = 'ai';
+        let activeTool = null;
+        let swapCell = null;
+        let isMuted = false;
+
+        const defaultAnimals = { 0: { icon: '', name: 'فارغ' } };
+        for (let i = 1; i <= 11; i++) defaultAnimals[i] = { icon: '🐾', name: `مستوى ${i}` };
+        let appSettings = { appName: "مساعد عقروب", animals: defaultAnimals, colors: {}, termsTitle: "الشروط", termsText: "أهلاً بك...", geminiApiKey: "" };
+
+        // ============================================
+        // المحرك الصوتي
+        // ============================================
+        let audioCtx;
+        function initAudio() { if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
+        function playSFX(type) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            if (type === 'merge') { osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); }
+            else if (type === 'success') { osc.type = 'triangle'; osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(600, now + 0.1); osc.frequency.setValueAtTime(800, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+            else if (type === 'error') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.setValueAtTime(90, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.2); osc.start(now); osc.stop(now + 0.2); }
+        }
+
+        document.getElementById('soundToggleBtn').onclick = (e) => { isMuted = !isMuted; e.currentTarget.innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-400 text-sm"></i>' : '<i class="fas fa-volume-up text-sm"></i>'; };
+
+        // ============================================
+        // دوال مساعدة
+        // ============================================
+        function getDeviceID() { let did = localStorage.getItem('devId'); if (!did) { did = 'dev_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('devId', did); } return did; }
+
+        async function fetchSettings() { try { const res = await fetch(`${API_BASE}/api/settings`); if (res.ok) applySettings(await res.json()); } catch (e) {} }
+
+        function applySettings(s) {
+            appSettings = s;
+            document.getElementById('pageTitle').innerText = s.appName;
+            document.getElementById('mainHeaderTitle').innerText = s.appName;
+            document.getElementById('loginAppTitle').innerText = s.appName;
+            document.getElementById('termsTitleDisplay').innerHTML = `<i class="fas fa-shield-alt"></i> ${s.termsTitle}`;
+            document.getElementById('termsTextDisplay').innerHTML = s.termsText.replace(/\n/g, '<br>');
+            if (s.colors) { const r = document.documentElement.style; r.setProperty('--bg-body', s.colors.bodyBg); r.setProperty('--bg-panel', s.colors.panelBg); r.setProperty('--color-primary', s.colors.primary); }
+            if (s.logoUrl) { const url = s.logoUrl.startsWith('/') ? API_BASE + s.logoUrl : s.logoUrl; document.getElementById('mainHeaderLogo').src = url; document.getElementById('mainHeaderLogo').classList.remove('hidden'); document.getElementById('loginAppLogo').src = url; document.getElementById('loginAppLogo').classList.remove('hidden'); document.getElementById('loginDefaultIcon').classList.add('hidden'); }
+            initPalette();
+            updateGridUI();
+        }
+
+        // ============================================
+        // الملف الشخصي
+        // ============================================
+        function openProfile() { document.getElementById('profileOverlay').classList.remove('hidden'); document.getElementById('profileKingdomInput').value = uData.kingdom || ''; document.getElementById('profileAllianceInput').value = uData.alliance || ''; if (uData.avatarUrl) { document.getElementById('profileAvatarPreview').src = uData.avatarUrl.startsWith('/') ? API_BASE + uData.avatarUrl : uData.avatarUrl; document.getElementById('profileAvatarPreview').classList.remove('hidden'); document.getElementById('profileAvatarFallback').classList.add('hidden'); } else { document.getElementById('profileAvatarFallback').innerText = uData.username.charAt(0).toUpperCase(); document.getElementById('profileAvatarPreview').classList.add('hidden'); document.getElementById('profileAvatarFallback').classList.remove('hidden'); } }
+
+        document.getElementById('profileAvatarInput').onchange = async (e) => { const file = e.target.files[0]; if (!file) return; const fd = new FormData(); fd.append('image', file); try { const r = await fetch(API_BASE + '/api/upload', { method: 'POST', body: fd }); const d = await r.json(); if (d.success) { uData.avatarUrl = d.url; document.getElementById('profileAvatarPreview').src = API_BASE + d.url; document.getElementById('profileAvatarPreview').classList.remove('hidden'); document.getElementById('profileAvatarFallback').classList.add('hidden'); } } catch (e) {} };
+
+        document.getElementById('saveProfileBtn').onclick = async () => { uData.kingdom = document.getElementById('profileKingdomInput').value.trim(); uData.alliance = document.getElementById('profileAllianceInput').value.trim(); try { await fetch(`${API_BASE}/api/profile/update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: uData.username, password: uData.password, avatarUrl: uData.avatarUrl, kingdom: uData.kingdom, alliance: uData.alliance }) }); updatePlayerUI(); document.getElementById('profileOverlay').classList.add('hidden'); playSFX('success'); } catch (e) { playSFX('error'); } };
+
+        function updatePlayerUI() {
+            document.getElementById('playerNameDisplay').innerText = uData.username;
+            if (uData.avatarUrl) { document.getElementById('playerAvatar').src = uData.avatarUrl.startsWith('/') ? API_BASE + uData.avatarUrl : uData.avatarUrl; document.getElementById('playerAvatar').classList.remove('hidden'); document.getElementById('playerAvatarFallback').classList.add('hidden'); } else { document.getElementById('playerAvatarFallback').innerText = uData.username.charAt(0).toUpperCase(); document.getElementById('playerAvatar').classList.add('hidden'); document.getElementById('playerAvatarFallback').classList.remove('hidden'); }
+        }
+
+        // ============================================
+        // تسجيل الدخول
+        // ============================================
+        document.getElementById('enterAppBtn').onclick = async () => {
+            initAudio();
+            const u = document.getElementById('usernameInput').value.trim().toLowerCase();
+            const p = document.getElementById('passwordInput').value.trim();
+            const errEl = document.getElementById('loginError');
+            if (!u || !p) { errEl.innerText = "أدخل بياناتك أولاً!"; errEl.classList.remove('hidden'); playSFX('error'); return; }
+            document.getElementById('enterAppBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            try {
+                const res = await fetch(`${API_BASE}/api/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p, deviceId: getDeviceID() }) });
+                const d = await res.json();
+                if (d.success) {
+                    uData.username = u; uData.password = p; isAdmin = d.isAdmin;
+                    if (d.userData) { uData.highScore = d.userData.highScore || 0; uData.energy = d.userData.energy !== undefined ? d.userData.energy : 200; uData.stats = d.userData.stats || { moves: 0, maxLvl: 0 }; uData.avatarUrl = d.userData.avatarUrl || ""; uData.kingdom = d.userData.kingdom || ""; uData.alliance = d.userData.alliance || ""; if (d.userData.grid) grid = d.userData.grid; }
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('termsOverlay').classList.remove('hidden');
+                    playSFX('success');
+                } else { errEl.innerText = d.message; errEl.classList.remove('hidden'); document.getElementById('enterAppBtn').innerHTML = '<span>دخول السيرفر</span> <i class="fas fa-sign-in-alt mr-1"></i>'; playSFX('error'); }
+            } catch (e) { errEl.innerText = "السيرفر لا يستجيب!"; errEl.classList.remove('hidden'); document.getElementById('enterAppBtn').innerHTML = '<span>دخول السيرفر</span> <i class="fas fa-sign-in-alt mr-1"></i>'; playSFX('error'); }
+        };
+
+        // الشروط
+        document.getElementById('agreeTermsCheckbox').onchange = (e) => { const btn = document.getElementById('acceptTermsBtn'); if (e.target.checked) { btn.disabled = false; btn.classList.remove('bg-slate-800', 'text-slate-400', 'cursor-not-allowed'); btn.classList.add('theme-primary-bg'); } else { btn.disabled = true; btn.classList.add('bg-slate-800', 'text-slate-400', 'cursor-not-allowed'); btn.classList.remove('theme-primary-bg'); } };
+        document.getElementById('acceptTermsBtn').onclick = () => { document.getElementById('termsOverlay').classList.add('hidden'); initializeAppAfterTerms(); };
+
+        function initializeAppAfterTerms() {
+            updatePlayerUI();
+            document.getElementById('highScoreDisplay').innerText = uData.highScore.toLocaleString();
+            document.getElementById('statMoves').innerText = uData.stats.moves;
+            document.getElementById('statMaxLvl').innerText = uData.stats.maxLvl;
+            document.getElementById('liveEnergy').value = uData.energy;
+            if (isAdmin) { document.getElementById('openAdminBtn').classList.remove('hidden'); document.getElementById('openAdminBtn').style.display = 'block'; }
+            updateGridUI();
+            fetchLeaderboard();
+            document.getElementById('chatWidget').classList.remove('hidden');
+            try {
+                socket = io(API_BASE || window.location.origin);
+                socket.emit('user_joined', { username: uData.username, kingdom: uData.kingdom, alliance: uData.alliance, avatarUrl: uData.avatarUrl });
+                socket.on('settings_updated', (s) => applySettings(s));
+                socket.on('profile_updated', () => fetchLeaderboard());
+                socket.on('global_msg', (data) => {
+                    const d = document.createElement('div');
+                    d.className = `msg ${data.sender === uData.username ? 'user' : 'other'} border border-white/5 flex gap-2 items-start`;
+                    let av = data.avatarUrl ? `<img src="${data.avatarUrl.startsWith('/') ? API_BASE + data.avatarUrl : data.avatarUrl}" class="w-5 h-5 rounded-full object-cover">` : `<div class="w-5 h-5 rounded-full bg-black/50 flex items-center justify-center text-[8px]">${data.sender.charAt(0)}</div>`;
+                    d.innerHTML = `${av}<div class="flex-1"><div class="text-[9px] opacity-60 mb-0.5">${data.sender}</div><div>${data.text}</div></div>`;
+                    document.getElementById('globalChatMessages').appendChild(d);
+                    document.getElementById('globalChatMessages').scrollTop = 99999;
+                });
+                socket.on('update_online_users', (users) => { document.getElementById('adminOnlineCount').innerText = users.length; });
+            } catch (e) {}
+        }
+
+        // ============================================
+        // الشات
+        // ============================================
+        document.getElementById('chatBtn').onclick = () => { document.getElementById('chatBox').style.display = 'flex'; document.getElementById('chatBtn').style.display = 'none'; };
+        document.getElementById('closeChatBtn').onclick = () => { document.getElementById('chatBox').style.display = 'none'; document.getElementById('chatBtn').style.display = 'flex'; };
+        document.getElementById('tabAiChat').onclick = () => { currentChatTab = 'ai'; document.getElementById('tabAiChat').classList.add('bg-[var(--color-primary)]', 'text-white'); document.getElementById('tabAiChat').classList.remove('text-slate-400'); document.getElementById('tabGlobalChat').classList.remove('bg-[var(--color-primary)]', 'text-white'); document.getElementById('tabGlobalChat').classList.add('text-slate-400'); document.getElementById('aiChatMessages').classList.remove('hidden'); document.getElementById('globalChatMessages').classList.add('hidden'); };
+        document.getElementById('tabGlobalChat').onclick = () => { currentChatTab = 'global'; document.getElementById('tabGlobalChat').classList.add('bg-[var(--color-primary)]', 'text-white'); document.getElementById('tabGlobalChat').classList.remove('text-slate-400'); document.getElementById('tabAiChat').classList.remove('bg-[var(--color-primary)]', 'text-white'); document.getElementById('tabAiChat').classList.add('text-slate-400'); document.getElementById('globalChatMessages').classList.remove('hidden'); document.getElementById('aiChatMessages').classList.add('hidden'); };
+
+        document.getElementById('sendChatBtn').onclick = sendChat;
+        document.getElementById('chatInput').onkeypress = (e) => { if (e.key === 'Enter') sendChat(); };
+
+        async function sendChat() {
+            const input = document.getElementById('chatInput');
+            const txt = input.value.trim();
+            if (!txt) return;
+            input.value = '';
+            
+            if (currentChatTab === 'ai') {
+                const d = document.createElement('div');
+                d.className = 'msg user';
+                d.innerText = txt;
+                document.getElementById('aiChatMessages').appendChild(d);
+                
+                try {
+                    const res = await fetch(`${API_BASE}/api/ai/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: uData.username, password: uData.password, message: txt }) });
+                    const data = await res.json();
+                    const r = document.createElement('div');
+                    r.className = 'msg bot';
+                    r.innerText = data.success ? data.response : data.message;
+                    document.getElementById('aiChatMessages').appendChild(r);
+                } catch (e) { }
+                document.getElementById('aiChatMessages').scrollTop = 99999;
+            } else {
+                socket.emit('global_msg', { sender: uData.username, text: txt, kingdom: uData.kingdom, alliance: uData.alliance, avatarUrl: uData.avatarUrl });
+            }
+        }
+
+        // ============================================
+        // لوحة المتصدرين - محدثة
+        // ============================================
+        async function fetchLeaderboard() {
+            try {
+                const res = await fetch(`${API_BASE}/api/leaderboard`);
+                const data = await res.json();
+                const medals = ['🥇', '🥈', '🥉'];
+                
+                document.getElementById('leaderboardList').innerHTML = data.map((p, i) => {
+                    // Avatar
+                    let av = p.avatarUrl ?
+                        `<img src="${p.avatarUrl.startsWith('/') ? API_BASE + p.avatarUrl : p.avatarUrl}" class="avatar-circle">` :
+                        `<div class="avatar-circle">${p.username.charAt(0).toUpperCase()}</div>`;
+                    
+                    // Badges
+                    let bdg = '';
+                    if (p.kingdom || p.alliance) {
+                        let b = [];
+                        if (p.kingdom) b.push(`K:${p.kingdom}`);
+                        if (p.alliance) b.push(`A:${p.alliance}`);
+                        bdg = `<span class="text-[8px] text-[var(--color-primary)]">[${b.join('|')}]</span>`;
+                    }
+                    
+                    // Animal icon - فقط emoji وليس رابط
+                    let animalIcon = '';
+                    if (p.maxLvl > 0 && appSettings.animals && appSettings.animals[p.maxLvl]) {
+                        const icon = appSettings.animals[p.maxLvl].icon;
+                        // عرض الـ icon فقط إذا كان emoji وليس رابط
+                        if (icon && !icon.startsWith('http') && !icon.startsWith('/')) {
+                            animalIcon = `<span class="text-base" title="${appSettings.animals[p.maxLvl].name}">${icon}</span>`;
+                        }
+                    }
+                    
+                    return `<div class="theme-panel p-3 rounded-xl flex justify-between items-center ${p.username === uData.username ? 'border-[var(--color-primary)]' : ''}">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg w-6 text-center">${i < 3 ? medals[i] : (i + 1)}</span>
+                            ${av}
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm">${p.username}</span>
+                                ${bdg}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${animalIcon}
+                            <span class="text-[var(--color-primary)] font-black">${p.score.toLocaleString()}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) {}
+        }
+
+        // ============================================
+        // Game Logic (Palette, Grid, AI)
+        // ============================================
+        function initPalette() {
+            const pal = document.getElementById('palette');
+            pal.innerHTML = '';
+            for (let i = 1; i <= 11; i++) {
+                const btn = document.createElement('div');
+                btn.className = `cell palette-btn lvl-${i}`;
+                btn.innerHTML = `<span class="text-lg">${appSettings.animals[i]?.icon || '🐾'}</span><span class="lvl-badge">${i}</span>`;
+                btn.onclick = () => { selectedLvl = i; document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); };
+                pal.appendChild(btn);
+            }
+        }
+
+        function updateGridUI() {
+            const gd = document.getElementById('gameGrid');
+            gd.innerHTML = '';
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const lvl = grid[r][c];
+                    const cell = document.createElement('div');
+                    cell.className = `cell lvl-${lvl}`;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    if (lvl > 0) {
+                        const animal = appSettings.animals[lvl] || { icon: '🐾' };
+                        const icon = animal.icon;
+                        if (icon && (icon.startsWith('http') || icon.startsWith('/'))) {
+                            cell.innerHTML = `<img src="${icon.startsWith('/') ? API_BASE + icon : icon}" class="cell-img"><span class="lvl-badge">${lvl}</span>`;
+                        } else {
+                            cell.innerHTML = `<span class="text-2xl">${icon || '🐾'}</span><span class="lvl-badge">${lvl}</span>`;
+                        }
+                    }
+                    
+                    cell.onclick = () => handleCellClick(r, c);
+                    gd.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(r, c) {
+            if (activeTool === 'hammer') {
+                grid[r][c] = 0;
+                activeTool = null;
+                document.querySelectorAll('.cell').forEach(cl => cl.classList.remove('waiting-input'));
+                updateGridUI();
+                playSFX('tool');
+            } else if (activeTool === 'swap') {
+                if (!swapCell) {
+                    swapCell = { r, c };
+                    document.querySelector(`[data-row="${r}"][data-col="${c}"]`).classList.add('swap-highlight');
+                } else {
+                    const temp = grid[r][c];
+                    grid[r][c] = grid[swapCell.r][swapCell.c];
+                    grid[swapCell.r][swapCell.c] = temp;
+                    swapCell = null;
+                    activeTool = null;
+                    document.querySelectorAll('.cell').forEach(cl => cl.classList.remove('swap-highlight', 'waiting-input'));
+                    updateGridUI();
+                    playSFX('tool');
+                }
+            } else if (grid[r][c] === 0) {
+                grid[r][c] = selectedLvl;
+                updateGridUI();
+                playSFX('merge');
+            }
+        }
+
+        document.getElementById('useHammerBtn').onclick = () => { activeTool = 'hammer'; document.getElementById('toolsOverlay').classList.add('hidden'); document.querySelectorAll('.cell').forEach(c => c.classList.add('waiting-input')); };
+        document.getElementById('useSwapBtn').onclick = () => { activeTool = 'swap'; document.getElementById('toolsOverlay').classList.add('hidden'); document.querySelectorAll('.cell').forEach(c => c.classList.add('waiting-input')); };
+        document.getElementById('toolsBtn')?.addEventListener('click', () => document.getElementById('toolsOverlay').classList.remove('hidden'));
+
+        document.getElementById('undoBtn').onclick = () => { if (history.length > 0) { grid = history.pop(); updateGridUI(); playSFX('tool'); } };
+        document.getElementById('clearBtn').onclick = () => { history.push(JSON.parse(JSON.stringify(grid))); grid = Array(4).fill().map(() => Array(4).fill(0)); updateGridUI(); playSFX('tool'); };
+
+        // Manual moves
+        function manualMove(dir) { history.push(JSON.parse(JSON.stringify(grid))); const res = moveGrid(dir, grid); if (res.moved) { grid = res.grid; updateGridUI(); saveState(); playSFX('merge'); } }
+
+        function moveGrid(dir, g) {
+            let moved = false, newG = JSON.parse(JSON.stringify(g));
+            const merge = (row) => { let newRow = row.filter(v => v !== 0); for (let i = 0; i < newRow.length - 1; i++) { if (newRow[i] === newRow[i + 1]) { newRow[i]++; newRow.splice(i + 1, 1); } } while (newRow.length < 4) newRow.push(0); return newRow; };
+            if (dir === 'RIGHT') { for (let r = 0; r < 4; r++) { let rev = [...newG[r]].reverse(); let merged = merge(rev).reverse(); if (JSON.stringify(newG[r]) !== JSON.stringify(merged)) moved = true; newG[r] = merged; } }
+            else if (dir === 'LEFT') { for (let r = 0; r < 4; r++) { let merged = merge(newG[r]); if (JSON.stringify(newG[r]) !== JSON.stringify(merged)) moved = true; newG[r] = merged; } }
+            else if (dir === 'UP') { for (let c = 0; c < 4; c++) { let col = [newG[0][c], newG[1][c], newG[2][c], newG[3][c]]; let merged = merge(col); if (JSON.stringify(col) !== JSON.stringify(merged)) moved = true; for (let r = 0; r < 4; r++) newG[r][c] = merged[r]; } }
+            else if (dir === 'DOWN') { for (let c = 0; c < 4; c++) { let col = [newG[3][c], newG[2][c], newG[1][c], newG[0][c]]; let merged = merge(col); if (JSON.stringify([newG[0][c], newG[1][c], newG[2][c], newG[3][c]]) !== JSON.stringify(merged.reverse())) moved = true; for (let r = 0; r < 4; r++) newG[r][c] = merged[r]; } }
+            return { moved, grid: newG };
+        }
+
+        // AI Calculation
+        document.getElementById('calcMoveBtn').onclick = () => {
+            const depth = parseInt(document.getElementById('aiDepth').value);
+            const btn = document.getElementById('calcMoveBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> يحسب...';
+            
+            setTimeout(() => {
+                const res = expectimax(grid, depth, true);
+                const dirs = { UP: '⬆️ للأعلى', DOWN: '⬇️ للأسفل', LEFT: '⬅️ لليسار', RIGHT: '➡️ لليمين' };
+                
+                document.getElementById('moveResult').innerHTML = `<span class="text-[var(--color-primary)]">${dirs[res.move] || res.move}</span>`;
+                document.getElementById('resultArea').classList.remove('hidden');
+                document.getElementById('calcMoveBtn').innerHTML = '<span>دمـــج</span> <i class="fas fa-magic"></i>';
+                
+                // Auto apply
+                history.push(JSON.parse(JSON.stringify(grid)));
+                const moveRes = moveGrid(res.move, grid);
+                if (moveRes.moved) {
+                    grid = moveRes.grid;
+                    updateGridUI();
+                    saveState();
+                    playSFX('merge');
+                    
+                    let maxLvl = 0;
+                    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (grid[r][c] > maxLvl) maxLvl = grid[r][c];
+                    uData.stats.maxLvl = Math.max(uData.stats.maxLvl, maxLvl);
+                    uData.stats.moves++;
+                    document.getElementById('statMoves').innerText = uData.stats.moves;
+                    document.getElementById('statMaxLvl').innerText = uData.stats.maxLvl;
+                }
+            }, 50);
+        };
+
+        function expectimax(g, depth, isMax) {
+            if (depth === 0) return { score: evaluate(g), move: null };
+            if (isMax) {
+                let best = { score: -Infinity, move: null };
+                for (let dir of ['UP', 'DOWN', 'LEFT', 'RIGHT']) {
+                    const res = moveGrid(dir, g);
+                    if (res.moved) {
+                        const child = expectimax(res.grid, depth - 1, false);
+                        if (child.score > best.score) best = { score: child.score, move: dir };
+                    }
+                }
+                return best.score === -Infinity ? { score: evaluate(g), move: 'UP' } : best;
+            } else {
+                let empty = [];
+                for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 0) empty.push({ r, c });
+                if (empty.length === 0) return { score: evaluate(g), move: null };
+                let total = 0;
+                for (let pos of empty.slice(0, 8)) {
+                    let ng = JSON.parse(JSON.stringify(g));
+                    ng[pos.r][pos.c] = 1;
+                    total += expectimax(ng, depth - 1, true).score;
+                }
+                return { score: total / Math.min(empty.length, 8), move: null };
+            }
+        }
+
+        function evaluate(g) {
+            let score = 0, empty = 0, maxV = 0;
+            const weights = [[6,5,4,3],[5,4,3,2],[4,3,2,1],[3,2,1,0]];
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    if (g[r][c] === 0) empty++;
+                    else { score += g[r][c] * weights[r][c]; if (g[r][c] > maxV) maxV = g[r][c]; }
+                }
+            }
+            score += empty * 10;
+            score += maxV * 5;
+            return score;
+        }
+
+        async function saveState() {
+            if (!uData.username) return;
+            try {
+                await fetch(`${API_BASE}/api/user/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...uData, grid }) });
+                fetchLeaderboard();
+            } catch (e) {}
+        }
+
+        // ============================================
+        // Admin Functions
+        // ============================================
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('[id^="tab"]').forEach(t => { t.classList.remove('bg-[var(--color-secondary)]'); t.classList.add('opacity-60'); });
+            document.getElementById('section' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('bg-[var(--color-secondary)]');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('opacity-60');
+        }
+
+        document.getElementById('addUserBtn').onclick = async () => {
+            const user = document.getElementById('newUsername').value.trim();
+            const pass = document.getElementById('newPassword').value.trim();
+            const admin = document.getElementById('newIsAdmin').checked;
+            if (!user || !pass) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/users/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, newUsername: user, newPassword: pass, isAdmin: admin }) });
+                const d = await res.json();
+                document.getElementById('addUserMsg').innerText = d.message;
+                document.getElementById('addUserMsg').classList.remove('hidden');
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newPassword').value = '';
+                loadUsersList();
+            } catch (e) {}
+        };
+
+        async function loadUsersList() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/users`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password }) });
+                const d = await res.json();
+                if (d.success) {
+                    document.getElementById('adminUsersDatabaseList').innerHTML = d.users.map(u => `
+                        <div class="flex justify-between items-center p-2 bg-black/30 rounded-lg">
+                            <span class="text-xs">${u.username} ${u.isAdmin ? '<i class="fas fa-crown text-yellow-400 text-[10px]"></i>' : ''}</span>
+                            <div class="flex gap-1">
+                                <span class="text-[10px] text-[var(--color-primary)]">${u.score}</span>
+                                <button onclick="resetUserScore('${u.username}')" class="text-[10px] text-red-400 hover:text-red-300">تصفير</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {}
+        }
+
+        async function resetUserScore(username) {
+            try { await fetch(`${API_BASE}/api/admin/reset_score`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, targetUser: username }) }); loadUsersList(); } catch (e) {}
+        }
+
+        document.getElementById('refreshUsersList').onclick = loadUsersList;
+
+        // Reviews
+        let selectedRating = 0;
+        document.querySelectorAll('#starRatingContainer i').forEach(star => {
+            star.onclick = () => {
+                selectedRating = parseInt(star.dataset.rating);
+                document.querySelectorAll('#starRatingContainer i').forEach((s, i) => { if (i < selectedRating) s.classList.add('active'); else s.classList.remove('active'); });
+            };
+        });
+
+        document.getElementById('submitReviewBtn').onclick = async () => {
+            if (selectedRating === 0) return;
+            try {
+                await fetch(`${API_BASE}/api/reviews/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: uData.username, rating: selectedRating, text: document.getElementById('reviewTextInput').value }) });
+                document.getElementById('reviewMsg').innerText = "شكراً لتقييمك!";
+                document.getElementById('reviewMsg').classList.remove('hidden', 'text-red-400');
+                document.getElementById('reviewMsg').classList.add('text-green-400');
+                setTimeout(() => document.getElementById('reviewOverlay').classList.add('hidden'), 1500);
+            } catch (e) {}
+        };
+
+        async function loadAdminReviewsList() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password }) });
+                const d = await res.json();
+                if (d.success) document.getElementById('adminReviewsList').innerHTML = d.reviews.map(r => `<div class="p-2 bg-black/30 rounded-lg"><div class="flex justify-between text-[10px]"><span>${r.username}</span><span class="text-yellow-400">${'★'.repeat(r.rating)}</span></div><div class="text-[9px] opacity-70 mt-1">${r.text || 'لا يوجد نص'}</div></div>`).join('');
+            } catch (e) {}
+        }
+
+        // Settings
+        async function loadSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/api/settings`);
+                const s = await res.json();
+                document.getElementById('settingAppName').value = s.appName || '';
+                document.getElementById('settingGeminiKey').value = s.geminiApiKey || '';
+                document.getElementById('settingTermsTitle').value = s.termsTitle || '';
+                document.getElementById('settingTermsText').value = s.termsText || '';
+                
+                // Animals
+                const list = document.getElementById('animalsSettingsList');
+                list.innerHTML = '';
+                for (let i = 1; i <= 11; i++) {
+                    const a = s.animals?.[i] || { icon: '🐾', name: `مستوى ${i}` };
+                    list.innerHTML += `<div class="flex gap-2 items-center"><span class="text-xs w-16">مستوى ${i}</span><input type="text" value="${a.icon || ''}" placeholder="أيقونة" class="animal-icon flex-1 bg-black/40 p-1 rounded text-[10px] border border-white/10 text-white" data-lvl="${i}"><input type="text" value="${a.name || ''}" placeholder="اسم" class="animal-name flex-1 bg-black/40 p-1 rounded text-[10px] border border-white/10 text-white" data-lvl="${i}"></div>`;
+                }
+            } catch (e) {}
+        }
+
+        document.getElementById('saveSettingsBtn').onclick = async () => {
+            const animals = {};
+            for (let i = 1; i <= 11; i++) {
+                animals[i] = {
+                    icon: document.querySelector(`.animal-icon[data-lvl="${i}"]`)?.value || '🐾',
+                    name: document.querySelector(`.animal-name[data-lvl="${i}"]`)?.value || `مستوى ${i}`
+                };
+            }
+            try {
+                const res = await fetch(`${API_BASE}/api/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, newSettings: { appName: document.getElementById('settingAppName').value, geminiApiKey: document.getElementById('settingGeminiKey').value, termsTitle: document.getElementById('settingTermsTitle').value, termsText: document.getElementById('settingTermsText').value, animals } }) });
+                const d = await res.json();
+                document.getElementById('saveSettingsMsg').innerText = d.message;
+                document.getElementById('saveSettingsMsg').classList.remove('hidden');
+            } catch (e) {}
+        };
+
+        // Share
+        document.getElementById('shareBtn')?.addEventListener('click', async () => {
+            const area = document.getElementById('captureArea');
+            try {
+                const canvas = await html2canvas(area, { backgroundColor: '#09090b' });
+                canvas.toBlob(async (blob) => {
+                    if (navigator.share && navigator.canShare) {
+                        try {
+                            await navigator.share({ files: [new File([blob], 'scorpion-score.png', { type: 'image/png' })], title: 'مساعد عقروب' });
+                        } catch (e) {}
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = 'scorpion-score.png';
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                    }
+                });
+            } catch (e) {}
+        });
+
+        // Initial load
+        fetchSettings();
+    </script>
+</body>
+</html>

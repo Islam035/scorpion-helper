@@ -1,17 +1,18 @@
 /**
  * ============================================
- * 🦂 مساعد عقروب V12 - السيرفر
+ * 🦂 مساعد عقروب V12 - السيرفر (MongoDB)
  * ============================================
  */
 
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const fs = require('fs');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const crypto = require('crypto');
+const fs = require('fs');
 
 // ============================================
 // الإعدادات الأساسية
@@ -19,8 +20,8 @@ const crypto = require('crypto');
 const app = express();
 const server = http.createServer(app);
 
-// المنفذ - مهم لـ Render
 const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URL;
 
 // Socket.io
 const io = new Server(server, { 
@@ -76,83 +77,77 @@ const upload = multer({
 });
 
 // ============================================
-// قاعدة البيانات
+// MongoDB Connection
 // ============================================
-const DB_FILE = './users_db.json';
-const SETTINGS_FILE = './settings_db.json';
-const REVIEWS_FILE = './reviews_db.json';
-
-function safeReadFile(filePath, defaultValue) {
+const connectDB = async () => {
     try {
-        if (!fs.existsSync(filePath)) return defaultValue;
-        const data = fs.readFileSync(filePath, 'utf8');
-        return JSON.parse(data);
-    } catch (e) {
-        console.error(`خطأ في قراءة ${filePath}:`, e.message);
-        return defaultValue;
-    }
-}
-
-function safeWriteFile(filePath, data) {
-    try {
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        if (!MONGODB_URI) {
+            console.error('❌ MONGODB_URI غير موجود في متغيرات البيئة!');
+            console.log('⚠️ السيرفر سيعمل بدون قاعدة بيانات');
+            return false;
+        }
+        
+        await mongoose.connect(MONGODB_URI);
+        console.log('✅ متصل بقاعدة بيانات MongoDB');
         return true;
-    } catch (e) {
-        console.error(`خطأ في كتابة ${filePath}:`, e.message);
+    } catch (error) {
+        console.error('❌ خطأ في الاتصال بـ MongoDB:', error.message);
         return false;
     }
-}
-
-function getDB() {
-    return safeReadFile(DB_FILE, { users: {} });
-}
-
-function saveDB(data) {
-    return safeWriteFile(DB_FILE, data);
-}
-
-function getReviews() {
-    return safeReadFile(REVIEWS_FILE, { reviews: [] });
-}
-
-function saveReviews(data) {
-    return safeWriteFile(REVIEWS_FILE, data);
-}
-
-// ============================================
-// الإعدادات الافتراضية
-// ============================================
-const defaultSettings = {
-    appName: "مساعد عقروب V12",
-    logoUrl: "",
-    geminiApiKey: "",
-    termsTitle: "ميثاق الشرف",
-    termsText: "أهلاً بك يا بطل...\n\n1. احترم اللاعبين الآخرين\n2. لا تشارك معلوماتك الحساسة\n3. استمتع وتعلم!",
-    colors: { 
-        bodyBg: "#09090b", 
-        panelBg: "#18181b", 
-        primary: "#ea580c", 
-        text: "#f8fafc" 
-    },
-    animals: { 0: { icon: '', name: 'فارغ' } }
 };
 
-for (let i = 1; i <= 11; i++) {
-    defaultSettings.animals[i] = { icon: '🐾', name: `مستوى ${i}` };
-}
+// ============================================
+// MongoDB Schemas
+// ============================================
 
-function getSettings() {
-    return safeReadFile(SETTINGS_FILE, defaultSettings);
-}
+// Schema المستخدمين
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    isAdmin: { type: Boolean, default: false },
+    createdBy: { type: String, default: null },
+    highScore: { type: Number, default: 0 },
+    energy: { type: Number, default: 200 },
+    stats: {
+        moves: { type: Number, default: 0 },
+        maxLvl: { type: Number, default: 0 }
+    },
+    grid: { type: Array, default: null },
+    avatarUrl: { type: String, default: "" },
+    kingdom: { type: String, default: "" },
+    alliance: { type: String, default: "" },
+    createdAt: { type: Date, default: Date.now }
+});
 
-function saveSettings(data) {
-    return safeWriteFile(SETTINGS_FILE, data);
-}
+// Schema الإعدادات
+const settingsSchema = new mongoose.Schema({
+    key: { type: String, default: 'main', unique: true },
+    appName: { type: String, default: "مساعد عقروب V12" },
+    logoUrl: { type: String, default: "" },
+    geminiApiKey: { type: String, default: "" },
+    termsTitle: { type: String, default: "ميثاق الشرف" },
+    termsText: { type: String, default: "أهلاً بك يا بطل...\n\n1. احترم اللاعبين الآخرين\n2. لا تشارك معلوماتك الحساسة\n3. استمتع وتعلم!" },
+    colors: {
+        bodyBg: { type: String, default: "#09090b" },
+        panelBg: { type: String, default: "#18181b" },
+        primary: { type: String, default: "#ea580c" },
+        text: { type: String, default: "#f8fafc" }
+    },
+    animals: { type: Map, of: { icon: String, name: String }, default: {} }
+});
 
-// تهيئة الملفات
-getDB(); 
-getSettings(); 
-getReviews();
+// Schema التقييمات
+const reviewSchema = new mongoose.Schema({
+    username: { type: String, required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    text: { type: String, default: '' },
+    date: { type: Date, default: Date.now }
+});
+
+// Models
+const User = mongoose.model('User', userSchema);
+const Settings = mongoose.model('Settings', settingsSchema);
+const Review = mongoose.model('Review', reviewSchema);
 
 // ============================================
 // بيانات الأدمن
@@ -163,16 +158,13 @@ const ADMIN_PASS = process.env.ADMIN_PASS || process.env.ADMIN_PASSWORD || 'admi
 // ============================================
 // دوال التحقق
 // ============================================
-function checkAdmin(db, adminUser, adminPass) {
-    if (adminUser === ADMIN_USER && adminPass === ADMIN_PASS) {
+function checkAdmin(user, adminPass) {
+    if (user.username === ADMIN_USER && adminPass === ADMIN_PASS) {
         return true;
     }
-    
-    const user = db.users[adminUser];
-    if (user && user.isAdmin) {
-        if (user.password === adminPass) return true;
+    if (user && user.isAdmin && user.password === adminPass) {
+        return true;
     }
-    
     return false;
 }
 
@@ -189,12 +181,29 @@ function validatePassword(password) {
     return true;
 }
 
+// دالة للحصول على الإعدادات الافتراضية
+function getDefaultSettings() {
+    const animals = { 0: { icon: '', name: 'فارغ' } };
+    for (let i = 1; i <= 11; i++) {
+        animals[i] = { icon: '🐾', name: `مستوى ${i}` };
+    }
+    return {
+        appName: "مساعد عقروب V12",
+        logoUrl: "",
+        geminiApiKey: "",
+        termsTitle: "ميثاق الشرف",
+        termsText: "أهلاً بك يا بطل...\n\n1. احترم اللاعبين الآخرين\n2. لا تشارك معلوماتك الحساسة\n3. استمتع وتعلم!",
+        colors: { bodyBg: "#09090b", panelBg: "#18181b", primary: "#ea580c", text: "#f8fafc" },
+        animals: animals
+    };
+}
+
 // ============================================
 // API Routes - تسجيل الدخول
 // ============================================
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     try {
-        const { username, password, deviceId } = req.body;
+        const { username, password } = req.body;
         
         if (!validateUsername(username) || !validatePassword(password)) {
             return res.json({ 
@@ -203,27 +212,22 @@ app.post('/api/login', (req, res) => {
             });
         }
 
-        const db = getDB();
-        
+        // التحقق من الأدمن الافتراضي
         if (username === ADMIN_USER && password === ADMIN_PASS) {
-            if (!db.users[ADMIN_USER]) {
-                db.users[ADMIN_USER] = { 
+            let adminUser = await User.findOne({ username: ADMIN_USER });
+            if (!adminUser) {
+                adminUser = await User.create({
+                    username: ADMIN_USER,
                     password: ADMIN_PASS,
-                    deviceId: null, 
-                    isAdmin: true, 
-                    highScore: 0, 
-                    energy: 200, 
-                    stats: { moves: 0, maxLvl: 0 }, 
-                    grid: null,
-                    avatarUrl: "", 
-                    kingdom: "القيادة", 
-                    alliance: "المديرين" 
-                };
-                saveDB(db);
+                    isAdmin: true,
+                    kingdom: "القيادة",
+                    alliance: "المديرين"
+                });
             }
         }
 
-        const user = db.users[username];
+        const user = await User.findOne({ username });
+        
         if (user) {
             if (user.password !== password) {
                 return res.json({ 
@@ -265,31 +269,32 @@ app.post('/api/login', (req, res) => {
 // ============================================
 // API Routes - الملف الشخصي
 // ============================================
-app.post('/api/profile/update', (req, res) => {
+app.post('/api/profile/update', async (req, res) => {
     try {
         const { username, password, avatarUrl, kingdom, alliance } = req.body;
-        const db = getDB();
         
-        if (db.users[username] && db.users[username].password === password) {
+        const user = await User.findOne({ username });
+        
+        if (user && user.password === password) {
             if (avatarUrl !== undefined) {
                 if (avatarUrl === '' || avatarUrl.startsWith('/uploads/') || avatarUrl.startsWith('http')) {
-                    db.users[username].avatarUrl = avatarUrl;
+                    user.avatarUrl = avatarUrl;
                 }
             }
             if (kingdom !== undefined) {
-                db.users[username].kingdom = String(kingdom).substring(0, 50);
+                user.kingdom = String(kingdom).substring(0, 50);
             }
             if (alliance !== undefined) {
-                db.users[username].alliance = String(alliance).substring(0, 50);
+                user.alliance = String(alliance).substring(0, 50);
             }
             
-            saveDB(db);
+            await user.save();
             
             io.emit('profile_updated', { 
                 username, 
-                avatarUrl: db.users[username].avatarUrl, 
-                kingdom: db.users[username].kingdom, 
-                alliance: db.users[username].alliance 
+                avatarUrl: user.avatarUrl, 
+                kingdom: user.kingdom, 
+                alliance: user.alliance 
             });
             
             res.json({ success: true });
@@ -305,32 +310,30 @@ app.post('/api/profile/update', (req, res) => {
 // ============================================
 // API Routes - حفظ اللعبة
 // ============================================
-app.post('/api/user/save', (req, res) => {
+app.post('/api/user/save', async (req, res) => {
     try {
         const { username, password, grid, energy, highScore, stats } = req.body;
-        const db = getDB();
         
-        if (db.users[username] && db.users[username].password === password) {
+        const user = await User.findOne({ username });
+        
+        if (user && user.password === password) {
             if (grid && Array.isArray(grid)) {
-                db.users[username].grid = grid;
+                user.grid = grid;
             }
             
             if (typeof energy === 'number') {
-                db.users[username].energy = Math.max(0, Math.min(200, energy));
+                user.energy = Math.max(0, Math.min(200, energy));
             }
             
             if (typeof highScore === 'number') {
-                db.users[username].highScore = Math.max(
-                    db.users[username].highScore || 0, 
-                    highScore
-                );
+                user.highScore = Math.max(user.highScore || 0, highScore);
             }
             
             if (stats) {
-                db.users[username].stats = stats;
+                user.stats = stats;
             }
             
-            saveDB(db);
+            await user.save();
             res.json({ success: true });
         } else {
             res.status(403).json({ success: false, message: "غير مصرح" });
@@ -366,12 +369,13 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 // ============================================
 // API Routes - إدارة المستخدمين
 // ============================================
-app.post('/api/users/add', (req, res) => {
+app.post('/api/users/add', async (req, res) => {
     try {
-        const { adminUser, adminPass, newUsername, newPassword, isAdmin } = req.body;
-        const db = getDB();
+        const { adminUser, adminPass, newUsername, newPassword, isAdmin: makeAdmin } = req.body;
         
-        if (!checkAdmin(db, adminUser, adminPass)) {
+        // التحقق من صلاحيات الأدمن
+        const admin = await User.findOne({ username: adminUser });
+        if (!admin || !checkAdmin(admin, adminPass)) {
             return res.json({ 
                 success: false, 
                 message: "غير مصرح لك!" 
@@ -392,28 +396,27 @@ app.post('/api/users/add', (req, res) => {
             });
         }
         
-        if (db.users[newUsername]) {
+        const existingUser = await User.findOne({ username: newUsername });
+        if (existingUser) {
             return res.json({ 
                 success: false, 
                 message: "اسم المستخدم موجود مسبقاً!" 
             });
         }
         
-        db.users[newUsername] = { 
+        await User.create({
+            username: newUsername,
             password: newPassword,
-            deviceId: null, 
-            isAdmin: isAdmin || false, 
+            isAdmin: makeAdmin || false,
             createdBy: adminUser,
-            highScore: 0, 
-            energy: 200, 
-            stats: { moves: 0, maxLvl: 0 }, 
+            highScore: 0,
+            energy: 200,
+            stats: { moves: 0, maxLvl: 0 },
             grid: null,
-            avatarUrl: "", 
-            kingdom: "", 
+            avatarUrl: "",
+            kingdom: "",
             alliance: ""
-        };
-        
-        saveDB(db);
+        });
         
         res.json({ 
             success: true, 
@@ -431,25 +434,24 @@ app.post('/api/users/add', (req, res) => {
 // ============================================
 // API Routes - تصفير النقاط
 // ============================================
-app.post('/api/admin/reset_score', (req, res) => {
+app.post('/api/admin/reset_score', async (req, res) => {
     try {
         const { adminUser, adminPass, targetUser } = req.body;
-        const db = getDB();
         
-        if (!checkAdmin(db, adminUser, adminPass)) {
+        const admin = await User.findOne({ username: adminUser });
+        if (!admin || !checkAdmin(admin, adminPass)) {
             return res.json({ 
                 success: false, 
                 message: "غير مصرح لك!" 
             });
         }
         
-        if (db.users[targetUser]) {
-            db.users[targetUser].highScore = 0;
-            if (db.users[targetUser].stats) {
-                db.users[targetUser].stats.maxLvl = 0;
-            }
-            db.users[targetUser].grid = null;
-            saveDB(db);
+        const user = await User.findOne({ username: targetUser });
+        if (user) {
+            user.highScore = 0;
+            user.stats = { moves: 0, maxLvl: 0 };
+            user.grid = null;
+            await user.save();
             
             res.json({ 
                 success: true, 
@@ -473,22 +475,24 @@ app.post('/api/admin/reset_score', (req, res) => {
 // ============================================
 // API Routes - قائمة المستخدمين
 // ============================================
-app.post('/api/admin/users', (req, res) => {
+app.post('/api/admin/users', async (req, res) => {
     try {
         const { adminUser, adminPass } = req.body;
-        const db = getDB();
         
-        if (!checkAdmin(db, adminUser, adminPass)) {
+        const admin = await User.findOne({ username: adminUser });
+        if (!admin || !checkAdmin(admin, adminPass)) {
             return res.status(403).json({ success: false, message: "غير مصرح" });
         }
         
-        const usersList = Object.keys(db.users).map(k => ({
-            username: k, 
-            isAdmin: db.users[k].isAdmin || false, 
-            createdBy: db.users[k].createdBy || 'المدير',
-            kingdom: db.users[k].kingdom || '', 
-            alliance: db.users[k].alliance || '', 
-            score: db.users[k].highScore || 0
+        const users = await User.find({}, 'username isAdmin createdBy kingdom alliance highScore');
+        
+        const usersList = users.map(u => ({
+            username: u.username,
+            isAdmin: u.isAdmin || false,
+            createdBy: u.createdBy || 'المدير',
+            kingdom: u.kingdom || '',
+            alliance: u.alliance || '',
+            score: u.highScore || 0
         }));
         
         res.json({ success: true, users: usersList });
@@ -501,36 +505,58 @@ app.post('/api/admin/users', (req, res) => {
 // ============================================
 // API Routes - الإعدادات
 // ============================================
-app.get('/api/settings', (req, res) => {
-    const settings = getSettings();
-    const publicSettings = { ...settings };
-    delete publicSettings.geminiApiKey;
-    res.json(publicSettings);
+app.get('/api/settings', async (req, res) => {
+    try {
+        let settings = await Settings.findOne({ key: 'main' });
+        if (!settings) {
+            const defaults = getDefaultSettings();
+            settings = await Settings.create({ key: 'main', ...defaults });
+        }
+        
+        const publicSettings = settings.toObject();
+        delete publicSettings.geminiApiKey;
+        res.json(publicSettings);
+    } catch (error) {
+        console.error('خطأ في جلب الإعدادات:', error);
+        res.json(getDefaultSettings());
+    }
 });
 
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', async (req, res) => {
     try {
         const { adminUser, adminPass, newSettings } = req.body;
-        const db = getDB();
         
-        if (!checkAdmin(db, adminUser, adminPass)) {
+        const admin = await User.findOne({ username: adminUser });
+        if (!admin || !checkAdmin(admin, adminPass)) {
             return res.json({ 
                 success: false, 
                 message: "غير مصرح لك!" 
             });
         }
         
-        const currentSettings = getSettings();
-        const mergedSettings = { 
-            ...currentSettings, 
-            ...newSettings,
-            geminiApiKey: newSettings.geminiApiKey !== undefined ? 
-                newSettings.geminiApiKey : currentSettings.geminiApiKey
-        };
+        let settings = await Settings.findOne({ key: 'main' });
+        if (!settings) {
+            settings = await Settings.create({ key: 'main', ...getDefaultSettings() });
+        }
         
-        saveSettings(mergedSettings);
+        // تحديث الإعدادات
+        if (newSettings.appName !== undefined) settings.appName = newSettings.appName;
+        if (newSettings.logoUrl !== undefined) settings.logoUrl = newSettings.logoUrl;
+        if (newSettings.geminiApiKey !== undefined) settings.geminiApiKey = newSettings.geminiApiKey;
+        if (newSettings.termsTitle !== undefined) settings.termsTitle = newSettings.termsTitle;
+        if (newSettings.termsText !== undefined) settings.termsText = newSettings.termsText;
+        if (newSettings.colors !== undefined) settings.colors = newSettings.colors;
+        if (newSettings.animals !== undefined) {
+            const animalsMap = new Map();
+            for (const [key, value] of Object.entries(newSettings.animals)) {
+                animalsMap.set(key, value);
+            }
+            settings.animals = animalsMap;
+        }
         
-        const publicSettings = { ...mergedSettings };
+        await settings.save();
+        
+        const publicSettings = settings.toObject();
         delete publicSettings.geminiApiKey;
         io.emit('settings_updated', publicSettings);
         
@@ -550,7 +576,7 @@ app.post('/api/settings', (req, res) => {
 // ============================================
 // API Routes - التقييمات
 // ============================================
-app.post('/api/reviews/add', (req, res) => {
+app.post('/api/reviews/add', async (req, res) => {
     try {
         const { username, rating, text } = req.body;
         
@@ -558,15 +584,12 @@ app.post('/api/reviews/add', (req, res) => {
             return res.status(400).json({ success: false, message: "بيانات غير صالحة" });
         }
         
-        const revs = getReviews();
-        revs.reviews.push({ 
-            username: String(username).substring(0, 50), 
-            rating: Math.min(5, Math.max(1, rating)), 
-            text: text ? String(text).substring(0, 500) : '', 
-            date: new Date().toISOString() 
+        await Review.create({
+            username: String(username).substring(0, 50),
+            rating: Math.min(5, Math.max(1, rating)),
+            text: text ? String(text).substring(0, 500) : ''
         });
         
-        saveReviews(revs);
         res.json({ success: true });
     } catch (error) {
         console.error('خطأ في إضافة التقييم:', error);
@@ -574,18 +597,24 @@ app.post('/api/reviews/add', (req, res) => {
     }
 });
 
-app.post('/api/admin/reviews', (req, res) => {
+app.post('/api/admin/reviews', async (req, res) => {
     try {
         const { adminUser, adminPass } = req.body;
-        const db = getDB();
         
-        if (!checkAdmin(db, adminUser, adminPass)) {
+        const admin = await User.findOne({ username: adminUser });
+        if (!admin || !checkAdmin(admin, adminPass)) {
             return res.status(403).json({ success: false, message: "غير مصرح" });
         }
         
+        const reviews = await Review.find().sort({ date: -1 });
         res.json({ 
             success: true, 
-            reviews: getReviews().reviews.reverse() 
+            reviews: reviews.map(r => ({
+                username: r.username,
+                rating: r.rating,
+                text: r.text,
+                date: r.date
+            }))
         });
     } catch (error) {
         console.error('خطأ في جلب التقييمات:', error);
@@ -596,20 +625,21 @@ app.post('/api/admin/reviews', (req, res) => {
 // ============================================
 // API Routes - لوحة المتصدرين
 // ============================================
-app.get('/api/leaderboard', (req, res) => {
+app.get('/api/leaderboard', async (req, res) => {
     try {
-        const db = getDB();
-        const list = Object.keys(db.users)
-            .map(name => ({ 
-                username: name, 
-                score: db.users[name].highScore || 0, 
-                maxLvl: db.users[name].stats?.maxLvl || 0,
-                kingdom: db.users[name].kingdom || "", 
-                alliance: db.users[name].alliance || "", 
-                avatarUrl: db.users[name].avatarUrl || ""
-            }))
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 10);
+        const users = await User.find({})
+            .sort({ highScore: -1 })
+            .limit(10)
+            .select('username highScore stats kingdom alliance avatarUrl');
+        
+        const list = users.map(u => ({
+            username: u.username,
+            score: u.highScore || 0,
+            maxLvl: u.stats?.maxLvl || 0,
+            kingdom: u.kingdom || "",
+            alliance: u.alliance || "",
+            avatarUrl: u.avatarUrl || ""
+        }));
         
         res.json(list);
     } catch (error) {
@@ -624,15 +654,15 @@ app.get('/api/leaderboard', (req, res) => {
 app.post('/api/ai/chat', async (req, res) => {
     try {
         const { username, password, message } = req.body;
-        const db = getDB();
         
-        if (!db.users[username] || db.users[username].password !== password) {
+        const user = await User.findOne({ username });
+        if (!user || user.password !== password) {
             return res.status(403).json({ success: false, message: "غير مصرح" });
         }
         
-        const settings = getSettings();
+        const settings = await Settings.findOne({ key: 'main' });
         
-        if (!settings.geminiApiKey) {
+        if (!settings || !settings.geminiApiKey) {
             return res.json({ 
                 success: false, 
                 message: "لم يتم تكوين مفتاح Gemini API" 
@@ -733,7 +763,13 @@ app.use((err, req, res, next) => {
 // ============================================
 // تشغيل السيرفر
 // ============================================
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🦂 السيرفر شغال على المنفذ ${PORT}`);
-    console.log(`📍 الرابط: http://localhost:${PORT}`);
-});
+const startServer = async () => {
+    await connectDB();
+    
+    server.listen(PORT, '0.0.0.0', () => {
+        console.log(`🦂 السيرفر شغال على المنفذ ${PORT}`);
+        console.log(`📍 الرابط: http://localhost:${PORT}`);
+    });
+};
+
+startServer();
