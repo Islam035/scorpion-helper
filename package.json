@@ -1,7 +1,7 @@
 {
-  "name": "scorpion-helper-v13",
-  "version": "13.0.0",
-  "description": "مساعد عقروب V13",
+  "name": "scorpion-helper-v14",
+  "version": "14.0.0",
+  "description": "مساعد عقروب V14",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

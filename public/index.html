@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مساعد عقروب V13</title>
+    <title>مساعد عقروب V14</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -14,81 +14,130 @@
             --gold: #D4AF37;
             --gold-dark: #B8860B;
             --red: #C41E3A;
+            --red-dark: #8B0000;
             --text: #F5F5DC;
             --muted: #8B7355;
             --bg: #0a0a0a;
+            --panel: #1a1a1a;
         }
         
         html, body {
             height: 100%;
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #000;
+            background: var(--bg);
             color: var(--text);
-            overflow-x: hidden;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
         
-        /* حاوية الموبايل */
+        /* حاوية التطبيق */
         .app {
             max-width: 420px;
             margin: 0 auto;
-            min-height: 100vh;
-            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             position: relative;
+            overflow: hidden;
         }
         
         /* الشاشات */
         .screen {
             display: none;
-            position: fixed;
+            position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: var(--bg);
             z-index: 100;
         }
         .screen.active { display: flex; flex-direction: column; }
         
-        /* شاشة البداية */
+        /* شاشة البداية - كهف عقرب */
         #splash {
-            background: radial-gradient(ellipse at center, #1a1000 0%, #000 100%);
+            background: radial-gradient(ellipse at center bottom, #1a0a00 0%, #000 50%, #000 100%);
             justify-content: center;
             align-items: center;
             z-index: 200;
         }
-        .splash-logo { font-size: 60px; animation: float 2s infinite; }
-        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        .splash-title {
-            font-size: 22px; font-weight: 900; margin-top: 15px;
-            background: linear-gradient(135deg, #D4AF37, #FFD700);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        
+        .cave {
+            position: relative;
+            width: 200px;
+            height: 150px;
         }
+        
+        .cave-entrance {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 100px;
+            background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%);
+            border-radius: 50% 50% 0 0;
+            box-shadow: inset 0 -20px 40px rgba(0,0,0,0.8);
+        }
+        
+        .scorpion-logo {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+            animation: scorpion-walk 2s infinite;
+            filter: drop-shadow(0 0 10px var(--gold));
+        }
+        
+        @keyframes scorpion-walk {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+        
+        .splash-title {
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--gold), #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
         .splash-loader {
-            width: 150px; height: 3px; background: rgba(255,255,255,0.1);
-            border-radius: 3px; margin-top: 20px; overflow: hidden;
+            width: 150px;
+            height: 3px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin-top: 20px;
+            overflow: hidden;
         }
         .splash-loader div {
-            height: 100%; background: var(--gold);
+            height: 100%;
+            background: var(--gold);
             animation: load 2s forwards;
         }
         @keyframes load { from { width: 0; } to { width: 100%; } }
         
         /* نافذة منبثقة */
         .popup {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.9);
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.95);
             z-index: 150;
             display: none;
             justify-content: center;
             align-items: center;
-            padding: 15px;
+            padding: 10px;
         }
         .popup.show { display: flex; }
         .popup-box {
             background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
             border: 1px solid rgba(212, 175, 55, 0.3);
             border-radius: 16px;
-            padding: 20px;
-            max-width: 350px;
+            padding: 15px;
+            max-width: 380px;
             width: 100%;
-            max-height: 85vh;
+            max-height: 90vh;
             overflow-y: auto;
         }
         
@@ -98,68 +147,219 @@
             color: #000;
             font-weight: bold;
             border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
+            padding: 10px 16px;
+            border-radius: 10px;
             cursor: pointer;
-            width: 100%;
             transition: all 0.2s;
+            font-size: 12px;
         }
         .btn:active { transform: scale(0.97); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; }
         
         /* حقل إدخال */
         .input {
             width: 100%;
             background: rgba(0,0,0,0.6);
             border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            padding: 12px;
+            border-radius: 8px;
+            padding: 10px;
             color: white;
             text-align: center;
-            font-size: 14px;
-            margin-bottom: 10px;
+            font-size: 12px;
+            margin-bottom: 8px;
             outline: none;
         }
         .input:focus { border-color: var(--gold); }
         
+        /* المحتوى الرئيسي */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            padding-bottom: 70px;
+        }
+        
         /* شريط التنقل */
         .navbar {
             position: fixed;
-            bottom: 0; left: 0; right: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
             background: linear-gradient(180deg, rgba(20,20,20,0.99), #000);
             border-top: 1px solid rgba(212, 175, 55, 0.3);
             display: flex;
             justify-content: space-around;
-            padding: 8px 0;
-            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            padding: 6px 0;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
             z-index: 50;
         }
         .nav-btn {
-            display: flex; flex-direction: column; align-items: center;
-            padding: 6px 20px; color: #666; cursor: pointer;
-            transition: all 0.2s; border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 16px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
         }
         .nav-btn.active { color: var(--gold); }
-        .nav-btn i { font-size: 18px; margin-bottom: 2px; }
-        .nav-btn span { font-size: 10px; font-weight: bold; }
+        .nav-btn i { font-size: 16px; margin-bottom: 2px; }
+        .nav-btn span { font-size: 9px; font-weight: bold; }
         
         /* صفحة التبويب */
-        .tab { display: none; padding: 10px; padding-bottom: 80px; }
+        .tab { display: none; }
         .tab.active { display: block; }
+        
+        /* العنوان */
+        .header-title {
+            text-align: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            margin-bottom: 8px;
+        }
+        .header-title h1 {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--gold);
+        }
+        
+        /* عداد الوقت */
+        .timer-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            padding: 6px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .timer-val {
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: var(--gold);
+            font-size: 11px;
+            min-width: 24px;
+            text-align: center;
+        }
+        .timer-label { font-size: 8px; color: var(--muted); }
+        
+        /* إحصائيات اللاعب */
+        .player-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 8px;
+            padding: 6px;
+            text-align: center;
+        }
+        .stat-box.clickable { cursor: pointer; }
+        .stat-box.clickable:active { background: rgba(212, 175, 55, 0.1); }
+        .stat-label { font-size: 8px; color: var(--muted); }
+        .stat-value { font-size: 12px; font-weight: 900; color: var(--gold); }
+        .stat-value.red { color: var(--red); }
+        
+        /* الطاقة */
+        .energy-box {
+            position: relative;
+            background: rgba(196, 30, 58, 0.1);
+            border: 1px solid rgba(196, 30, 58, 0.3);
+        }
+        .energy-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--red);
+            border-radius: 8px 8px 0 0;
+            transition: width 0.3s;
+        }
+        .energy-input {
+            width: 40px;
+            background: transparent;
+            border: none;
+            color: var(--red);
+            font-weight: 900;
+            text-align: center;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        /* شريط الأدوات السريع */
+        .tools-bar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .tool-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 2px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            min-height: 45px;
+        }
+        .tool-btn:active { background: var(--gold); }
+        .tool-btn:active * { color: #000 !important; }
+        .tool-btn.active { border-color: var(--gold); background: rgba(212, 175, 55, 0.3); }
+        .tool-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+        .tool-icon { font-size: 16px; }
+        .tool-name { font-size: 7px; color: var(--gold); margin-top: 2px; }
+        .tool-count {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--red);
+            color: white;
+            font-size: 8px;
+            padding: 1px 4px;
+            border-radius: 6px;
+            min-width: 14px;
+            text-align: center;
+        }
+        .tool-limit {
+            font-size: 7px;
+            color: var(--muted);
+        }
+        
+        /* لوحة الاختيار */
+        .palette {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 3px;
+            margin-bottom: 6px;
+        }
         
         /* شبكة اللعب */
         .grid-4x4 {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
+            gap: 4px;
             background: #050505;
-            padding: 8px;
-            border-radius: 12px;
+            padding: 6px;
+            border-radius: 10px;
             border: 2px solid rgba(212, 175, 55, 0.3);
+            margin-bottom: 8px;
         }
         .cell {
             aspect-ratio: 1;
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -167,52 +367,58 @@
             cursor: pointer;
             transition: all 0.15s;
             position: relative;
-            font-size: clamp(20px, 5vw, 28px);
+            font-size: clamp(18px, 4vw, 24px);
             background: #1a1a1a;
             border: 1px solid rgba(255,255,255,0.05);
         }
         .cell:active { transform: scale(0.92); }
-        .cell .lvl {
+        .cell .lvl-num {
             position: absolute;
-            bottom: 2px; right: 2px;
-            font-size: 8px;
+            bottom: 1px;
+            right: 2px;
+            font-size: 7px;
             font-weight: bold;
             color: var(--gold);
             background: rgba(0,0,0,0.7);
-            padding: 1px 4px;
-            border-radius: 3px;
+            padding: 0 3px;
+            border-radius: 2px;
+        }
+        .cell.selected-tool {
+            border: 2px dashed var(--gold) !important;
+            animation: pulse-border 1s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: var(--gold); }
+            50% { border-color: transparent; }
         }
         
         /* ألوان المستويات */
-        .lvl-1 { background: radial-gradient(circle, #3d5a3d, #1a2a1a); }
-        .lvl-2 { background: radial-gradient(circle, #3d5a5a, #1a2a2a); }
-        .lvl-3 { background: radial-gradient(circle, #4a4a6a, #2a2a3a); }
-        .lvl-4 { background: radial-gradient(circle, #5a3d6a, #2a1a3a); }
-        .lvl-5 { background: radial-gradient(circle, #6a3d5a, #3a1a2a); }
-        .lvl-6 { background: radial-gradient(circle, #6a4a3d, #3a2a1a); }
-        .lvl-7 { background: radial-gradient(circle, #6a5a2d, #3a3a1a); }
-        .lvl-8 { background: radial-gradient(circle, #7a4a2d, #4a2a1a); }
-        .lvl-9 { background: radial-gradient(circle, #6a2a2a, #3a1a1a); }
-        .lvl-10 { background: radial-gradient(circle, #5a1a1a, #3a0a0a); }
-        .lvl-11 { 
+        .lvl-0 { background: #18181b; }
+        .lvl-1 { background: radial-gradient(circle, #4ade80, #14532d); }
+        .lvl-2 { background: radial-gradient(circle, #38bdf8, #0c4a6e); }
+        .lvl-3 { background: radial-gradient(circle, #60a5fa, #1e3a8a); }
+        .lvl-4 { background: radial-gradient(circle, #a78bfa, #4c1d95); }
+        .lvl-5 { background: radial-gradient(circle, #d946ef, #701a75); }
+        .lvl-6 { background: radial-gradient(circle, #f472b6, #831843); }
+        .lvl-7 { background: radial-gradient(circle, #fbbf24, #78350f); }
+        .lvl-8 { background: radial-gradient(circle, #ea580c, #7c2d12); }
+        .lvl-9 { background: radial-gradient(circle, #ef4444, #7f1d1d); }
+        .lvl-10 { background: radial-gradient(circle, #dc2626, #450a0a); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        .lvl-11 {
             background: radial-gradient(circle, var(--gold), var(--gold-dark));
             border: 2px solid #FFD700 !important;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
-            animation: glow 1.5s infinite;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+            animation: glow-gold 1.5s infinite;
         }
-        @keyframes glow { 0%,100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); } 50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.8); } }
+        @keyframes glow-gold {
+            0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(212, 175, 55, 1); }
+        }
         
-        /* لوحة الاختيار */
-        .palette {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 4px;
-            margin-bottom: 10px;
-        }
         .palette .cell {
             aspect-ratio: auto;
-            height: clamp(32px, 8vw, 42px);
-            font-size: clamp(14px, 3vw, 18px);
+            height: clamp(30px, 7vw, 38px);
+            font-size: clamp(12px, 2.5vw, 16px);
         }
         .palette .cell.selected {
             border: 2px solid var(--gold) !important;
@@ -220,286 +426,416 @@
             transform: scale(1.1);
         }
         
-        /* أدوات سريعة */
-        .tools-bar {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-        .tool-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 4px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 10px;
-            cursor: pointer;
-            position: relative;
-        }
-        .tool-btn:active { background: var(--gold); }
-        .tool-btn:active * { color: #000 !important; }
-        .tool-btn .icon { font-size: 18px; }
-        .tool-btn .name { font-size: 8px; color: var(--gold); margin-top: 2px; }
-        .tool-btn .count {
-            position: absolute;
-            top: -4px; right: -4px;
-            background: var(--red);
-            color: white;
-            font-size: 9px;
-            padding: 1px 5px;
-            border-radius: 8px;
-            min-width: 16px;
-            text-align: center;
-        }
-        
-        /* عداد الوقت */
-        .timer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 4px;
-            padding: 8px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        .timer-val {
-            background: rgba(0,0,0,0.5);
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-weight: bold;
-            color: var(--gold);
-            min-width: 28px;
-            text-align: center;
-        }
-        .timer-label { font-size: 9px; color: var(--muted); }
-        
-        /* إحصائيات */
-        .stats {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-        .stat {
-            flex: 1;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 10px;
-            padding: 8px;
-            text-align: center;
-        }
-        .stat-val { font-size: 14px; font-weight: 900; color: var(--gold); }
-        .stat-label { font-size: 9px; color: var(--muted); }
-        
         /* أزرار التحكم */
-        .controls {
+        .controls-row {
             display: flex;
-            gap: 6px;
-            margin-top: 10px;
+            gap: 4px;
+            margin-bottom: 8px;
         }
         .ctrl-btn {
             flex: 1;
-            padding: 10px;
-            border-radius: 10px;
+            padding: 8px;
+            border-radius: 8px;
             border: none;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 10px;
             cursor: pointer;
         }
         .ctrl-btn:active { transform: scale(0.96); }
         .ctrl-undo { background: rgba(255,255,255,0.1); color: white; }
-        .ctrl-reset { background: rgba(196, 30, 58, 0.3); color: var(--red); }
+        .ctrl-reset { background: rgba(196, 30, 58, 0.3); color: var(--red); border: 1px solid rgba(196, 30, 58, 0.5); }
+        .ctrl-new { background: rgba(34, 197, 94, 0.3); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.5); }
         
+        /* أزرار الاتجاهات */
         .arrows {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            margin-top: 10px;
+            gap: 4px;
+            margin-bottom: 8px;
         }
         .arrow-btn {
-            padding: 12px;
+            padding: 10px;
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
         }
         .arrow-btn:active { background: var(--gold); color: #000; }
         
-        /* زر الإدارة */
+        /* زر الدمج الذكي */
+        .smart-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-weight: 900;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .smart-btn:active { transform: scale(0.98); }
+        .smart-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        /* نتيجة الحركة */
+        .result-box {
+            margin-top: 8px;
+            background: rgba(212,175,55,0.1);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .result-direction {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--gold);
+        }
+        .result-reason {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        
+        /* تحليل AI */
+        .ai-analysis {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(212,175,55,0.2);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 10px;
+            line-height: 1.6;
+        }
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            color: var(--gold);
+            font-weight: bold;
+        }
+        
+        /* زر الإدارة العائم */
         .admin-fab {
             position: fixed;
-            bottom: 70px;
-            left: 10px;
-            width: 45px; height: 45px;
+            bottom: 60px;
+            left: 8px;
+            width: 40px;
+            height: 40px;
             background: linear-gradient(135deg, var(--red), #800);
             border: none;
             border-radius: 50%;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             display: none;
             z-index: 40;
             box-shadow: 0 4px 15px rgba(196, 30, 58, 0.5);
         }
         
-        /* جولة تعريفية */
-        .tour-tooltip {
-            position: fixed;
-            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-            border: 2px solid var(--gold);
-            border-radius: 12px;
-            padding: 15px;
-            max-width: 280px;
-            z-index: 300;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-            animation: popIn 0.3s;
-        }
-        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } }
-        .tour-backdrop {
+        /* احتفال */
+        .celebration {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 250;
+            background: rgba(0,0,0,0.95);
+            z-index: 300;
             display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
         }
-        .tour-backdrop.show { display: block; }
+        .celebration.show { display: flex; }
+        
+        .celeb-content {
+            text-align: center;
+            animation: celeb-pop 0.5s;
+        }
+        @keyframes celeb-pop {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .celeb-icon {
+            font-size: 60px;
+            animation: celeb-float 1s infinite;
+        }
+        @keyframes celeb-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .celeb-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--gold);
+            margin: 10px 0;
+        }
+        
+        /* إحصائيات سريعة */
+        .quick-stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 6px;
+            margin-bottom: 8px;
+            font-size: 9px;
+        }
+        
+        /* أقسام متعددة */
+        .section {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+        .section-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--gold);
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        /* تصنيف الأدوات في الإدارة */
+        .admin-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        .admin-tab {
+            flex: 1;
+            padding: 6px;
+            text-align: center;
+            background: rgba(212,175,55,0.1);
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .admin-tab.active { background: var(--red); color: white; }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        
+        /* المتصدرين */
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+        .rank-badge {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 2px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--gold);
+        }
+        
+        /* إدخال البيانات اليدوي */
+        .manual-input-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+        .manual-input-grid input {
+            width: 100%;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
         
         .hidden { display: none !important; }
+        
+        /* تأثير التحميل */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--gold);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="app">
-        <!-- شاشة البداية -->
+        <!-- ==================== شاشة البداية (كهف عقرب) ==================== -->
         <div id="splash" class="screen active">
-            <div class="splash-logo">🦂</div>
-            <div class="splash-title">مساعد عقروب V13</div>
+            <div class="cave">
+                <div class="cave-entrance"></div>
+                <div class="scorpion-logo">🦂</div>
+            </div>
+            <div class="splash-title">مساعد عقروب V14</div>
             <div class="splash-loader"><div></div></div>
         </div>
 
-        <!-- شاشة تسجيل الدخول -->
+        <!-- ==================== شاشة تسجيل الدخول ==================== -->
         <div id="loginScreen" class="screen">
             <div class="popup-box" style="margin: auto;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <div style="font-size: 50px;">🦂</div>
-                    <div style="font-size: 18px; font-weight: 900; color: var(--gold);">مساعد عقروب</div>
-                    <div style="font-size: 11px; color: var(--muted);">أدخل بياناتك للدخول</div>
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img id="loginLogo" src="" class="hidden" style="height: 60px; margin-bottom: 8px;">
+                    <div id="loginLogoDefault" style="font-size: 50px;">🦂</div>
+                    <div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="loginAppName">مساعد عقروب</div>
+                    <div style="font-size: 10px; color: var(--muted);">أدخل بياناتك للدخول</div>
                 </div>
                 <input type="text" id="loginUser" class="input" placeholder="اسم المستخدم">
                 <input type="password" id="loginPass" class="input" placeholder="كلمة المرور">
-                <button class="btn" id="loginBtn">دخول 🚀</button>
-                <div id="loginErr" class="hidden" style="color: #ef4444; font-size: 11px; text-align: center; margin-top: 10px;"></div>
+                <button class="btn" id="loginBtn" style="width: 100%;">دخول 🚀</button>
+                <div id="loginErr" class="hidden" style="color: #ef4444; font-size: 10px; text-align: center; margin-top: 8px;"></div>
             </div>
         </div>
 
-        <!-- شاشة الشروط -->
+        <!-- ==================== شاشة الشروط ==================== -->
         <div id="termsScreen" class="screen">
             <div class="popup-box">
-                <div style="font-size: 16px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 15px;">📜 ميثاق الشرف</div>
-                <div style="font-size: 11px; line-height: 1.8; max-height: 50vh; overflow-y: auto; margin-bottom: 15px;">
+                <div style="font-size: 14px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 10px;" id="termsTitle">📜 ميثاق الشرف</div>
+                <div style="font-size: 10px; line-height: 1.8; max-height: 50vh; overflow-y: auto; margin-bottom: 10px; text-align: right;" id="termsText">
                     <b>🦂 مرحباً بك!</b><br><br>
                     <b>📌 البرنامج:</b> مساعد لعبة بهجة الحيوانات<br><br>
-                    <b>🎯 الهدف:</b> دمج الحيوانات للوصول للمستوى 11<br><br>
-                    <b>⚡ الطاقة:</b> 200 وحدة، 1/72 ثانية<br><br>
+                    <b>🎯 الهدف:</b> تحقيق 3 دمجات للمستوى 11 في جولة واحدة<br><br>
+                    <b>⚡ الطاقة:</b> 200 وحدة، تستهلك 1 لكل حركة<br>
+                    الاستعادة: 1 نقطة كل 1:12 دقيقة<br><br>
                     <b>🛠️ الأدوات:</b><br>
-                    💎 جوهرة - إضافة حيوان<br>
-                    ⬆️ ترقية - رفع مستوى<br>
-                    🦅 مخلب - حذف<br>
-                    🎡 عجلة - تبديل<br><br>
+                    🔄 تحديث مجاني - إنهاء الجولة<br>
+                    💎 الجوهر - +15 طاقة (999 يومياً)<br>
+                    ⬆️ الترقية - رفع مستوى حيوان<br>
+                    🦅 المخلب - حذف حيوان<br>
+                    🎡 العجلة - تبديل موقع<br><br>
+                    <b>🏆 عند دمج 11:</b><br>
+                    +2048 نقطة + يختفي الحيوان<br>
+                    +20 استخدام لكل أداة<br><br>
                     <b>📜 الشروط:</b><br>
                     • استخدام ترفيهي فقط<br>
                     • عدم مشاركة الحساب<br>
                     • احترام الآخرين
                 </div>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 10px;">
                     <input type="checkbox" id="agreeCheck">
                     أوافق على الشروط
                 </label>
-                <button class="btn" id="acceptTerms" disabled>متابعة ←</button>
+                <button class="btn" id="acceptTerms" disabled style="width: 100%;">متابعة ←</button>
             </div>
         </div>
 
-        <!-- التطبيق الرئيسي -->
+        <!-- ==================== التطبيق الرئيسي ==================== -->
         <div id="mainApp" class="screen">
-            <!-- صفحة اللعب -->
-            <div id="tabPlay" class="tab active">
-                <!-- العنوان -->
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <div style="font-size: 16px; font-weight: 900; color: var(--gold);">🦂 مساعد عقروب V13</div>
-                </div>
+            <!-- شريط الحالة العلوي -->
+            <div class="header-title">
+                <img id="headerLogo" src="" class="hidden" style="height: 30px; margin-bottom: 4px;">
+                <h1 id="headerTitle">🦂 مساعد عقروب V14</h1>
+            </div>
 
+            <div class="main-content">
                 <!-- عداد الوقت -->
-                <div class="timer" id="timerBox">
+                <div class="timer-box" id="timerBox">
                     <span>⏰</span>
-                    <div><div class="timer-val" id="tDay">0</div><div class="timer-label">يوم</div></div>
-                    <div><div class="timer-val" id="tHour">00</div><div class="timer-label">ساعة</div></div>
-                    <div><div class="timer-val" id="tMin">00</div><div class="timer-label">دقيقة</div></div>
-                    <div><div class="timer-val" id="tSec">00</div><div class="timer-label">ثانية</div></div>
+                    <div><div class="timer-val" id="tDay">1</div><div class="timer-label">يوم</div></div>
+                    <div><div class="timer-val" id="tHour">21</div><div class="timer-label">ساعة</div></div>
+                    <div><div class="timer-val" id="tMin">28</div><div class="timer-label">دقيقة</div></div>
+                    <div><div class="timer-val" id="tSec">10</div><div class="timer-label">ثانية</div></div>
                 </div>
 
-                <!-- إحصائيات -->
-                <div class="stats" id="statsBox">
-                    <div class="stat" onclick="showProfile()" style="cursor: pointer;">
+                <!-- إحصائيات اللاعب -->
+                <div class="player-stats">
+                    <div class="stat-box clickable" onclick="showProfile()">
                         <div class="stat-label">اللاعب</div>
-                        <div class="stat-val" id="playerName" style="font-size: 11px;">---</div>
+                        <div class="stat-value" id="playerName" style="font-size: 10px;">---</div>
                     </div>
-                    <div class="stat">
-                        <div class="stat-label">النقاط</div>
-                        <div class="stat-val" id="playerScore">0</div>
+                    <div class="stat-box">
+                        <div class="stat-label">نقاط الجولة</div>
+                        <div class="stat-value" id="sessionScore">0</div>
                     </div>
-                    <div class="stat">
+                    <div class="stat-box energy-box">
+                        <div class="energy-bar" id="energyBar" style="width: 100%;"></div>
                         <div class="stat-label">الطاقة ⚡</div>
-                        <div class="stat-val"><input type="number" id="energy" value="200" max="200" style="width: 35px; background: transparent; border: none; color: var(--gold); font-weight: 900; text-align: center; font-size: 14px;"></div>
+                        <div class="stat-value red">
+                            <input type="number" id="energy" value="200" max="200" min="0" class="energy-input">
+                        </div>
                     </div>
                 </div>
 
                 <!-- إحصائيات سريعة -->
-                <div id="quickStats" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 10px; display: flex; justify-content: space-around; font-size: 10px;">
+                <div class="quick-stats">
                     <span>تحركات: <b id="mMoves" style="color: var(--gold);">0</b></span>
                     <span>أعلى: <b id="mMax" style="color: var(--red);">0</b></span>
-                    <span>دمجات 11: <b id="mL11" style="color: var(--gold);">0</b></span>
+                    <span>دمجات 11: <b id="mL11" style="color: var(--gold);">0</b>/3</span>
                 </div>
 
-                <!-- أدوات سريعة -->
-                <div class="tools-bar" id="toolsBox">
-                    <div class="tool-btn" onclick="useTool('gem')">
-                        <span class="icon">💎</span>
-                        <span class="name">جوهرة</span>
-                        <span class="count" id="cntGem">0</span>
+                <!-- شريط الأدوات السريع -->
+                <div class="tools-bar" id="toolsBar">
+                    <div class="tool-btn" id="toolFree" onclick="useTool('free')">
+                        <span class="tool-icon">🔄</span>
+                        <span class="tool-name">تحديث</span>
+                        <span class="tool-count">∞</span>
                     </div>
-                    <div class="tool-btn" onclick="useTool('upgrade')">
-                        <span class="icon">⬆️</span>
-                        <span class="name">ترقية</span>
-                        <span class="count" id="cntUpg">0</span>
+                    <div class="tool-btn" id="toolGem" onclick="useTool('gem')">
+                        <span class="tool-icon">💎</span>
+                        <span class="tool-name">جوهر</span>
+                        <span class="tool-count" id="cntGem">0</span>
+                        <span class="tool-limit" id="limGem">999</span>
                     </div>
-                    <div class="tool-btn" onclick="useTool('claw')">
-                        <span class="icon">🦅</span>
-                        <span class="name">مخلب</span>
-                        <span class="count" id="cntClaw">0</span>
+                    <div class="tool-btn" id="toolUpgrade" onclick="useTool('upgrade')">
+                        <span class="tool-icon">⬆️</span>
+                        <span class="tool-name">ترقية</span>
+                        <span class="tool-count" id="cntUpg">0</span>
+                        <span class="tool-limit" id="limUpg">20</span>
                     </div>
-                    <div class="tool-btn" onclick="useTool('wheel')">
-                        <span class="icon">🎡</span>
-                        <span class="name">عجلة</span>
-                        <span class="count" id="cntWheel">0</span>
+                    <div class="tool-btn" id="toolClaw" onclick="useTool('claw')">
+                        <span class="tool-icon">🦅</span>
+                        <span class="tool-name">مخلب</span>
+                        <span class="tool-count" id="cntClaw">0</span>
+                        <span class="tool-limit" id="limClaw">20</span>
+                    </div>
+                    <div class="tool-btn" id="toolWheel" onclick="useTool('wheel')">
+                        <span class="tool-icon">🎡</span>
+                        <span class="tool-name">عجلة</span>
+                        <span class="tool-count" id="cntWheel">0</span>
+                        <span class="tool-limit" id="limWheel">20</span>
                     </div>
                 </div>
 
                 <!-- لوحة الاختيار -->
-                <div style="background: linear-gradient(145deg, #1a1a1a, #0d0d0d); border-radius: 12px; padding: 10px; border: 1px solid rgba(212, 175, 55, 0.3); margin-bottom: 10px;">
-                    <div style="font-size: 10px; color: var(--gold); text-align: center; margin-bottom: 8px;">اختر مستوى:</div>
+                <div class="section">
+                    <div class="section-title">🎨 اختر مستوى للإضافة</div>
                     <div class="palette" id="palette"></div>
-                    <div class="controls">
-                        <button class="ctrl-btn ctrl-undo" onclick="undo()">↩️ تراجع</button>
-                        <button class="ctrl-btn ctrl-reset" onclick="reset()">🔄 تصفير</button>
-                        <select id="depth" style="background: #000; border: 1px solid rgba(212,175,55,0.3); border-radius: 8px; padding: 8px; color: var(--gold); font-size: 10px;">
+                    <div style="display: flex; gap: 4px; margin-top: 6px;">
+                        <select id="aiDepth" style="flex: 1; background: #000; border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; padding: 6px; color: var(--gold); font-size: 9px;">
                             <option value="1">سريع</option>
                             <option value="2">متوسط</option>
                             <option value="3" selected>تكتيكي</option>
+                            <option value="4">عميق</option>
                         </select>
+                        <button class="ctrl-btn ctrl-undo" onclick="undo()" style="flex: 1;">↩️ تراجع</button>
+                        <button class="ctrl-btn ctrl-reset" onclick="resetGrid()" style="flex: 1;">🗑️ تصفير</button>
                     </div>
                 </div>
 
@@ -508,205 +844,385 @@
 
                 <!-- أزرار الاتجاهات -->
                 <div class="arrows">
-                    <button class="arrow-btn" onclick="move('UP')">⬆️</button>
-                    <button class="arrow-btn" onclick="move('DOWN')">⬇️</button>
-                    <button class="arrow-btn" onclick="move('LEFT')">➡️</button>
-                    <button class="arrow-btn" onclick="move('RIGHT')">⬅️</button>
+                    <button class="arrow-btn" onclick="manualMove('UP')">⬆️</button>
+                    <button class="arrow-btn" onclick="manualMove('DOWN')">⬇️</button>
+                    <button class="arrow-btn" onclick="manualMove('LEFT')">➡️</button>
+                    <button class="arrow-btn" onclick="manualMove('RIGHT')">⬅️</button>
                 </div>
 
                 <!-- زر الدمج الذكي -->
-                <button class="btn" id="smartBtn" style="margin-top: 10px;">✨ دمج ذكي</button>
+                <button class="smart-btn" id="smartBtn">
+                    <span>✨ دمج ذكي</span>
+                </button>
 
                 <!-- نتيجة الحركة -->
-                <div id="resultBox" class="hidden" style="margin-top: 10px; background: rgba(212,175,55,0.1); border-radius: 10px; padding: 12px; text-align: center;">
-                    <div id="resultText" style="font-size: 18px; font-weight: 900; color: var(--gold);"></div>
-                </div>
-            </div>
-
-            <!-- صفحة المتصدرين -->
-            <div id="tabRank" class="tab">
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div style="font-size: 18px; font-weight: 900; color: var(--gold);">🏆 المتصدرين</div>
-                </div>
-                <div id="rankList"></div>
-            </div>
-
-            <!-- صفحة المزيد -->
-            <div id="tabMore" class="tab">
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div style="font-size: 18px; font-weight: 900; color: var(--gold);">⚙️ المزيد</div>
+                <div id="resultBox" class="result-box hidden">
+                    <div class="result-direction" id="resultDir"></div>
+                    <div class="result-reason" id="resultReason"></div>
                 </div>
 
-                <!-- إحصائياتي -->
-                <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
-                    <div style="font-size: 11px; color: white; margin-bottom: 10px;">📊 إحصائياتي</div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
-                        <div><div style="font-size: 14px; font-weight: 900; color: var(--gold);" id="myScore">0</div><div style="font-size: 9px; color: var(--muted);">النقاط</div></div>
-                        <div><div style="font-size: 14px; font-weight: 900; color: var(--red);" id="myMax">0</div><div style="font-size: 9px; color: var(--muted);">أعلى</div></div>
-                        <div><div style="font-size: 14px; font-weight: 900; color: #60a5fa;" id="myMoves">0</div><div style="font-size: 9px; color: var(--muted);">تحركات</div></div>
-                        <div><div style="font-size: 14px; font-weight: 900; color: var(--gold);" id="myL11">0</div><div style="font-size: 9px; color: var(--muted);">دمجات 11</div></div>
+                <!-- تحليل AI -->
+                <div id="aiBox" class="ai-analysis hidden">
+                    <div class="ai-header">
+                        <i class="fas fa-brain"></i>
+                        <span>تحليل ذكي</span>
                     </div>
+                    <div id="aiText"></div>
                 </div>
-
-                <!-- أزرار -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div onclick="showProfile()" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; text-align: center; cursor: pointer;">
-                        <div style="font-size: 24px;">👤</div>
-                        <div style="font-size: 10px; font-weight: bold;">بياناتي</div>
-                    </div>
-                    <div onclick="showReview()" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; text-align: center; cursor: pointer;">
-                        <div style="font-size: 24px;">⭐</div>
-                        <div style="font-size: 10px; font-weight: bold;">تقييم</div>
-                    </div>
-                </div>
-
-                <!-- زر الإدارة -->
-                <button id="adminBtn" class="hidden btn" style="margin-top: 15px; background: linear-gradient(135deg, var(--red), #800);">⚙️ لوحة الإدارة</button>
             </div>
 
             <!-- شريط التنقل -->
             <nav class="navbar">
-                <div class="nav-btn active" onclick="goTab('Play')"><i class="fas fa-gamepad"></i><span>اللعب</span></div>
-                <div class="nav-btn" onclick="goTab('Rank')"><i class="fas fa-trophy"></i><span>المتصدرين</span></div>
-                <div class="nav-btn" onclick="goTab('More')"><i class="fas fa-ellipsis-h"></i><span>المزيد</span></div>
+                <div class="nav-btn active" onclick="goTab('play')">
+                    <i class="fas fa-gamepad"></i>
+                    <span>اللعب</span>
+                </div>
+                <div class="nav-btn" onclick="goTab('rank')">
+                    <i class="fas fa-trophy"></i>
+                    <span>المتصدرين</span>
+                </div>
+                <div class="nav-btn" onclick="goTab('tools')">
+                    <i class="fas fa-toolbox"></i>
+                    <span>الأدوات</span>
+                </div>
+                <div class="nav-btn" onclick="goTab('more')">
+                    <i class="fas fa-ellipsis-h"></i>
+                    <span>المزيد</span>
+                </div>
             </nav>
 
             <!-- زر الإدارة العائم -->
             <button class="admin-fab" id="adminFab" onclick="showAdmin()">⚙️</button>
         </div>
 
-        <!-- نافذة الملف الشخصي -->
-        <div id="profilePopup" class="popup">
-            <div class="popup-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div style="font-size: 14px; font-weight: 900; color: var(--gold);">👤 بياناتي</div>
-                    <div onclick="hidePopup('profilePopup')" style="cursor: pointer; color: #666; font-size: 20px;">×</div>
+        <!-- ==================== صفحة المتصدرين ==================== -->
+        <div id="tabRank" class="tab">
+            <div class="main-content">
+                <div class="header-title">
+                    <h1>🏆 المتصدرين</h1>
+                </div>
+                <div id="rankList"></div>
+            </div>
+        </div>
+
+        <!-- ==================== صفحة الأدوات ==================== -->
+        <div id="tabTools" class="tab">
+            <div class="main-content">
+                <div class="header-title">
+                    <h1>🛠️ الأدوات المساعدة</h1>
                 </div>
                 
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div style="width: 60px; height: 60px; background: #1a1a1a; border: 2px solid var(--gold); border-radius: 50%; margin: 0 auto 8px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: var(--gold);" id="profAvatar">؟</div>
+                <div class="section">
+                    <div class="section-title">💎 الجوهر - زيادة الطاقة</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 30px;">💎</span>
+                        <div style="flex: 1;">
+                            <div style="font-size: 10px;">الامتلاك: <b id="tGemOwned" style="color: var(--gold);">0</b></div>
+                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tGemLimit" style="color: var(--gold);">999/999</b></div>
+                        </div>
+                        <button class="btn" onclick="useTool('gem')" style="padding: 6px 12px;">استخدام +15⚡</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">⬆️ الترقية - رفع مستوى حيوان</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 30px;">⬆️</span>
+                        <div style="flex: 1;">
+                            <div style="font-size: 10px;">الامتلاك: <b id="tUpgOwned" style="color: var(--gold);">0</b></div>
+                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tUpgLimit" style="color: var(--gold);">20/20</b></div>
+                            <div style="font-size: 9px; color: var(--muted);">يرفع حيوان واحد (<7) مستوى</div>
+                        </div>
+                        <button class="btn" onclick="useTool('upgrade')" style="padding: 6px 12px;">استخدام</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">🦅 المخلب - حذف حيوان</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 30px;">🦅</span>
+                        <div style="flex: 1;">
+                            <div style="font-size: 10px;">الامتلاك: <b id="tClawOwned" style="color: var(--gold);">0</b></div>
+                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tClawLimit" style="color: var(--gold);">20/20</b></div>
+                            <div style="font-size: 9px; color: var(--muted);">يحذف حيوان واحد من أي مكان</div>
+                        </div>
+                        <button class="btn" onclick="useTool('claw')" style="padding: 6px 12px;">استخدام</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">🎡 العجلة - تبديل المواقع</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 30px;">🎡</span>
+                        <div style="flex: 1;">
+                            <div style="font-size: 10px;">الامتلاك: <b id="tWheelOwned" style="color: var(--gold);">0</b></div>
+                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tWheelLimit" style="color: var(--gold);">20/20</b></div>
+                            <div style="font-size: 9px; color: var(--muted);">يبدل موقع حيوانين</div>
+                        </div>
+                        <button class="btn" onclick="useTool('wheel')" style="padding: 6px 12px;">استخدام</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📊 معلومات</div>
+                    <div style="font-size: 10px; line-height: 1.8;">
+                        • عند دمج 11: +20 استخدام لكل أداة<br>
+                        • التجديد اليومي: الساعة 2:00 AM (مصر)<br>
+                        • التحديث المجاني: بدون حد
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== صفحة المزيد ==================== -->
+        <div id="tabMore" class="tab">
+            <div class="main-content">
+                <div class="header-title">
+                    <h1>⚙️ المزيد</h1>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📊 إحصائياتي</div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myScore">0</div>
+                            <div style="font-size: 8px; color: var(--muted);">أعلى نقاط</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 16px; font-weight: 900; color: var(--red);" id="myMax">0</div>
+                            <div style="font-size: 8px; color: var(--muted);">أعلى مستوى</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 16px; font-weight: 900; color: #60a5fa;" id="myMoves">0</div>
+                            <div style="font-size: 8px; color: var(--muted);">التحركات</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myL11">0</div>
+                            <div style="font-size: 8px; color: var(--muted);">دمجات 11</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div class="section" onclick="showProfile()" style="cursor: pointer; text-align: center;">
+                        <div style="font-size: 24px;">👤</div>
+                        <div style="font-size: 10px; font-weight: bold;">بياناتي</div>
+                    </div>
+                    <div class="section" onclick="showReview()" style="cursor: pointer; text-align: center;">
+                        <div style="font-size: 24px;">⭐</div>
+                        <div style="font-size: 10px; font-weight: bold;">تقييم</div>
+                    </div>
+                    <div class="section" onclick="showManualInput()" style="cursor: pointer; text-align: center;">
+                        <div style="font-size: 24px;">✏️</div>
+                        <div style="font-size: 10px; font-weight: bold;">تعديل يدوي</div>
+                    </div>
+                    <div class="section" onclick="newSession()" style="cursor: pointer; text-align: center;">
+                        <div style="font-size: 24px;">🔄</div>
+                        <div style="font-size: 10px; font-weight: bold;">جولة جديدة</div>
+                    </div>
+                </div>
+
+                <button id="adminBtn" class="hidden btn btn-red" style="margin-top: 10px; width: 100%;">⚙️ لوحة الإدارة</button>
+            </div>
+        </div>
+
+        <!-- ==================== نافذة الملف الشخصي ==================== -->
+        <div id="profilePopup" class="popup">
+            <div class="popup-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">👤 بياناتي</div>
+                    <div onclick="hidePopup('profilePopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <div style="width: 50px; height: 50px; background: #1a1a1a; border: 2px solid var(--gold); border-radius: 50%; margin: 0 auto 6px; display: flex; justify-content: center; align-items: center; font-size: 20px; color: var(--gold);" id="profAvatar">؟</div>
                     <div style="font-weight: bold; color: var(--gold);" id="profName">---</div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; text-align: center;">
-                    <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px;"><div style="font-size: 14px; font-weight: 900; color: var(--gold);" id="profScore">0</div><div style="font-size: 8px; color: var(--muted);">النقاط</div></div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px;"><div style="font-size: 14px; font-weight: 900; color: var(--red);" id="profMax">0</div><div style="font-size: 8px; color: var(--muted);">أعلى</div></div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px;"><div style="font-size: 14px; font-weight: 900; color: #60a5fa;" id="profMoves">0</div><div style="font-size: 8px; color: var(--muted);">تحركات</div></div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; text-align: center;">
+                    <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px;">
+                        <div style="font-size: 12px; font-weight: 900; color: var(--gold);" id="profScore">0</div>
+                        <div style="font-size: 7px; color: var(--muted);">أعلى نقاط</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px;">
+                        <div style="font-size: 12px; font-weight: 900; color: var(--red);" id="profMax">0</div>
+                        <div style="font-size: 7px; color: var(--muted);">أعلى مستوى</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px;">
+                        <div style="font-size: 12px; font-weight: 900; color: #60a5fa;" id="profMoves">0</div>
+                        <div style="font-size: 7px; color: var(--muted);">التحركات</div>
+                    </div>
                 </div>
                 
-                <div style="margin-bottom: 10px;">
-                    <label style="font-size: 10px; color: var(--muted);">الاسم الظاهر</label>
+                <div style="margin-bottom: 8px;">
+                    <label style="font-size: 9px; color: var(--muted);">الاسم الظاهر</label>
                     <input type="text" id="editName" class="input" placeholder="اسمك الذي سيظهر للآخرين" maxlength="20">
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;">
                     <div>
-                        <label style="font-size: 10px; color: var(--muted);">المملكة</label>
+                        <label style="font-size: 9px; color: var(--muted);">المملكة</label>
                         <input type="text" id="editKingdom" class="input" placeholder="123">
                     </div>
                     <div>
-                        <label style="font-size: 10px; color: var(--muted);">التحالف</label>
+                        <label style="font-size: 9px; color: var(--muted);">التحالف</label>
                         <input type="text" id="editAlliance" class="input" placeholder="الأبطال">
                     </div>
                 </div>
                 
-                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-bottom: 15px;">
-                    <div style="font-size: 10px; color: var(--muted); margin-bottom: 8px;">🛠️ أدواتي</div>
-                    <div style="display: flex; justify-content: space-around; text-align: center;">
-                        <div><div style="font-size: 16px;">💎</div><div style="font-size: 12px; font-weight: bold; color: var(--gold);" id="pGem">0</div></div>
-                        <div><div style="font-size: 16px;">⬆️</div><div style="font-size: 12px; font-weight: bold; color: var(--gold);" id="pUpg">0</div></div>
-                        <div><div style="font-size: 16px;">🦅</div><div style="font-size: 12px; font-weight: bold; color: var(--gold);" id="pClaw">0</div></div>
-                        <div><div style="font-size: 16px;">🎡</div><div style="font-size: 12px; font-weight: bold; color: var(--gold);" id="pWheel">0</div></div>
-                    </div>
-                </div>
-                
-                <button class="btn" id="saveProfileBtn">💾 حفظ</button>
+                <button class="btn" id="saveProfileBtn" style="width: 100%;">💾 حفظ</button>
             </div>
         </div>
 
-        <!-- نافذة التقييم -->
+        <!-- ==================== نافذة التقييم ==================== -->
         <div id="reviewPopup" class="popup">
             <div class="popup-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div style="font-size: 14px; font-weight: 900; color: var(--gold);">⭐ تقييم</div>
-                    <div onclick="hidePopup('reviewPopup')" style="cursor: pointer; color: #666; font-size: 20px;">×</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">⭐ تقييم</div>
+                    <div onclick="hidePopup('reviewPopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
                 </div>
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div id="stars" style="font-size: 28px; cursor: pointer;">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <div id="stars" style="font-size: 24px; cursor: pointer;">
                         <span data="1">☆</span><span data="2">☆</span><span data="3">☆</span><span data="4">☆</span><span data="5">☆</span>
                     </div>
                 </div>
                 <textarea id="reviewText" class="input" rows="3" placeholder="اقتراحاتك..." style="text-align: right;"></textarea>
-                <button class="btn" id="sendReviewBtn">📤 إرسال</button>
+                <button class="btn" id="sendReviewBtn" style="width: 100%;">📤 إرسال</button>
             </div>
         </div>
 
-        <!-- نافذة الاحتفال -->
-        <div id="celebPopup" class="popup">
-            <div class="popup-box" style="text-align: center;">
-                <div style="font-size: 50px; animation: popIn 0.5s infinite alternate;">👑</div>
-                <div style="font-size: 18px; font-weight: 900; color: var(--gold); margin: 10px 0;">🏆 مبروك! المستوى 11!</div>
-                <div style="background: rgba(212,175,55,0.1); border-radius: 10px; padding: 12px; margin-bottom: 15px; text-align: right;">
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 5px 0;"><span>النقاط</span><span id="cScore" style="color: var(--gold);">0</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 5px 0;"><span>التحركات</span><span id="cMoves">0</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 5px 0;"><span>دمجات 11</span><span id="cL11" style="color: var(--gold);">0</span></div>
+        <!-- ==================== نافذة التعديل اليدوي ==================== -->
+        <div id="manualPopup" class="popup">
+            <div class="popup-box" style="max-width: 400px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">✏️ تعديل يدوي</div>
+                    <div onclick="hidePopup('manualPopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
                 </div>
-                <div style="margin-bottom: 10px;">
-                    <div style="font-size: 11px; color: var(--muted); margin-bottom: 5px;">قيّم تجربتك:</div>
-                    <div id="cStars" style="font-size: 24px; cursor: pointer;">
+                
+                <div class="section-title">🎮 الشبكة (أدخل الأرقام 0-11)</div>
+                <div class="manual-input-grid" id="manualGrid"></div>
+                
+                <div class="section-title" style="margin-top: 10px;">🛠️ الأدوات</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div>
+                        <label style="font-size: 9px; color: var(--muted);">امتلاك الجوهر</label>
+                        <input type="number" id="editGemOwned" class="input" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size: 9px; color: var(--muted);">امتلاك الترقية</label>
+                        <input type="number" id="editUpgOwned" class="input" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size: 9px; color: var(--muted);">امتلاك المخلب</label>
+                        <input type="number" id="editClawOwned" class="input" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size: 9px; color: var(--muted);">امتلاك العجلة</label>
+                        <input type="number" id="editWheelOwned" class="input" min="0">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                    <div>
+                        <label style="font-size: 9px; color: var(--muted);">نقاط الجولة</label>
+                        <input type="number" id="editSessionScore" class="input" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size: 9px; color: var(--muted);">الطاقة</label>
+                        <input type="number" id="editEnergy" class="input" min="0" max="200">
+                    </div>
+                </div>
+                
+                <button class="btn" id="applyManualBtn" style="width: 100%; margin-top: 10px;">✅ تطبيق</button>
+            </div>
+        </div>
+
+        <!-- ==================== نافذة الاحتفال ==================== -->
+        <div id="celebPopup" class="celebration">
+            <div class="celeb-content">
+                <div class="celeb-icon">👑</div>
+                <div class="celeb-title">🏆 مبروك! المستوى 11!</div>
+                <div style="background: rgba(212,175,55,0.1); border-radius: 10px; padding: 10px; margin: 10px 0; text-align: right;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0;">
+                        <span>النقاط</span>
+                        <span id="cScore" style="color: var(--gold);">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0;">
+                        <span>التحركات</span>
+                        <span id="cMoves">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0;">
+                        <span>دمجات 11</span>
+                        <span id="cL11" style="color: var(--gold);">0</span>
+                    </div>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 10px; color: var(--muted); margin-bottom: 4px;">قيّم تجربتك:</div>
+                    <div id="cStars" style="font-size: 20px; cursor: pointer;">
                         <span data="1">☆</span><span data="2">☆</span><span data="3">☆</span><span data="4">☆</span><span data="5">☆</span>
                     </div>
                 </div>
                 <textarea id="cComment" class="input" rows="2" placeholder="تعليقك..." style="text-align: right;"></textarea>
-                <button class="btn" id="cSaveBtn">✅ حفظ ومتابعة</button>
+                <button class="btn" id="cSaveBtn" style="width: 100%;">✅ حفظ ومتابعة</button>
             </div>
         </div>
 
-        <!-- نافذة الإدارة -->
+        <!-- ==================== نافذة الإدارة ==================== -->
         <div id="adminPopup" class="popup">
-            <div class="popup-box" style="max-width: 380px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div style="font-size: 14px; font-weight: 900; color: var(--red);">⚙️ لوحة الإدارة</div>
-                    <div onclick="hidePopup('adminPopup')" style="cursor: pointer; color: #666; font-size: 20px;">×</div>
+            <div class="popup-box" style="max-width: 400px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 12px; font-weight: 900; color: var(--red);">⚙️ لوحة الإدارة</div>
+                    <div onclick="hidePopup('adminPopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
                 </div>
                 
-                <!-- تبويبات -->
-                <div style="display: flex; gap: 5px; margin-bottom: 15px;">
-                    <div class="admin-tab active" onclick="adminTab('users')" style="flex: 1; text-align: center; padding: 8px; background: var(--red); border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer;">اللاعبين</div>
-                    <div class="admin-tab" onclick="adminTab('archive')" style="flex: 1; text-align: center; padding: 8px; background: rgba(212,175,55,0.1); border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer;">الأرشيف</div>
-                    <div class="admin-tab" onclick="adminTab('reviews')" style="flex: 1; text-align: center; padding: 8px; background: rgba(212,175,55,0.1); border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer;">التقييمات</div>
+                <div class="admin-tabs">
+                    <div class="admin-tab active" onclick="adminTab('users')">اللاعبين</div>
+                    <div class="admin-tab" onclick="adminTab('archive')">الأرشيف</div>
+                    <div class="admin-tab" onclick="adminTab('reviews')">التقييمات</div>
+                    <div class="admin-tab" onclick="adminTab('settings')">الإعدادات</div>
                 </div>
                 
                 <!-- قسم اللاعبين -->
-                <div id="adminUsers" class="admin-section">
+                <div id="adminUsers" class="admin-section active">
                     <input type="text" id="newUser" class="input" placeholder="اسم اللاعب الجديد">
                     <input type="text" id="newPass" class="input" placeholder="كلمة السر">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 10px;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 8px;">
                         <input type="checkbox" id="newAdmin"> صلاحيات مدير
                     </label>
-                    <button class="btn" id="addUserBtn" style="background: linear-gradient(135deg, var(--red), #800);">➕ إضافة</button>
-                    <div id="addUserMsg" class="hidden" style="font-size: 10px; text-align: center; margin-top: 8px;"></div>
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
-                    <div style="font-size: 11px; color: var(--gold); margin-bottom: 10px;">اللاعبين:</div>
-                    <div id="usersList" style="max-height: 180px; overflow-y: auto;"></div>
+                    <button class="btn btn-red" id="addUserBtn" style="width: 100%;">➕ إضافة</button>
+                    <div id="addUserMsg" class="hidden" style="font-size: 9px; text-align: center; margin-top: 6px;"></div>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
+                    <div style="font-size: 10px; color: var(--gold); margin-bottom: 6px;">اللاعبين:</div>
+                    <div id="usersList" style="max-height: 150px; overflow-y: auto;"></div>
                 </div>
                 
                 <!-- قسم الأرشيف -->
-                <div id="adminArchive" class="admin-section hidden">
-                    <div style="font-size: 11px; color: var(--gold); margin-bottom: 10px;">🏆 إنجازات المستوى 11:</div>
-                    <div id="archiveList" style="max-height: 250px; overflow-y: auto;"></div>
+                <div id="adminArchive" class="admin-section">
+                    <div style="font-size: 10px; color: var(--gold); margin-bottom: 6px;">🏆 إنجازات المستوى 11:</div>
+                    <div id="archiveList" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
                 
                 <!-- قسم التقييمات -->
-                <div id="adminReviews" class="admin-section hidden">
-                    <div style="font-size: 11px; color: var(--gold); margin-bottom: 10px;">التقييمات:</div>
-                    <div id="reviewsList" style="max-height: 250px; overflow-y: auto;"></div>
+                <div id="adminReviews" class="admin-section">
+                    <div style="font-size: 10px; color: var(--gold); margin-bottom: 6px;">التقييمات:</div>
+                    <div id="reviewsList" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                
+                <!-- قسم الإعدادات -->
+                <div id="adminSettings" class="admin-section">
+                    <input type="text" id="setAppName" class="input" placeholder="اسم التطبيق">
+                    <input type="text" id="setGeminiKey" class="input" placeholder="Gemini API Key">
+                    <input type="text" id="setLogo" class="input" placeholder="رابط اللوجو">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                        <input type="text" id="setTermsTitle" class="input" placeholder="عنوان الشروط">
+                        <input type="datetime-local" id="setEventEnd" class="input">
+                    </div>
+                    <textarea id="setTermsText" class="input" rows="2" placeholder="نص الشروط"></textarea>
+                    <button class="btn btn-red" id="saveSettingsBtn" style="width: 100%;">💾 حفظ الإعدادات</button>
+                    <div id="saveSettingsMsg" class="hidden" style="font-size: 9px; text-align: center; margin-top: 6px;"></div>
                 </div>
             </div>
         </div>
-
-        <!-- خلفية الجولة التعريفية -->
-        <div class="tour-backdrop" id="tourBackdrop"></div>
     </div>
 
     <script>
@@ -722,12 +1238,25 @@
         };
         
         // بيانات المستخدم
-        let U = { user: '', pass: '', name: '', score: 0, energy: 200, stats: {}, tools: {}, admin: false };
+        let U = {
+            user: '', pass: '', name: '',
+            score: 0, sessionScore: 0, energy: 200,
+            stats: { moves: 0, maxLvl: 0, level11Count: 0 },
+            tools: {
+                gem: { owned: 0, dailyLimit: 999, used: 0 },
+                upgrade: { owned: 0, dailyLimit: 20, used: 0 },
+                claw: { owned: 0, dailyLimit: 20, used: 0 },
+                wheel: { owned: 0, dailyLimit: 20, used: 0 }
+            },
+            kingdom: '', alliance: '', admin: false
+        };
+        
         let grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
         let history = [];
         let selected = 1;
         let activeTool = null;
         let swapCell = null;
+        let appSettings = {};
         
         // ============================================
         // المراحل (Splash → Login → Terms → App)
@@ -740,7 +1269,7 @@
         // بدء التطبيق
         setTimeout(() => {
             showScreen('loginScreen');
-        }, 2000);
+        }, 2500);
         
         // ============================================
         // تسجيل الدخول
@@ -757,7 +1286,7 @@
             }
             
             document.getElementById('loginBtn').disabled = true;
-            document.getElementById('loginBtn').textContent = '⏳ جاري...';
+            document.getElementById('loginBtn').innerHTML = '<span class="loading"></span>';
             
             try {
                 const res = await fetch(`${API}/api/login`, {
@@ -768,13 +1297,18 @@
                 const d = await res.json();
                 
                 if (d.success) {
-                    U = { user, pass, admin: d.isAdmin };
+                    U.user = user;
+                    U.pass = pass;
+                    U.admin = d.isAdmin;
                     if (d.userData) {
                         U.score = d.userData.highScore || 0;
+                        U.sessionScore = d.userData.sessionScore || 0;
                         U.energy = d.userData.energy ?? 200;
                         U.name = d.userData.displayName || user;
                         U.stats = d.userData.stats || {};
-                        U.tools = d.userData.tools || {};
+                        U.tools = d.userData.tools || U.tools;
+                        U.kingdom = d.userData.kingdom || '';
+                        U.alliance = d.userData.alliance || '';
                         if (d.userData.grid) grid = d.userData.grid;
                     }
                     showScreen('termsScreen');
@@ -801,46 +1335,119 @@
         document.getElementById('acceptTerms').onclick = () => {
             showScreen('mainApp');
             initApp();
-            
-            // الجولة التعريفية
-            if (!localStorage.getItem('tour_done')) {
-                setTimeout(startTour, 500);
-            }
         };
         
         // ============================================
         // تهيئة التطبيق
         // ============================================
-        function initApp() {
+        async function initApp() {
+            await loadSettings();
             updateUI();
             buildPalette();
             buildGrid();
             startTimer();
             
-            // إظهار زر الإدارة
             if (U.admin) {
                 document.getElementById('adminBtn').classList.remove('hidden');
                 document.getElementById('adminFab').style.display = 'block';
             }
         }
         
+        async function loadSettings() {
+            try {
+                const res = await fetch(`${API}/api/settings`);
+                appSettings = await res.json();
+                
+                if (appSettings.logoUrl) {
+                    document.getElementById('loginLogo').src = appSettings.logoUrl;
+                    document.getElementById('loginLogo').classList.remove('hidden');
+                    document.getElementById('loginLogoDefault').classList.add('hidden');
+                    document.getElementById('headerLogo').src = appSettings.logoUrl;
+                    document.getElementById('headerLogo').classList.remove('hidden');
+                }
+                
+                if (appSettings.appName) {
+                    document.getElementById('loginAppName').textContent = appSettings.appName;
+                    document.getElementById('headerTitle').innerHTML = '🦂 ' + appSettings.appName;
+                    document.title = appSettings.appName;
+                }
+                
+                if (appSettings.termsTitle) {
+                    document.getElementById('termsTitle').textContent = '📜 ' + appSettings.termsTitle;
+                }
+                
+                if (appSettings.termsText) {
+                    document.getElementById('termsText').innerHTML = appSettings.termsText;
+                }
+                
+                if (appSettings.animals) {
+                    Object.assign(ANIMALS, appSettings.animals);
+                }
+            } catch (e) {}
+        }
+        
         function updateUI() {
             document.getElementById('playerName').textContent = U.name || U.user;
-            document.getElementById('playerScore').textContent = U.score.toLocaleString();
+            document.getElementById('sessionScore').textContent = U.sessionScore.toLocaleString();
             document.getElementById('energy').value = U.energy;
+            document.getElementById('energyBar').style.width = (U.energy / 200 * 100) + '%';
+            
             document.getElementById('mMoves').textContent = U.stats.moves || 0;
             document.getElementById('mMax').textContent = U.stats.maxLvl || 0;
-            document.getElementById('mL11').textContent = U.stats.level11Merges || 0;
+            document.getElementById('mL11').textContent = U.stats.level11Count || 0;
+            
             document.getElementById('myScore').textContent = U.score.toLocaleString();
             document.getElementById('myMax').textContent = U.stats.maxLvl || 0;
             document.getElementById('myMoves').textContent = U.stats.moves || 0;
-            document.getElementById('myL11').textContent = U.stats.level11Merges || 0;
+            document.getElementById('myL11').textContent = U.stats.level11Count || 0;
             
             // الأدوات
-            document.getElementById('cntGem').textContent = U.tools.gem?.owned || 0;
-            document.getElementById('cntUpg').textContent = U.tools.upgrade?.owned || 0;
-            document.getElementById('cntClaw').textContent = U.tools.claw?.owned || 0;
-            document.getElementById('cntWheel').textContent = U.tools.wheel?.owned || 0;
+            updateToolsUI();
+        }
+        
+        function updateToolsUI() {
+            // الجوهر
+            const gem = U.tools.gem || { owned: 0, dailyLimit: 999, used: 0 };
+            document.getElementById('cntGem').textContent = gem.owned;
+            document.getElementById('limGem').textContent = `${gem.dailyLimit - gem.used}/${gem.dailyLimit}`;
+            document.getElementById('tGemOwned').textContent = gem.owned;
+            document.getElementById('tGemLimit').textContent = `${gem.dailyLimit - gem.used}/${gem.dailyLimit}`;
+            
+            // الترقية
+            const upg = U.tools.upgrade || { owned: 0, dailyLimit: 20, used: 0 };
+            document.getElementById('cntUpg').textContent = upg.owned;
+            document.getElementById('limUpg').textContent = `${upg.dailyLimit - upg.used}/${upg.dailyLimit}`;
+            document.getElementById('tUpgOwned').textContent = upg.owned;
+            document.getElementById('tUpgLimit').textContent = `${upg.dailyLimit - upg.used}/${upg.dailyLimit}`;
+            
+            // المخلب
+            const claw = U.tools.claw || { owned: 0, dailyLimit: 20, used: 0 };
+            document.getElementById('cntClaw').textContent = claw.owned;
+            document.getElementById('limClaw').textContent = `${claw.dailyLimit - claw.used}/${claw.dailyLimit}`;
+            document.getElementById('tClawOwned').textContent = claw.owned;
+            document.getElementById('tClawLimit').textContent = `${claw.dailyLimit - claw.used}/${claw.dailyLimit}`;
+            
+            // العجلة
+            const wheel = U.tools.wheel || { owned: 0, dailyLimit: 20, used: 0 };
+            document.getElementById('cntWheel').textContent = wheel.owned;
+            document.getElementById('limWheel').textContent = `${wheel.dailyLimit - wheel.used}/${wheel.dailyLimit}`;
+            document.getElementById('tWheelOwned').textContent = wheel.owned;
+            document.getElementById('tWheelLimit').textContent = `${wheel.dailyLimit - wheel.used}/${wheel.dailyLimit}`;
+            
+            // تحديث حالة الأزرار
+            checkToolAvailability();
+        }
+        
+        function checkToolAvailability() {
+            const tools = ['gem', 'upgrade', 'claw', 'wheel'];
+            tools.forEach(t => {
+                const tool = U.tools[t];
+                const btn = document.getElementById('tool' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (btn) {
+                    const available = tool.owned > 0 && (tool.used < tool.dailyLimit);
+                    btn.classList.toggle('disabled', !available);
+                }
+            });
         }
         
         // ============================================
@@ -852,7 +1459,7 @@
             for (let i = 1; i <= 11; i++) {
                 const cell = document.createElement('div');
                 cell.className = `cell lvl-${i}` + (i === selected ? ' selected' : '');
-                cell.innerHTML = `<span>${ANIMALS[i]}</span><span class="lvl">${i}</span>`;
+                cell.innerHTML = `<span>${ANIMALS[i]}</span><span class="lvl-num">${i}</span>`;
                 cell.onclick = () => selectLvl(i);
                 el.appendChild(cell);
             }
@@ -873,7 +1480,7 @@
                     cell.dataset.r = r;
                     cell.dataset.c = c;
                     if (grid[r][c] > 0) {
-                        cell.innerHTML = `<span>${ANIMALS[grid[r][c]]}</span><span class="lvl">${grid[r][c]}</span>`;
+                        cell.innerHTML = `<span>${ANIMALS[grid[r][c]]}</span><span class="lvl-num">${grid[r][c]}</span>`;
                     }
                     cell.onclick = () => cellClick(r, c);
                     el.appendChild(cell);
@@ -882,24 +1489,12 @@
         }
         
         function cellClick(r, c) {
-            // جوهرة
-            if (activeTool === 'gem') {
-                if (grid[r][c] === 0) {
-                    grid[r][c] = selected;
-                    U.tools.gem.owned = Math.max(0, (U.tools.gem.owned || 0) - 1);
-                }
-                activeTool = null;
-                updateUI();
-                buildGrid();
-                saveGame();
-                return;
-            }
-            
             // ترقية
             if (activeTool === 'upgrade') {
-                if (grid[r][c] > 0 && grid[r][c] < 11) {
+                if (grid[r][c] > 0 && grid[r][c] < 7) {
                     grid[r][c]++;
-                    U.tools.upgrade.owned = Math.max(0, (U.tools.upgrade.owned || 0) - 1);
+                    U.tools.upgrade.used++;
+                    addScore(grid[r][c]);
                 }
                 activeTool = null;
                 updateUI();
@@ -912,7 +1507,7 @@
             if (activeTool === 'claw') {
                 if (grid[r][c] > 0) {
                     grid[r][c] = 0;
-                    U.tools.claw.owned = Math.max(0, (U.tools.claw.owned || 0) - 1);
+                    U.tools.claw.used++;
                 }
                 activeTool = null;
                 updateUI();
@@ -926,13 +1521,13 @@
                 if (!swapCell) {
                     if (grid[r][c] > 0) {
                         swapCell = { r, c };
-                        document.querySelector(`[data-r="${r}"][data-c="${c}"]`).style.border = '2px dashed var(--gold)';
+                        document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('selected-tool');
                     }
                 } else {
                     const temp = grid[r][c];
                     grid[r][c] = grid[swapCell.r][swapCell.c];
                     grid[swapCell.r][swapCell.c] = temp;
-                    U.tools.wheel.owned = Math.max(0, (U.tools.wheel.owned || 0) - 1);
+                    U.tools.wheel.used++;
                     swapCell = null;
                     activeTool = null;
                     updateUI();
@@ -945,35 +1540,70 @@
             // إضافة عادي
             if (grid[r][c] === 0) {
                 grid[r][c] = selected;
+                addScore(selected);
                 buildGrid();
                 saveGame();
             }
+        }
+        
+        function addScore(lvl) {
+            U.sessionScore += Math.pow(2, lvl);
         }
         
         // ============================================
         // استخدام الأدوات
         // ============================================
         function useTool(t) {
-            const cnt = U.tools[t]?.owned || 0;
-            if (cnt <= 0) {
-                alert('ليس لديك هذه الأداة! تواصل مع الإدارة.');
+            if (t === 'free') {
+                newSession();
                 return;
             }
+            
+            const tool = U.tools[t];
+            if (!tool || tool.owned <= 0) {
+                showToast('ليس لديك هذه الأداة!');
+                return;
+            }
+            if (tool.used >= tool.dailyLimit) {
+                showToast('تم استخدام الحد اليومي!');
+                return;
+            }
+            
+            if (t === 'gem') {
+                U.energy = Math.min(200, U.energy + 15);
+                tool.used++;
+                updateUI();
+                saveGame();
+                showToast('تم إضافة 15 طاقة ⚡');
+                return;
+            }
+            
             activeTool = t;
-            const names = { gem: 'جوهرة', upgrade: 'ترقية', claw: 'مخلب', wheel: 'عجلة' };
-            alert(`اختر خانة لاستخدام ${names[t]}`);
+            const names = { upgrade: 'الترقية - اختر حيوان (<7)', claw: 'المخلب - اختر حيوان للحذف', wheel: 'العجلة - اختر حيوانين للتبديل' };
+            showToast(names[t]);
+        }
+        
+        function showToast(msg) {
+            const box = document.getElementById('resultBox');
+            document.getElementById('resultDir').textContent = msg;
+            document.getElementById('resultReason').textContent = '';
+            box.classList.remove('hidden');
+            setTimeout(() => box.classList.add('hidden'), 3000);
         }
         
         // ============================================
         // التحركات
         // ============================================
-        function move(dir) {
+        function manualMove(dir) {
             history.push(JSON.parse(JSON.stringify(grid)));
             const res = doMove(dir);
             if (res.moved) {
                 grid = res.grid;
-                buildGrid();
+                U.energy = Math.max(0, U.energy - 1);
+                U.stats.moves = (U.stats.moves || 0) + 1;
                 checkMax();
+                updateUI();
+                buildGrid();
                 saveGame();
             }
         }
@@ -981,11 +1611,19 @@
         function doMove(dir) {
             let moved = false;
             let g = JSON.parse(JSON.stringify(grid));
+            let mergeScore = 0;
             
             const merge = (row) => {
                 let r = row.filter(v => v !== 0);
                 for (let i = 0; i < r.length - 1; i++) {
-                    if (r[i] === r[i + 1]) { r[i]++; r.splice(i + 1, 1); }
+                    if (r[i] === r[i + 1] && r[i] < 11) {
+                        r[i]++;
+                        r.splice(i + 1, 1);
+                        mergeScore += Math.pow(2, r[i]);
+                        if (r[i] === 11) {
+                            showCeleb();
+                        }
+                    }
                 }
                 while (r.length < 4) r.push(0);
                 return r;
@@ -996,6 +1634,8 @@
             if (dir === 'UP') for (let j = 0; j < 4; j++) { let col = [g[0][j], g[1][j], g[2][j], g[3][j]]; let m = merge(col); if (JSON.stringify(col) !== JSON.stringify(m)) moved = true; for (let i = 0; i < 4; i++) g[i][j] = m[i]; }
             if (dir === 'DOWN') for (let j = 0; j < 4; j++) { let col = [g[3][j], g[2][j], g[1][j], g[0][j]]; let m = merge(col).reverse(); if (JSON.stringify([g[0][j], g[1][j], g[2][j], g[3][j]]) !== JSON.stringify(m)) moved = true; for (let i = 0; i < 4; i++) g[i][j] = m[i]; }
             
+            U.sessionScore += mergeScore;
+            
             return { moved, grid: g };
         }
         
@@ -1004,12 +1644,13 @@
                 grid = history.pop();
                 buildGrid();
                 saveGame();
+                showToast('تم التراجع');
             } else {
-                alert('لا توجد حركات سابقة');
+                showToast('لا توجد حركات سابقة');
             }
         }
         
-        function reset() {
+        function resetGrid() {
             if (confirm('تصفير الشبكة؟')) {
                 history.push(JSON.parse(JSON.stringify(grid)));
                 grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
@@ -1018,72 +1659,105 @@
             }
         }
         
+        function newSession() {
+            if (confirm('إنهاء الجولة والبدء من جديد؟')) {
+                fetch(`${API}/api/session/reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: U.user, password: U.pass })
+                });
+                grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+                U.sessionScore = 0;
+                U.stats.level11Count = 0;
+                U.stats.moves = 0;
+                history = [];
+                updateUI();
+                buildGrid();
+                showToast('جولة جديدة! 🔄');
+            }
+        }
+        
         function checkMax() {
             let max = 0;
             for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (grid[r][c] > max) max = grid[r][c];
             U.stats.maxLvl = Math.max(U.stats.maxLvl || 0, max);
-            U.stats.moves = (U.stats.moves || 0) + 1;
             updateUI();
-            if (max === 11) showCeleb();
         }
         
         // ============================================
         // الدمج الذكي
         // ============================================
-        document.getElementById('smartBtn').onclick = () => {
-            document.getElementById('smartBtn').disabled = true;
-            document.getElementById('smartBtn').textContent = '⏳ يحسب...';
+        document.getElementById('smartBtn').onclick = async () => {
+            const btn = document.getElementById('smartBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> <span>يحسب...</span>';
             
             setTimeout(() => {
-                const depth = parseInt(document.getElementById('depth').value);
+                const depth = parseInt(document.getElementById('aiDepth').value);
                 const res = expectimax(grid, depth, true);
+                
                 const dirs = { UP: '⬆️ للأعلى', DOWN: '⬇️ للأسفل', LEFT: '➡️ لليمين', RIGHT: '⬅️ لليسار' };
                 
-                document.getElementById('resultText').textContent = dirs[res.dir] || res.dir;
+                // إظهار النتيجة
+                document.getElementById('resultDir').textContent = dirs[res.dir] || res.dir;
+                document.getElementById('resultReason').textContent = res.reason || '';
                 document.getElementById('resultBox').classList.remove('hidden');
                 
-                history.push(JSON.parse(JSON.stringify(grid)));
-                const m = doMove(res.dir);
-                if (m.moved) { grid = m.grid; buildGrid(); checkMax(); saveGame(); }
+                // تنفيذ الحركة
+                if (res.dir) {
+                    history.push(JSON.parse(JSON.stringify(grid)));
+                    const m = doMove(res.dir);
+                    if (m.moved) {
+                        grid = m.grid;
+                        U.energy = Math.max(0, U.energy - 1);
+                        U.stats.moves = (U.stats.moves || 0) + 1;
+                        checkMax();
+                        updateUI();
+                        buildGrid();
+                        saveGame();
+                    }
+                }
                 
-                document.getElementById('smartBtn').disabled = false;
-                document.getElementById('smartBtn').textContent = '✨ دمج ذكي';
+                btn.disabled = false;
+                btn.innerHTML = '<span>✨ دمج ذكي</span>';
             }, 100);
         };
         
         function expectimax(g, depth, isMax) {
-            if (depth === 0) return { score: evalGrid(g), dir: null };
+            if (depth === 0) return { score: evalGrid(g), dir: null, reason: '' };
             
             if (isMax) {
-                let best = { score: -Infinity, dir: null };
+                let best = { score: -Infinity, dir: null, reason: '' };
                 for (let d of ['UP', 'DOWN', 'LEFT', 'RIGHT']) {
                     const r = doMoveDir(d, g);
                     if (r.moved) {
                         const c = expectimax(r.grid, depth - 1, false);
-                        if (c.score > best.score) best = { score: c.score, dir: d };
+                        if (c.score > best.score) {
+                            best = { score: c.score, dir: d, reason: `درجة: ${c.score.toFixed(0)}` };
+                        }
                     }
                 }
-                return best.score === -Infinity ? { score: evalGrid(g), dir: 'UP' } : best;
+                return best.score === -Infinity ? { score: evalGrid(g), dir: 'UP', reason: '' } : best;
             } else {
                 let empty = [];
                 for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 0) empty.push({ r, c });
-                if (empty.length === 0) return { score: evalGrid(g), dir: null };
+                if (empty.length === 0) return { score: evalGrid(g), dir: null, reason: '' };
                 let total = 0;
-                for (let p of empty.slice(0, 4)) {
-                    for (let v = 1; v <= 3; v++) {
+                for (let p of empty.slice(0, 6)) {
+                    for (let v = 1; v <= 7; v++) {
                         let ng = JSON.parse(JSON.stringify(g));
                         ng[p.r][p.c] = v;
                         total += expectimax(ng, depth - 1, true).score;
                     }
                 }
-                return { score: total / (Math.min(empty.length, 4) * 3), dir: null };
+                return { score: total / (Math.min(empty.length, 6) * 7), dir: null, reason: '' };
             }
         }
         
         function doMoveDir(dir, g) {
             let moved = false;
             let ng = JSON.parse(JSON.stringify(g));
-            const merge = (row) => { let r = row.filter(v => v !== 0); for (let i = 0; i < r.length - 1; i++) if (r[i] === r[i + 1]) { r[i]++; r.splice(i + 1, 1); } while (r.length < 4) r.push(0); return r; };
+            const merge = (row) => { let r = row.filter(v => v !== 0); for (let i = 0; i < r.length - 1; i++) if (r[i] === r[i + 1] && r[i] < 11) { r[i]++; r.splice(i + 1, 1); } while (r.length < 4) r.push(0); return r; };
             if (dir === 'RIGHT') for (let i = 0; i < 4; i++) { let m = merge([...ng[i]].reverse()).reverse(); if (JSON.stringify(ng[i]) !== JSON.stringify(m)) moved = true; ng[i] = m; }
             if (dir === 'LEFT') for (let i = 0; i < 4; i++) { let m = merge(ng[i]); if (JSON.stringify(ng[i]) !== JSON.stringify(m)) moved = true; ng[i] = m; }
             if (dir === 'UP') for (let j = 0; j < 4; j++) { let col = [ng[0][j], ng[1][j], ng[2][j], ng[3][j]]; let m = merge(col); if (JSON.stringify(col) !== JSON.stringify(m)) moved = true; for (let i = 0; i < 4; i++) ng[i][j] = m[i]; }
@@ -1114,7 +1788,15 @@
                 await fetch(`${API}/api/user/save`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: U.user, password: U.pass, grid, energy: U.energy, highScore: U.score, stats: U.stats })
+                    body: JSON.stringify({
+                        username: U.user,
+                        password: U.pass,
+                        grid,
+                        energy: U.energy,
+                        sessionScore: U.sessionScore,
+                        stats: U.stats,
+                        tools: U.tools
+                    })
                 });
             } catch (e) {}
         }
@@ -1146,9 +1828,18 @@
         function goTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
-            document.getElementById('tab' + tab).classList.add('active');
+            
+            if (tab === 'play') {
+                document.getElementById('mainApp').classList.add('active');
+            } else {
+                document.getElementById('mainApp').classList.remove('active');
+                document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            }
+            
             event.currentTarget.classList.add('active');
-            if (tab === 'Rank') loadRank();
+            
+            if (tab === 'rank') loadRank();
+            if (tab === 'tools') updateToolsUI();
         }
         
         // ============================================
@@ -1160,14 +1851,14 @@
                 const data = await res.json();
                 const medals = ['🥇', '🥈', '🥉'];
                 document.getElementById('rankList').innerHTML = data.map((p, i) => `
-                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 8px;">
-                        <div style="font-size: 16px; min-width: 25px; text-align: center;">${i < 3 ? medals[i] : i + 1}</div>
-                        <div style="width: 35px; height: 35px; background: #1a1a1a; border: 2px solid var(--gold); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; color: var(--gold);">${(p.displayName || p.username).charAt(0)}</div>
+                    <div class="leaderboard-item">
+                        <div class="rank-badge">${i < 3 ? medals[i] : i + 1}</div>
+                        <div class="avatar">${(p.displayName || p.username).charAt(0)}</div>
                         <div style="flex: 1;">
-                            <div style="font-size: 12px; font-weight: bold;">${p.displayName || p.username}</div>
-                            <div style="font-size: 9px; color: var(--gold);">${p.kingdom ? 'K:' + p.kingdom : ''} ${p.alliance ? 'A:' + p.alliance : ''}</div>
+                            <div style="font-size: 11px; font-weight: bold;">${p.displayName || p.username}</div>
+                            <div style="font-size: 9px; color: var(--muted);">${p.kingdom ? 'K:' + p.kingdom : ''} ${p.alliance ? 'A:' + p.alliance : ''}</div>
                         </div>
-                        <div style="font-size: 14px; font-weight: 900; color: var(--gold);">${p.score.toLocaleString()}</div>
+                        <div style="font-size: 12px; font-weight: 900; color: var(--gold);">${p.score.toLocaleString()}</div>
                     </div>
                 `).join('');
             } catch (e) {}
@@ -1188,10 +1879,6 @@
             document.getElementById('editName').value = U.name || '';
             document.getElementById('editKingdom').value = U.kingdom || '';
             document.getElementById('editAlliance').value = U.alliance || '';
-            document.getElementById('pGem').textContent = U.tools.gem?.owned || 0;
-            document.getElementById('pUpg').textContent = U.tools.upgrade?.owned || 0;
-            document.getElementById('pClaw').textContent = U.tools.claw?.owned || 0;
-            document.getElementById('pWheel').textContent = U.tools.wheel?.owned || 0;
             showPopup('profilePopup');
         }
         
@@ -1204,13 +1891,19 @@
                 await fetch(`${API}/api/profile/update`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: U.user, password: U.pass, displayName: U.name, kingdom: U.kingdom, alliance: U.alliance, tools: U.tools })
+                    body: JSON.stringify({
+                        username: U.user,
+                        password: U.pass,
+                        displayName: U.name,
+                        kingdom: U.kingdom,
+                        alliance: U.alliance
+                    })
                 });
                 updateUI();
                 hidePopup('profilePopup');
-                alert('تم الحفظ!');
+                showToast('تم الحفظ! ✓');
             } catch (e) {
-                alert('خطأ في الحفظ');
+                showToast('خطأ في الحفظ');
             }
         };
         
@@ -1233,29 +1926,104 @@
         }
         
         document.getElementById('sendReviewBtn').onclick = async () => {
-            if (reviewRating === 0) { alert('اختر تقييم'); return; }
+            if (reviewRating === 0) { showToast('اختر تقييم'); return; }
             try {
                 await fetch(`${API}/api/reviews/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: U.user, rating: reviewRating, text: document.getElementById('reviewText').value })
+                    body: JSON.stringify({
+                        username: U.user,
+                        rating: reviewRating,
+                        text: document.getElementById('reviewText').value
+                    })
                 });
                 hidePopup('reviewPopup');
-                alert('شكراً!');
+                showToast('شكراً لك! ⭐');
             } catch (e) {}
+        };
+        
+        // التعديل اليدوي
+        function showManualInput() {
+            const mg = document.getElementById('manualGrid');
+            mg.innerHTML = '';
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const inp = document.createElement('input');
+                    inp.type = 'number';
+                    inp.min = 0;
+                    inp.max = 11;
+                    inp.value = grid[r][c];
+                    inp.dataset.r = r;
+                    inp.dataset.c = c;
+                    inp.className = 'input';
+                    inp.style.padding = '6px';
+                    mg.appendChild(inp);
+                }
+            }
+            
+            document.getElementById('editGemOwned').value = U.tools.gem.owned;
+            document.getElementById('editUpgOwned').value = U.tools.upgrade.owned;
+            document.getElementById('editClawOwned').value = U.tools.claw.owned;
+            document.getElementById('editWheelOwned').value = U.tools.wheel.owned;
+            document.getElementById('editSessionScore').value = U.sessionScore;
+            document.getElementById('editEnergy').value = U.energy;
+            
+            showPopup('manualPopup');
+        }
+        
+        document.getElementById('applyManualBtn').onclick = () => {
+            const inputs = document.querySelectorAll('#manualGrid input');
+            inputs.forEach(inp => {
+                const r = parseInt(inp.dataset.r);
+                const c = parseInt(inp.dataset.c);
+                grid[r][c] = Math.min(11, Math.max(0, parseInt(inp.value) || 0));
+            });
+            
+            U.tools.gem.owned = parseInt(document.getElementById('editGemOwned').value) || 0;
+            U.tools.upgrade.owned = parseInt(document.getElementById('editUpgOwned').value) || 0;
+            U.tools.claw.owned = parseInt(document.getElementById('editClawOwned').value) || 0;
+            U.tools.wheel.owned = parseInt(document.getElementById('editWheelOwned').value) || 0;
+            U.sessionScore = parseInt(document.getElementById('editSessionScore').value) || 0;
+            U.energy = Math.min(200, Math.max(0, parseInt(document.getElementById('editEnergy').value) || 200));
+            
+            updateUI();
+            buildGrid();
+            saveGame();
+            hidePopup('manualPopup');
+            showToast('تم التحديث ✓');
         };
         
         // الاحتفال
         let celebRating = 0;
         function showCeleb() {
-            U.stats.level11Merges = (U.stats.level11Merges || 0) + 1;
-            document.getElementById('cScore').textContent = U.score.toLocaleString();
+            U.stats.level11Count = (U.stats.level11Count || 0) + 1;
+            
+            // زيادة حدود الأدوات
+            U.tools.upgrade.dailyLimit = Math.min(99, (U.tools.upgrade.dailyLimit || 20) + 20);
+            U.tools.claw.dailyLimit = Math.min(99, (U.tools.claw.dailyLimit || 20) + 20);
+            U.tools.wheel.dailyLimit = Math.min(99, (U.tools.wheel.dailyLimit || 20) + 20);
+            
+            document.getElementById('cScore').textContent = U.sessionScore.toLocaleString();
             document.getElementById('cMoves').textContent = U.stats.moves || 0;
-            document.getElementById('cL11').textContent = U.stats.level11Merges;
+            document.getElementById('cL11').textContent = U.stats.level11Count;
             celebRating = 0;
             updateStars('cStars', 0);
             showPopup('celebPopup');
             updateUI();
+            
+            // إرسال للسيرفر
+            fetch(`${API}/api/achievements/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: U.user,
+                    password: U.pass,
+                    sessionScore: U.sessionScore,
+                    moves: U.stats.moves,
+                    rating: 0,
+                    comment: ''
+                })
+            });
         }
         
         document.querySelectorAll('#cStars span').forEach(s => {
@@ -1270,7 +2038,14 @@
                 await fetch(`${API}/api/achievements/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: U.user, password: U.pass, score: U.score, moves: U.stats.moves, rating: celebRating, comment: document.getElementById('cComment').value })
+                    body: JSON.stringify({
+                        username: U.user,
+                        password: U.pass,
+                        sessionScore: U.sessionScore,
+                        moves: U.stats.moves,
+                        rating: celebRating,
+                        comment: document.getElementById('cComment').value
+                    })
                 });
             } catch (e) {}
             hidePopup('celebPopup');
@@ -1284,34 +2059,48 @@
             loadUsers();
             loadArchive();
             loadReviews();
+            loadSettingsForm();
             showPopup('adminPopup');
         }
         
         function adminTab(tab) {
-            document.querySelectorAll('.admin-tab').forEach(t => { t.style.background = 'rgba(212,175,55,0.1)'; });
-            document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
-            event.currentTarget.style.background = 'var(--red)';
-            document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
         }
+        
+        document.getElementById('adminBtn').onclick = showAdmin;
         
         document.getElementById('addUserBtn').onclick = async () => {
             const user = document.getElementById('newUser').value.trim();
             const pass = document.getElementById('newPass').value.trim();
             const admin = document.getElementById('newAdmin').checked;
             
-            if (!user || !pass) { alert('أدخل البيانات'); return; }
+            if (!user || !pass) { showToast('أدخل البيانات'); return; }
             
             try {
                 const res = await fetch(`${API}/api/users/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUser: U.user, adminPass: U.pass, newUsername: user, newPassword: pass, isAdmin: admin })
+                    body: JSON.stringify({
+                        adminUser: U.user,
+                        adminPass: U.pass,
+                        newUsername: user,
+                        newPassword: pass,
+                        isAdmin: admin
+                    })
                 });
                 const d = await res.json();
-                document.getElementById('addUserMsg').textContent = d.message;
-                document.getElementById('addUserMsg').classList.remove('hidden');
-                document.getElementById('addUserMsg').style.color = d.success ? '#4ade80' : '#ef4444';
-                if (d.success) { document.getElementById('newUser').value = ''; document.getElementById('newPass').value = ''; loadUsers(); }
+                const msg = document.getElementById('addUserMsg');
+                msg.textContent = d.message;
+                msg.classList.remove('hidden');
+                msg.style.color = d.success ? '#4ade80' : '#ef4444';
+                if (d.success) {
+                    document.getElementById('newUser').value = '';
+                    document.getElementById('newPass').value = '';
+                    loadUsers();
+                }
             } catch (e) {}
         };
         
@@ -1325,7 +2114,7 @@
                 const d = await res.json();
                 if (d.success) {
                     document.getElementById('usersList').innerHTML = d.users.map(u => `
-                        <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 5px; font-size: 11px;">
+                        <div style="display: flex; justify-content: space-between; padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 4px; font-size: 10px;">
                             <span>${u.username} ${u.isAdmin ? '👑' : ''}</span>
                             <span style="color: var(--gold);">${u.highScore || 0}</span>
                         </div>
@@ -1344,11 +2133,11 @@
                 const d = await res.json();
                 if (d.success) {
                     document.getElementById('archiveList').innerHTML = d.achievements.map(a => `
-                        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 5px; font-size: 10px;">
+                        <div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 4px; font-size: 9px;">
                             <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">${a.username}</span><span style="color: var(--gold);">👑 LVL 11</span></div>
-                            <div style="color: var(--muted); margin-top: 3px;">النقاط: ${a.score} | التحركات: ${a.moves}</div>
+                            <div style="color: var(--muted); margin-top: 2px;">النقاط: ${a.sessionScore} | التحركات: ${a.moves}</div>
                         </div>
-                    `).join('') || '<div style="text-align: center; color: var(--muted);">لا توجد إنجازات</div>';
+                    `).join('') || '<div style="text-align: center; color: var(--muted); font-size: 10px;">لا توجد إنجازات</div>';
                 }
             } catch (e) {}
         }
@@ -1363,80 +2152,53 @@
                 const d = await res.json();
                 if (d.success) {
                     document.getElementById('reviewsList').innerHTML = d.reviews.map(r => `
-                        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 5px; font-size: 10px;">
+                        <div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 4px; font-size: 9px;">
                             <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">${r.username}</span><span style="color: var(--gold);">${'★'.repeat(r.rating)}</span></div>
-                            <div style="color: var(--muted); margin-top: 3px;">${r.text || 'لا يوجد نص'}</div>
+                            <div style="color: var(--muted); margin-top: 2px;">${r.text || 'لا يوجد نص'}</div>
                         </div>
-                    `).join('') || '<div style="text-align: center; color: var(--muted);">لا توجد تقييمات</div>';
+                    `).join('') || '<div style="text-align: center; color: var(--muted); font-size: 10px;">لا توجد تقييمات</div>';
                 }
             } catch (e) {}
         }
         
-        // ============================================
-        // الجولة التعريفية
-        // ============================================
-        const tourSteps = [
-            { target: '#timerBox', title: '⏰ عداد الوقت', text: 'الوقت المتبقي للحدث الرئيسي' },
-            { target: '#statsBox', title: '📊 إحصائياتك', text: 'اضغط هنا لفتح ملفك الشخصي' },
-            { target: '#toolsBox', title: '🛠️ الأدوات', text: '💎 جوهرة ⬆️ ترقية 🦅 مخلب 🎡 عجلة' },
-            { target: '#palette', title: '🎨 اللوحة', text: 'اختر مستوى ثم اضغط على الشبكة' },
-            { target: '#gridBox', title: '🎮 الشبكة', text: 'شبكة اللعب 4×4' },
-            { target: '#smartBtn', title: '✨ الدمج الذكي', text: 'أفضل حركة مقترحة' }
-        ];
-        
-        let tourIdx = 0;
-        
-        function startTour() {
-            tourIdx = 0;
-            document.getElementById('tourBackdrop').classList.add('show');
-            showTourStep();
+        async function loadSettingsForm() {
+            document.getElementById('setAppName').value = appSettings.appName || '';
+            document.getElementById('setGeminiKey').value = appSettings.geminiApiKey || '';
+            document.getElementById('setLogo').value = appSettings.logoUrl || '';
+            document.getElementById('setTermsTitle').value = appSettings.termsTitle || '';
+            document.getElementById('setTermsText').value = appSettings.termsText || '';
+            if (appSettings.eventEndTime) {
+                document.getElementById('setEventEnd').value = new Date(appSettings.eventEndTime).toISOString().slice(0, 16);
+            }
         }
         
-        function showTourStep() {
-            if (tourIdx >= tourSteps.length) { endTour(); return; }
-            
-            const step = tourSteps[tourIdx];
-            const el = document.querySelector(step.target);
-            if (!el) { tourIdx++; showTourStep(); return; }
-            
-            const rect = el.getBoundingClientRect();
-            el.style.position = 'relative';
-            el.style.zIndex = '260';
-            el.style.boxShadow = '0 0 0 1000px rgba(0,0,0,0.5)';
-            
-            const tip = document.createElement('div');
-            tip.className = 'tour-tooltip';
-            tip.id = 'tourTip';
-            tip.style.top = Math.max(10, rect.bottom + 10) + 'px';
-            tip.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - 290)) + 'px';
-            tip.innerHTML = `
-                <div style="font-size: 14px; font-weight: 900; color: var(--gold); margin-bottom: 8px;">${step.title}</div>
-                <div style="font-size: 11px; line-height: 1.6; margin-bottom: 10px;">${step.text}</div>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="endTour()" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.1); border: none; border-radius: 8px; color: var(--muted); cursor: pointer; font-size: 11px;">تخطي</button>
-                    <button onclick="nextTour()" style="flex: 1; padding: 8px; background: var(--gold); border: none; border-radius: 8px; color: #000; cursor: pointer; font-weight: bold; font-size: 11px;">التالي ←</button>
-                </div>
-                <div style="text-align: center; margin-top: 8px; font-size: 10px; color: var(--muted);">${tourIdx + 1} / ${tourSteps.length}</div>
-            `;
-            document.body.appendChild(tip);
-        }
-        
-        window.nextTour = function() {
-            const el = document.querySelector(tourSteps[tourIdx].target);
-            if (el) { el.style.zIndex = ''; el.style.boxShadow = ''; }
-            document.getElementById('tourTip')?.remove();
-            tourIdx++;
-            showTourStep();
-        };
-        
-        window.endTour = function() {
-            tourSteps.forEach(s => {
-                const el = document.querySelector(s.target);
-                if (el) { el.style.zIndex = ''; el.style.boxShadow = ''; }
-            });
-            document.getElementById('tourTip')?.remove();
-            document.getElementById('tourBackdrop').classList.remove('show');
-            localStorage.setItem('tour_done', 'true');
+        document.getElementById('saveSettingsBtn').onclick = async () => {
+            try {
+                const res = await fetch(`${API}/api/settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminUser: U.user,
+                        adminPass: U.pass,
+                        newSettings: {
+                            appName: document.getElementById('setAppName').value,
+                            geminiApiKey: document.getElementById('setGeminiKey').value,
+                            logoUrl: document.getElementById('setLogo').value,
+                            termsTitle: document.getElementById('setTermsTitle').value,
+                            termsText: document.getElementById('setTermsText').value,
+                            eventEndTime: document.getElementById('setEventEnd').value
+                        }
+                    })
+                });
+                const d = await res.json();
+                const msg = document.getElementById('saveSettingsMsg');
+                msg.textContent = d.message;
+                msg.classList.remove('hidden');
+                msg.style.color = d.success ? '#4ade80' : '#ef4444';
+                if (d.success) {
+                    loadSettings();
+                }
+            } catch (e) {}
         };
     </script>
 </body>

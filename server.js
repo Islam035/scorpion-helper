@@ -1,5 +1,6 @@
 /**
- * 🦂 مساعد عقروب V13 - السيرفر
+ * 🦂 مساعد عقروب V14 - السيرفر الكامل
+ * جميع الحقوق محفوظة
  */
 
 const express = require('express');
@@ -13,7 +14,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 
 // ============================================
-// إعدادات أساسية
+// الإعدادات الأساسية
 // ============================================
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +23,8 @@ const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URL;
 
 // Socket.io
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
+    cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] },
+    maxHttpBufferSize: 1e8
 });
 
 // ============================================
@@ -47,7 +49,7 @@ const upload = multer({
 });
 
 // ============================================
-// MongoDB
+// MongoDB Connection
 // ============================================
 const connectDB = async () => {
     try {
@@ -73,31 +75,44 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     displayName: { type: String, default: "" },
     isAdmin: { type: Boolean, default: false },
+    createdBy: { type: String, default: null },
     highScore: { type: Number, default: 0 },
+    sessionScore: { type: Number, default: 0 },
     energy: { type: Number, default: 200 },
     stats: {
         moves: { type: Number, default: 0 },
         maxLvl: { type: Number, default: 0 },
-        level11Merges: { type: Number, default: 0 }
+        level11Count: { type: Number, default: 0 }
     },
     grid: { type: Array, default: null },
+    avatarUrl: { type: String, default: "" },
     kingdom: { type: String, default: "" },
     alliance: { type: String, default: "" },
     tools: {
-        gem: { owned: { type: Number, default: 0 } },
-        upgrade: { owned: { type: Number, default: 0 } },
-        claw: { owned: { type: Number, default: 0 } },
-        wheel: { owned: { type: Number, default: 0 } }
+        gem: { owned: { type: Number, default: 0 }, dailyLimit: { type: Number, default: 999 }, used: { type: Number, default: 0 } },
+        upgrade: { owned: { type: Number, default: 0 }, dailyLimit: { type: Number, default: 20 }, used: { type: Number, default: 0 } },
+        claw: { owned: { type: Number, default: 0 }, dailyLimit: { type: Number, default: 20 }, used: { type: Number, default: 0 } },
+        wheel: { owned: { type: Number, default: 0 }, dailyLimit: { type: Number, default: 20 }, used: { type: Number, default: 0 } }
     },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    lastDailyReset: { type: Date, default: null }
 });
 
 const settingsSchema = new mongoose.Schema({
     key: { type: String, default: 'main', unique: true },
-    appName: { type: String, default: "مساعد عقروب V13" },
+    appName: { type: String, default: "مساعد عقروب V14" },
     logoUrl: { type: String, default: "" },
-    eventEndDate: { type: Date, default: null }
-});
+    geminiApiKey: { type: String, default: "" },
+    termsTitle: { type: String, default: "ميثاق الشرف" },
+    termsText: { type: String, default: "أهلاً بك يا بطل..." },
+    colors: {
+        primary: { type: String, default: "#D4AF37" },
+        secondary: { type: String, default: "#C41E3A" },
+        bg: { type: String, default: "#0a0a0a" }
+    },
+    animals: { type: Object, default: {} },
+    eventEndTime: { type: Date, default: null }
+}, { minimize: false });
 
 const reviewSchema = new mongoose.Schema({
     username: String,
@@ -108,7 +123,7 @@ const reviewSchema = new mongoose.Schema({
 
 const achievementSchema = new mongoose.Schema({
     username: String,
-    score: Number,
+    sessionScore: Number,
     moves: Number,
     rating: Number,
     comment: String,
@@ -127,39 +142,48 @@ const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
 
 // ============================================
-// الحيوانات
+// الحيوانات الافتراضية
 // ============================================
-const ANIMALS = {
-    0: { icon: '', name: 'فارغ' },
-    1: { icon: '🐭', name: 'فأر' },
-    2: { icon: '🐰', name: 'أرنب' },
-    3: { icon: '🦊', name: 'ثعلب' },
-    4: { icon: '🐺', name: 'ذئب' },
-    5: { icon: '🦁', name: 'أسد' },
-    6: { icon: '🐯', name: 'نمر' },
-    7: { icon: '🦅', name: 'نسر' },
-    8: { icon: '🐉', name: 'تنين' },
-    9: { icon: '🔥', name: 'عنقاء' },
-    10: { icon: '⚡', name: 'برق' },
-    11: { icon: '👑', name: 'ملك' }
-};
+function getDefaultAnimals() {
+    return {
+        '0': { icon: '', name: 'فارغ' },
+        '1': { icon: '🐭', name: 'فأر' },
+        '2': { icon: '🐰', name: 'أرنب' },
+        '3': { icon: '🦊', name: 'ثعلب' },
+        '4': { icon: '🐺', name: 'ذئب' },
+        '5': { icon: '🦁', name: 'أسد' },
+        '6': { icon: '🐯', name: 'نمر' },
+        '7': { icon: '🦅', name: 'نسر' },
+        '8': { icon: '🐉', name: 'تنين' },
+        '9': { icon: '🔥', name: 'عنقاء' },
+        '10': { icon: '⚡', name: 'برق' },
+        '11': { icon: '👑', name: 'ملك' }
+    };
+}
 
 // ============================================
 // تهيئة الإعدادات
 // ============================================
 async function initSettings() {
-    let settings = await Settings.findOne({ key: 'main' });
-    if (!settings) {
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + 1);
-        endDate.setHours(endDate.getHours() + 21);
-        
-        settings = await Settings.create({
-            key: 'main',
-            appName: "مساعد عقروب V13",
-            eventEndDate: endDate
-        });
-        console.log('✅ تم إنشاء الإعدادات');
+    try {
+        let settings = await Settings.findOne({ key: 'main' });
+        if (!settings) {
+            const eventEnd = new Date();
+            eventEnd.setDate(eventEnd.getDate() + 1);
+            eventEnd.setHours(eventEnd.getHours() + 21);
+            eventEnd.setMinutes(eventEnd.getMinutes() + 28);
+            eventEnd.setSeconds(eventEnd.getSeconds() + 10);
+
+            settings = await Settings.create({
+                key: 'main',
+                appName: "مساعد عقروب V14",
+                animals: getDefaultAnimals(),
+                eventEndTime: eventEnd
+            });
+            console.log('✅ تم إنشاء الإعدادات الافتراضية');
+        }
+    } catch (err) {
+        console.error('خطأ في تهيئة الإعدادات:', err.message);
     }
 }
 
@@ -167,46 +191,81 @@ async function initSettings() {
 // دوال مساعدة
 // ============================================
 function checkAdmin(user, pass) {
-    return (user === ADMIN_USER && pass === ADMIN_PASS) || (user && user.isAdmin && user.password === pass);
+    return (user === ADMIN_USER && pass === ADMIN_PASS) ||
+           (user && user.isAdmin && user.password === pass);
+}
+
+async function resetDailyUsage(user) {
+    const now = new Date();
+    const egyptTime = new Date(now.toLocaleString("en-US", { timeZone: "Africa/Cairo" }));
+    const lastReset = user.lastDailyReset ? new Date(user.lastDailyReset.toLocaleString("en-US", { timeZone: "Africa/Cairo" })) : null;
+
+    if (!lastReset ||
+        egyptTime.getDate() !== lastReset.getDate() ||
+        egyptTime.getMonth() !== lastReset.getMonth() ||
+        egyptTime.getFullYear() !== lastReset.getFullYear()) {
+
+        user.tools.gem.used = 0;
+        user.tools.upgrade.used = 0;
+        user.tools.claw.used = 0;
+        user.tools.wheel.used = 0;
+        user.sessionScore = 0;
+        user.stats.level11Count = 0;
+        user.lastDailyReset = now;
+        await user.save();
+        return true;
+    }
+    return false;
 }
 
 // ============================================
 // API Routes
 // ============================================
 
-// الإعدادات
 app.get('/api/settings', async (req, res) => {
     try {
         let settings = await Settings.findOne({ key: 'main' });
-        res.json({
-            appName: settings?.appName || "مساعد عقروب V13",
-            logoUrl: settings?.logoUrl || "",
-            animals: ANIMALS,
-            eventEndDate: settings?.eventEndDate
-        });
+        if (!settings) {
+            settings = {
+                appName: "مساعد عقروب V14",
+                animals: getDefaultAnimals(),
+                eventEndTime: null
+            };
+        }
+
+        const publicSettings = settings.toObject ? settings.toObject() : settings;
+        delete publicSettings.geminiApiKey;
+        delete publicSettings._id;
+        delete publicSettings.__v;
+        delete publicSettings.key;
+
+        res.json(publicSettings);
     } catch (err) {
-        res.json({ appName: "مساعد عقروب", animals: ANIMALS });
+        res.json({
+            appName: "مساعد عقروب V14",
+            animals: getDefaultAnimals(),
+            eventEndTime: null
+        });
     }
 });
 
-// الوقت المتبقي
 app.get('/api/event/timeleft', async (req, res) => {
     try {
         const settings = await Settings.findOne({ key: 'main' });
-        const endDate = settings?.eventEndDate;
-        
-        if (!endDate) {
+        const endTime = settings?.eventEndTime;
+
+        if (!endTime) {
             return res.json({ success: false, message: "لا يوجد حدث" });
         }
-        
+
         const now = new Date();
-        const end = new Date(endDate);
+        const end = new Date(endTime);
         const diff = end - now;
-        
+
         if (diff <= 0) {
             return res.json({ success: false, message: "انتهى الحدث" });
         }
-        
+
         res.json({
             success: true,
             timeLeft: {
@@ -221,16 +280,14 @@ app.get('/api/event/timeleft', async (req, res) => {
     }
 });
 
-// تسجيل الدخول
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        
+
         if (!username || !password) {
             return res.json({ success: false, message: "أدخل البيانات كاملة" });
         }
 
-        // إنشاء أدمن افتراضي
         if (username === ADMIN_USER && password === ADMIN_PASS) {
             let admin = await User.findOne({ username: ADMIN_USER });
             if (!admin) {
@@ -240,32 +297,41 @@ app.post('/api/login', async (req, res) => {
                     isAdmin: true,
                     displayName: "المدير",
                     kingdom: "القيادة",
-                    tools: { gem: {owned: 99}, upgrade: {owned: 99}, claw: {owned: 99}, wheel: {owned: 99} }
+                    tools: {
+                        gem: { owned: 999, dailyLimit: 999, used: 0 },
+                        upgrade: { owned: 99, dailyLimit: 20, used: 0 },
+                        claw: { owned: 99, dailyLimit: 20, used: 0 },
+                        wheel: { owned: 99, dailyLimit: 20, used: 0 }
+                    }
                 });
             }
         }
 
         const user = await User.findOne({ username });
-        
+
         if (!user) {
             return res.json({ success: false, message: "الحساب غير موجود" });
         }
-        
+
         if (user.password !== password) {
             return res.json({ success: false, message: "كلمة المرور خطأ" });
         }
-        
+
+        await resetDailyUsage(user);
+
         res.json({
             success: true,
             isAdmin: user.isAdmin || false,
             userData: {
                 highScore: user.highScore || 0,
+                sessionScore: user.sessionScore || 0,
                 energy: user.energy ?? 200,
                 grid: user.grid,
                 stats: user.stats || {},
                 displayName: user.displayName || "",
                 kingdom: user.kingdom || "",
                 alliance: user.alliance || "",
+                avatarUrl: user.avatarUrl || "",
                 tools: user.tools || {}
             }
         });
@@ -274,17 +340,22 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// حفظ اللعبة
 app.post('/api/user/save', async (req, res) => {
     try {
-        const { username, password, grid, energy, highScore, stats } = req.body;
+        const { username, password, grid, energy, sessionScore, stats, tools } = req.body;
         const user = await User.findOne({ username });
-        
+
         if (user && user.password === password) {
             if (grid) user.grid = grid;
             if (energy !== undefined) user.energy = Math.max(0, Math.min(200, energy));
-            if (highScore !== undefined) user.highScore = Math.max(user.highScore || 0, highScore);
+            if (sessionScore !== undefined) user.sessionScore = sessionScore;
             if (stats) user.stats = { ...user.stats, ...stats };
+            if (tools) user.tools = { ...user.tools, ...tools };
+
+            if (user.sessionScore > (user.highScore || 0)) {
+                user.highScore = user.sessionScore;
+            }
+
             await user.save();
             res.json({ success: true });
         } else {
@@ -295,17 +366,18 @@ app.post('/api/user/save', async (req, res) => {
     }
 });
 
-// تحديث الملف
 app.post('/api/profile/update', async (req, res) => {
     try {
-        const { username, password, displayName, kingdom, alliance, tools } = req.body;
+        const { username, password, displayName, kingdom, alliance, avatarUrl, tools } = req.body;
         const user = await User.findOne({ username });
-        
+
         if (user && user.password === password) {
             if (displayName !== undefined) user.displayName = String(displayName).substring(0, 30);
             if (kingdom !== undefined) user.kingdom = String(kingdom).substring(0, 50);
             if (alliance !== undefined) user.alliance = String(alliance).substring(0, 50);
-            if (tools !== undefined) user.tools = tools;
+            if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+            if (tools !== undefined) user.tools = { ...user.tools, ...tools };
+
             await user.save();
             res.json({ success: true, displayName: user.displayName });
         } else {
@@ -316,71 +388,123 @@ app.post('/api/profile/update', async (req, res) => {
     }
 });
 
-// إضافة مستخدم
+app.post('/api/session/reset', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+
+        if (user && user.password === password) {
+            user.grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+            user.sessionScore = 0;
+            user.stats.level11Count = 0;
+            user.stats.moves = 0;
+
+            if (user.sessionScore > (user.highScore || 0)) {
+                user.highScore = user.sessionScore;
+            }
+
+            await user.save();
+            res.json({ success: true });
+        } else {
+            res.status(403).json({ success: false });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false });
+    }
+});
+
+app.post('/api/achievements/add', async (req, res) => {
+    try {
+        const { username, password, sessionScore, moves, rating, comment } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user || user.password !== password) {
+            return res.status(403).json({ success: false });
+        }
+
+        await Achievement.create({
+            username,
+            sessionScore,
+            moves,
+            rating,
+            comment
+        });
+
+        user.stats.level11Count = (user.stats.level11Count || 0) + 1;
+        user.tools.upgrade.dailyLimit = Math.min(99, (user.tools.upgrade.dailyLimit || 20) + 20);
+        user.tools.claw.dailyLimit = Math.min(99, (user.tools.claw.dailyLimit || 20) + 20);
+        user.tools.wheel.dailyLimit = Math.min(99, (user.tools.wheel.dailyLimit || 20) + 20);
+
+        await user.save();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false });
+    }
+});
+
 app.post('/api/users/add', async (req, res) => {
     try {
-        const { adminUser, adminPass, newUsername, newPassword, isAdmin } = req.body;
+        const { adminUser, adminPass, newUsername, newPassword, isAdmin, tools } = req.body;
         const admin = await User.findOne({ username: adminUser });
-        
+
         if (!admin || !checkAdmin(admin, adminPass)) {
             return res.json({ success: false, message: "غير مصرح" });
         }
-        
+
         if (await User.findOne({ username: newUsername })) {
             return res.json({ success: false, message: "الاسم موجود" });
         }
-        
-        await User.create({
+
+        const newUser = {
             username: newUsername,
             password: newPassword,
-            isAdmin: isAdmin || false
-        });
-        
+            isAdmin: isAdmin || false,
+            createdBy: adminUser
+        };
+
+        if (tools) {
+            newUser.tools = tools;
+        }
+
+        await User.create(newUser);
         res.json({ success: true, message: `تم إنشاء ${newUsername}` });
     } catch (err) {
         res.json({ success: false, message: "خطأ" });
     }
 });
 
-// قائمة المستخدمين
 app.post('/api/admin/users', async (req, res) => {
     try {
         const { adminUser, adminPass } = req.body;
         const admin = await User.findOne({ username: adminUser });
-        
+
         if (!admin || !checkAdmin(admin, adminPass)) {
             return res.status(403).json({ success: false });
         }
-        
-        const users = await User.find({}, 'username isAdmin highScore stats kingdom alliance tools');
+
+        const users = await User.find({}, 'username isAdmin highScore stats kingdom alliance tools displayName');
         res.json({ success: true, users });
     } catch (err) {
         res.json({ success: false });
     }
 });
 
-// المتصدرين
-app.get('/api/leaderboard', async (req, res) => {
+app.post('/api/admin/achievements', async (req, res) => {
     try {
-        const users = await User.find({})
-            .sort({ highScore: -1 })
-            .limit(10)
-            .select('username highScore stats kingdom alliance displayName');
-        
-        res.json(users.map(u => ({
-            username: u.username,
-            displayName: u.displayName || u.username,
-            score: u.highScore || 0,
-            maxLvl: u.stats?.maxLvl || 0,
-            kingdom: u.kingdom || "",
-            alliance: u.alliance || ""
-        })));
+        const { adminUser, adminPass } = req.body;
+        const admin = await User.findOne({ username: adminUser });
+
+        if (!admin || !checkAdmin(admin, adminPass)) {
+            return res.status(403).json({ success: false });
+        }
+
+        const achievements = await Achievement.find().sort({ date: -1 }).limit(50);
+        res.json({ success: true, achievements });
     } catch (err) {
-        res.json([]);
+        res.json({ success: false });
     }
 });
 
-// تقييم
 app.post('/api/reviews/add', async (req, res) => {
     try {
         const { username, rating, text } = req.body;
@@ -391,16 +515,15 @@ app.post('/api/reviews/add', async (req, res) => {
     }
 });
 
-// التقييمات (للأدمن)
 app.post('/api/admin/reviews', async (req, res) => {
     try {
         const { adminUser, adminPass } = req.body;
         const admin = await User.findOne({ username: adminUser });
-        
+
         if (!admin || !checkAdmin(admin, adminPass)) {
             return res.status(403).json({ success: false });
         }
-        
+
         const reviews = await Review.find().sort({ date: -1 });
         res.json({ success: true, reviews });
     } catch (err) {
@@ -408,59 +531,126 @@ app.post('/api/admin/reviews', async (req, res) => {
     }
 });
 
-// إنجاز
-app.post('/api/achievements/add', async (req, res) => {
+app.get('/api/leaderboard', async (req, res) => {
     try {
-        const { username, password, score, moves, rating, comment } = req.body;
-        const user = await User.findOne({ username });
-        
-        if (!user || user.password !== password) {
-            return res.status(403).json({ success: false });
-        }
-        
-        await Achievement.create({ username, score, moves, rating, comment });
-        
-        user.stats.level11Merges = (user.stats.level11Merges || 0) + 1;
-        await user.save();
-        
-        res.json({ success: true });
+        const users = await User.find({})
+            .sort({ highScore: -1 })
+            .limit(10)
+            .select('username highScore stats kingdom alliance displayName avatarUrl');
+
+        res.json(users.map(u => ({
+            username: u.username,
+            displayName: u.displayName || u.username,
+            score: u.highScore || 0,
+            maxLvl: u.stats?.maxLvl || 0,
+            kingdom: u.kingdom || "",
+            alliance: u.alliance || "",
+            avatarUrl: u.avatarUrl || ""
+        })));
     } catch (err) {
-        res.json({ success: false });
+        res.json([]);
     }
 });
 
-// الأرشيف (للأدمن)
-app.post('/api/admin/achievements', async (req, res) => {
+app.post('/api/settings', async (req, res) => {
     try {
-        const { adminUser, adminPass } = req.body;
+        const { adminUser, adminPass, newSettings } = req.body;
         const admin = await User.findOne({ username: adminUser });
-        
+
         if (!admin || !checkAdmin(admin, adminPass)) {
-            return res.status(403).json({ success: false });
+            return res.json({ success: false, message: "غير مصرح" });
         }
-        
-        const achievements = await Achievement.find().sort({ date: -1 }).limit(50);
-        res.json({ success: true, achievements });
+
+        let settings = await Settings.findOne({ key: 'main' });
+        if (!settings) settings = new Settings({ key: 'main' });
+
+        if (newSettings.appName) settings.appName = newSettings.appName;
+        if (newSettings.logoUrl !== undefined) settings.logoUrl = newSettings.logoUrl;
+        if (newSettings.geminiApiKey !== undefined) settings.geminiApiKey = newSettings.geminiApiKey;
+        if (newSettings.termsTitle) settings.termsTitle = newSettings.termsTitle;
+        if (newSettings.termsText) settings.termsText = newSettings.termsText;
+        if (newSettings.colors) settings.colors = { ...settings.colors, ...newSettings.colors };
+        if (newSettings.animals) settings.animals = newSettings.animals;
+        if (newSettings.eventEndTime) settings.eventEndTime = new Date(newSettings.eventEndTime);
+
+        await settings.save();
+        io.emit('settings_updated', settings.toObject());
+        res.json({ success: true, message: "تم الحفظ" });
     } catch (err) {
-        res.json({ success: false });
+        res.json({ success: false, message: "خطأ" });
     }
 });
 
-// رفع صورة
 app.post('/api/upload', upload.single('image'), (req, res) => {
     if (!req.file) return res.status(400).json({ success: false });
     res.json({ success: true, url: `/uploads/${req.file.filename}` });
 });
 
+app.post('/api/ai/analyze', async (req, res) => {
+    try {
+        const { username, password, grid, question, context } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user || user.password !== password) {
+            return res.status(403).json({ success: false, message: "غير مصرح" });
+        }
+
+        const settings = await Settings.findOne({ key: 'main' });
+
+        if (!settings?.geminiApiKey) {
+            return res.json({ success: false, message: "لم يتم تكوين Gemini API" });
+        }
+
+        const prompt = `أنت مساعد ذكي للعبة دمج الحيوانات.
+الشبكة الحالية (4×4):
+${JSON.stringify(grid)}
+
+${context || ''}
+
+السؤال: ${question}
+
+أجب باختصار بالعربية. إذا كان سؤال عن حركة، اقترح الحركة الأفضل مع السبب.`;
+
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${settings.geminiApiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (data.candidates?.[0]) {
+            res.json({ success: true, response: data.candidates[0].content.parts[0].text });
+        } else {
+            res.json({ success: false, message: "لم يتم الحصول على رد" });
+        }
+    } catch (err) {
+        res.json({ success: false, message: "خطأ في الاتصال" });
+    }
+});
+
 // ============================================
 // Socket.io
 // ============================================
+let onlineUsers = {};
+
 io.on('connection', (socket) => {
     socket.on('user_joined', (data) => {
-        socket.data = data;
+        if (!data?.username) return;
+        onlineUsers[socket.id] = data;
+        io.emit('online_users', Object.values(onlineUsers));
     });
-    
-    socket.on('disconnect', () => {});
+
+    socket.on('disconnect', () => {
+        delete onlineUsers[socket.id];
+        io.emit('online_users', Object.values(onlineUsers));
+    });
 });
 
 // ============================================
