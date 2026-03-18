@@ -3,407 +3,466 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مساعد عقروب V1.15</title>
+    <title>مساعد عقروب V1.15 - المحاكي الاستراتيجي</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        
+        /* الألوان الأساسية للمتغيرات */
         :root {
-            --gold: #D4AF37;
+            --gold: #D4AF37; 
             --gold-dark: #B8860B;
-            --red: #C41E3A;
+            --red: #C41E3A; 
             --red-dark: #8B0000;
-            --text: #F5F5DC;
-            --muted: #8B7355;
+            --text: #F5F5DC; 
+            --muted: #8B7355; 
             --bg: #0a0a0a;
+            --panel-bg: rgba(20, 20, 20, 0.95);
         }
-        html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; position: fixed; width: 100%; }
-        .app { max-width: 420px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-        .screen { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 100; }
-        .screen.active { display: flex; flex-direction: column; }
-        #splash { background: radial-gradient(ellipse at center bottom, #1a0a00 0%, #000 50%, #000 100%); justify-content: center; align-items: center; z-index: 200; }
-        .cave { position: relative; width: 200px; height: 150px; }
-        .cave-entrance { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 100px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 40px rgba(0,0,0,0.8); }
-        .scorpion-logo { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-size: 50px; animation: scorpion-walk 2s infinite; filter: drop-shadow(0 0 10px var(--gold)); }
-        @keyframes scorpion-walk { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-10px); } }
-        .splash-title { font-size: 24px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 30px; text-align: center; }
-        .splash-loader { width: 150px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 20px; overflow: hidden; }
-        .splash-loader div { height: 100%; background: var(--gold); animation: load 2s forwards; }
-        @keyframes load { from { width: 0; } to { width: 100%; } }
-        .popup { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 150; display: none; justify-content: center; align-items: center; padding: 10px; }
-        .popup.show { display: flex; }
-        .popup-box { background: linear-gradient(145deg, #1a1a1a, #0d0d0d); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 16px; padding: 15px; max-width: 380px; width: 100%; max-height: 90vh; overflow-y: auto; }
-        .btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; font-weight: bold; border: none; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-size: 12px; }
-        .btn:active { transform: scale(0.97); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; }
-        .input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 10px; color: white; text-align: center; font-size: 12px; margin-bottom: 8px; outline: none; }
-        .input:focus { border-color: var(--gold); }
-        .main-content { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 70px; }
-        .navbar { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(180deg, rgba(20,20,20,0.99), #000); border-top: 1px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: space-around; padding: 6px 0; padding-bottom: max(6px, env(safe-area-inset-bottom)); z-index: 50; }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; padding: 6px 16px; color: #666; cursor: pointer; border-radius: 8px; }
-        .nav-btn.active { color: var(--gold); }
-        .nav-btn i { font-size: 16px; margin-bottom: 2px; }
-        .nav-btn span { font-size: 9px; font-weight: bold; }
-        .tab { display: none; }
-        .tab.active { display: block; }
-        .header-title { text-align: center; padding: 8px 0; border-bottom: 1px solid rgba(212, 175, 55, 0.2); margin-bottom: 8px; }
-        .header-title h1 { font-size: 16px; font-weight: 900; color: var(--gold); }
-        .timer-box { display: flex; justify-content: center; align-items: center; gap: 3px; padding: 6px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; margin-bottom: 8px; }
-        .timer-val { background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: var(--gold); font-size: 11px; min-width: 24px; text-align: center; }
-        .timer-label { font-size: 8px; color: var(--muted); }
-        .player-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
-        .stat-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 6px; text-align: center; }
-        .stat-box.clickable { cursor: pointer; }
-        .stat-label { font-size: 8px; color: var(--muted); }
-        .stat-value { font-size: 12px; font-weight: 900; color: var(--gold); }
-        .stat-value.red { color: var(--red); }
-        .energy-box { position: relative; background: rgba(196, 30, 58, 0.1); border: 1px solid rgba(196, 30, 58, 0.3); }
-        .energy-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--red); border-radius: 8px 8px 0 0; transition: width 0.3s; }
-        .energy-input { width: 40px; background: transparent; border: none; color: var(--red); font-weight: 900; text-align: center; font-size: 14px; outline: none; }
-        .tools-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 8px; }
-        .tool-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 2px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; cursor: pointer; position: relative; min-height: 45px; }
-        .tool-btn:active { background: var(--gold); }
-        .tool-btn:active * { color: #000 !important; }
-        .tool-btn.active { border-color: var(--gold); background: rgba(212, 175, 55, 0.3); }
-        .tool-btn.disabled { opacity: 0.4; cursor: not-allowed; }
-        .tool-icon { font-size: 16px; }
-        .tool-name { font-size: 7px; color: var(--gold); margin-top: 2px; }
-        .tool-count { position: absolute; top: -3px; right: -3px; background: var(--red); color: white; font-size: 8px; padding: 1px 4px; border-radius: 6px; min-width: 14px; text-align: center; }
-        .tool-limit { font-size: 7px; color: var(--muted); }
-        .palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; margin-bottom: 6px; }
-        .grid-4x4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #050505; padding: 6px; border-radius: 10px; border: 2px solid rgba(212, 175, 55, 0.3); margin-bottom: 8px; }
-        .cell { aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; font-size: clamp(18px, 4vw, 24px); background: #1a1a1a; border: 1px solid rgba(255,255,255,0.05); }
-        .cell img { pointer-events: none; user-select: none; max-width: 80%; max-height: 80%; object-fit: contain; }
+        
+        /* ضبط الشاشة لمنع التمرير الخارجي */
+        html, body { 
+            height: 100%; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            overflow: hidden; 
+            position: fixed; 
+            width: 100%; 
+        }
+        
+        .app { 
+            max-width: 420px; 
+            margin: 0 auto; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            overflow: hidden; 
+            background: radial-gradient(circle at top, #1a1a1a, #000); 
+        }
+        
+        /* إدارة الشاشات (الصفحات) */
+        .screen { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 100; flex-direction: column; }
+        .screen.active { display: flex; }
+        
+        /* ================= شاشة الدخول (Splash) ================= */
+        #splash { background: radial-gradient(ellipse at center bottom, #2a0a00 0%, #000 70%, #000 100%); justify-content: center; align-items: center; z-index: 200; }
+        .cave { position: relative; width: 250px; height: 200px; display: flex; justify-content: center; align-items: flex-end; }
+        .cave-entrance { position: absolute; bottom: 0; width: 160px; height: 140px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(212, 175, 55, 0.2); }
+        .logo-img { position: relative; max-width: 100px; max-height: 100px; z-index: 10; animation: logo-reveal 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.8)); opacity: 0; transform: translateY(30px) scale(0.5); }
+        @keyframes logo-reveal { to { opacity: 1; transform: translateY(-10px) scale(1); } }
+        .splash-title { font-size: 26px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #FFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        
+        /* ================= العناصر العامة (الأزرار والمدخلات) ================= */
+        .btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; font-weight: 900; border: none; padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3); transition: transform 0.1s; }
+        .btn:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); box-shadow: none; }
+        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; box-shadow: 0 4px 10px rgba(196, 30, 58, 0.3); }
+        
+        .input { width: 100%; background: rgba(0,0,0,0.7); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 10px; color: white; text-align: center; font-size: 13px; margin-bottom: 8px; outline: none; transition: border-color 0.3s; }
+        .input:focus { border-color: #FFF; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
+        
+        /* ================= التخطيط الداخلي (Main Content) ================= */
+        .main-content { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; display: flex; flex-direction: column; gap: 8px; }
+        .main-content::-webkit-scrollbar { width: 4px; } 
+        .main-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 4px; }
+        
+        /* ================= شريط التنقل السفلي ================= */
+        .navbar { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: linear-gradient(180deg, rgba(10,10,10,0.95), #000); border-top: 1px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: space-around; align-items: center; z-index: 50; padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(10px); }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #666; cursor: pointer; border-radius: 8px; width: 60px; transition: color 0.3s; }
+        .nav-btn.active { color: var(--gold); transform: translateY(-3px); }
+        .nav-btn i { font-size: 20px; margin-bottom: 4px; }
+        .nav-btn span { font-size: 10px; font-weight: bold; }
+        
+        /* ================= التبويبات ================= */
+        .tab { display: none; flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; } 
+        .tab.active { display: flex; flex-direction: column; gap: 10px; }
+        
+        /* ================= الشريط العلوي والإحصائيات ================= */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.2); }
+        .timer-box { display: flex; align-items: center; gap: 4px; color: var(--gold); font-size: 11px; font-weight: bold; }
+        .timer-val { background: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 4px; min-width: 26px; text-align: center; font-variant-numeric: tabular-nums; }
+        .sync-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;}
+        .sync-btn:active { transform: scale(0.95); background: var(--gold); color: #000; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .stat-card { background: linear-gradient(145deg, #111, #080808); border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 8px; padding: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+        .stat-title { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
+        .stat-val { font-size: 15px; font-weight: 900; color: #FFF; }
+        
+        .energy-wrap { position: relative; padding-top: 4px; }
+        .energy-progress { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #222; border-radius: 3px; overflow: hidden; }
+        .energy-fill { height: 100%; background: var(--gold); width: 100%; transition: width 0.3s, background 0.3s; }
+        .energy-fill.low { background: var(--red); }
+        
+        /* ================= شريط الأدوات الذكي ================= */
+        .tools-rack { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; justify-content: space-between; }
+        .tools-rack::-webkit-scrollbar { display: none; }
+        .tool-item { flex: 1; min-width: 55px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 6px 2px; text-align: center; position: relative; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; }
+        .tool-item:active { transform: scale(0.95); }
+        .tool-item.active { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
+        .tool-item.empty { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
+        .tool-icon { width: 20px; height: 20px; object-fit: contain; display: block; margin-bottom: 2px; font-size: 16px; }
+        .tool-name { font-size: 8px; color: var(--gold); display: block; white-space: nowrap; }
+        .tool-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 6px; border: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 2; }
+        .tool-limit { font-size: 7px; color: #aaa; margin-top: 2px; }
+
+        /* ================= الشبكة (اللوحة) والحيوانات ================= */
+        .board-container { aspect-ratio: 1; width: 100%; max-width: 350px; margin: 0 auto; background: #050505; padding: 6px; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.2); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .cell { background: #151515; border-radius: 8px; display: flex; justify-content: center; align-items: center; position: relative; font-size: 24px; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: transform 0.1s; }
+        .cell img { max-width: 75%; max-height: 75%; object-fit: contain; user-select: none; pointer-events: none; }
         .cell:active { transform: scale(0.92); }
-        .cell .lvl-num { position: absolute; bottom: 1px; right: 2px; font-size: 7px; font-weight: bold; color: var(--gold); background: rgba(0,0,0,0.7); padding: 0 3px; border-radius: 2px; }
-        .cell.selected-tool { border: 2px dashed var(--gold) !important; animation: pulse-border 1s infinite; }
-        @keyframes pulse-border { 0%, 100% { border-color: var(--gold); } 50% { border-color: transparent; } }
-        .lvl-0 { background: #18181b; }
-        .lvl-1 { background: radial-gradient(circle, #4ade80, #14532d); }
-        .lvl-2 { background: radial-gradient(circle, #38bdf8, #0c4a6e); }
-        .lvl-3 { background: radial-gradient(circle, #60a5fa, #1e3a8a); }
-        .lvl-4 { background: radial-gradient(circle, #a78bfa, #4c1d95); }
-        .lvl-5 { background: radial-gradient(circle, #d946ef, #701a75); }
-        .lvl-6 { background: radial-gradient(circle, #f472b6, #831843); }
-        .lvl-7 { background: radial-gradient(circle, #fbbf24, #78350f); }
-        .lvl-8 { background: radial-gradient(circle, #ea580c, #7c2d12); }
-        .lvl-9 { background: radial-gradient(circle, #ef4444, #7f1d1d); }
-        .lvl-10 { background: radial-gradient(circle, #dc2626, #450a0a); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
-        .lvl-11 { background: radial-gradient(circle, var(--gold), var(--gold-dark)); border: 2px solid #FFD700 !important; box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); animation: glow-gold 1.5s infinite; }
-        @keyframes glow-gold { 0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); } 50% { box-shadow: 0 0 30px rgba(212, 175, 55, 1); } }
-        .palette .cell { aspect-ratio: auto; height: clamp(30px, 7vw, 38px); font-size: clamp(12px, 2.5vw, 16px); }
-        .palette .cell img { max-width: 20px; max-height: 20px; }
-        .palette .cell.selected { border: 2px solid var(--gold) !important; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); transform: scale(1.1); }
-        .ctrl-btn { flex: 1; padding: 8px; border-radius: 8px; border: none; font-weight: bold; font-size: 10px; cursor: pointer; }
-        .ctrl-btn:active { transform: scale(0.96); }
-        .ctrl-undo { background: rgba(255,255,255,0.1); color: white; }
-        .ctrl-reset { background: rgba(196, 30, 58, 0.3); color: var(--red); border: 1px solid rgba(196, 30, 58, 0.5); }
-        .arrows { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
-        .arrow-btn { padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; color: white; font-size: 14px; cursor: pointer; }
-        .arrow-btn:active { background: var(--gold); color: #000; }
-        .smart-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); border: none; border-radius: 10px; color: #000; font-weight: 900; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .smart-btn:active { transform: scale(0.98); }
-        .smart-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .result-box { margin-top: 8px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 10px; padding: 10px; text-align: center; }
-        .result-direction { font-size: 18px; font-weight: 900; color: var(--gold); }
-        .result-reason { font-size: 10px; color: var(--muted); margin-top: 4px; }
-        .ai-analysis { background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.2); border-radius: 10px; padding: 10px; margin-top: 8px; font-size: 10px; line-height: 1.6; }
-        .ai-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--gold); font-weight: bold; }
-        .admin-fab { position: fixed; bottom: 60px; left: 8px; width: 40px; height: 40px; background: linear-gradient(135deg, var(--red), #800); border: none; border-radius: 50%; color: white; font-size: 16px; cursor: pointer; display: none; z-index: 40; box-shadow: 0 4px 15px rgba(196, 30, 58, 0.5); }
-        .celebration { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; justify-content: center; align-items: center; padding: 10px; }
-        .celebration.show { display: flex; }
-        .celeb-content { text-align: center; animation: celeb-pop 0.5s; }
-        @keyframes celeb-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .celeb-icon { font-size: 60px; animation: celeb-float 1s infinite; }
-        @keyframes celeb-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        .celeb-title { font-size: 20px; font-weight: 900; color: var(--gold); margin: 10px 0; }
-        .quick-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 6px; margin-bottom: 8px; font-size: 9px; }
-        .section { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(212, 175, 55, 0.1); }
-        .section-title { font-size: 11px; font-weight: bold; color: var(--gold); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
-        .admin-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
-        .admin-tab { flex: 1; padding: 6px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer; }
-        .admin-tab.active { background: var(--red); color: white; }
+        .cell .lvl-num { position: absolute; bottom: 2px; right: 4px; font-size: 10px; font-weight: 900; color: #FFF; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.4); padding: 0 4px; border-radius: 4px; }
+        
+        /* حركة نبض عند اختيار أداة (المخلب/العجلة/الترقية) */
+        .cell.target-tool { border: 2px dashed var(--gold); animation: pulse-border 1s infinite; z-index: 5; }
+        @keyframes pulse-border { 0%, 100% { border-color: var(--gold); box-shadow: inset 0 0 10px rgba(212,175,55,0.5); } 50% { border-color: transparent; box-shadow: none; } }
+        
+        /* تلوين المستويات بدقة */
+        .lvl-0 { background: #111; }
+        .lvl-1 { background: radial-gradient(circle, #2d3748, #1a202c); }
+        .lvl-2 { background: radial-gradient(circle, #2b6cb0, #1a365d); }
+        .lvl-3 { background: radial-gradient(circle, #2f855a, #1c4532); }
+        .lvl-4 { background: radial-gradient(circle, #b7791f, #744210); }
+        .lvl-5 { background: radial-gradient(circle, #c53030, #742a2a); }
+        .lvl-6 { background: radial-gradient(circle, #805ad5, #44337a); }
+        .lvl-7 { background: radial-gradient(circle, #d53f8c, #702459); }
+        .lvl-8 { background: radial-gradient(circle, #38b2ac, #234e52); }
+        .lvl-9 { background: radial-gradient(circle, #ed8936, #7b341e); }
+        .lvl-10 { background: radial-gradient(circle, #e53e3e, #822727); box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
+        
+        /* المستوى 11 - التاج */
+        .lvl-11 { background: radial-gradient(circle, var(--gold), #8B6508); border: 2px solid #FFF !important; box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); animation: glow-11 2s infinite; }
+        @keyframes glow-11 { 0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.5); transform: scale(1); } 50% { box-shadow: 0 0 25px rgba(212,175,55,1); transform: scale(1.02); } }
+
+        /* ================= أزرار التحكم والذكاء الاصطناعي ================= */
+        .controls-row { display: flex; gap: 8px; align-items: stretch; margin-top: auto; }
+        
+        /* أسهم التحريك (D-Pad) */
+        .dpad { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 30px); gap: 3px; justify-content: center; }
+        .dpad-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; transition: background 0.1s; }
+        .dpad-btn:active { background: var(--gold); color: #000; transform: scale(0.9); }
+        .dpad-up { grid-column: 2; grid-row: 1; } 
+        .dpad-down { grid-column: 2; grid-row: 3; }
+        .dpad-left { grid-column: 1; grid-row: 2; } 
+        .dpad-right { grid-column: 3; grid-row: 2; }
+        
+        /* أزرار التحليل */
+        .ai-actions { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .ai-btn { flex: 1; background: linear-gradient(135deg, #18181b, #09090b); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold); font-weight: 900; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.1s; }
+        .ai-btn:active { transform: scale(0.97); }
+        .ai-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
+        
+        /* صندوق رسائل الذكاء الاصطناعي */
+        .ai-response-box { background: rgba(212,175,55,0.1); border: 1px solid var(--gold); border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.6; position: relative; overflow: hidden; }
+        .ai-response-box::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--gold); }
+        .ai-option { background: rgba(0,0,0,0.5); padding: 6px; border-radius: 6px; margin-top: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* ================= النوافذ المنبثقة (Modals) ================= */
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(5px); }
+        .modal.show { display: flex; animation: fade-in 0.2s; }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-box { background: linear-gradient(145deg, #18181b, #09090b); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .modal-box::-webkit-scrollbar { width: 4px; } .modal-box::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
+        
+        .modal-title { font-size: 18px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 15px; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px; }
+        
+        /* شبكة المزامنة البصرية */
+        .sync-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; background: #000; padding: 6px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); }
+        .sync-cell { aspect-ratio: 1; background: #1a1a1a; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: 1px solid #333; position: relative; }
+        .sync-cell img { max-width: 70%; max-height: 70%; }
+        .sync-cell:hover { border-color: var(--gold); }
+        .sync-cell .lvl-num { position: absolute; bottom: 2px; right: 2px; font-size: 8px; font-weight: bold; color: var(--gold); }
+        
+        /* قائمة اختيار الحيوان أثناء المزامنة */
+        .animal-picker { display: none; grid-template-columns: repeat(4, 1fr); gap: 4px; position: absolute; background: #111; border: 2px solid var(--gold); border-radius: 8px; padding: 6px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
+        .animal-picker.show { display: grid; }
+        .picker-item { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #222; border-radius: 4px; cursor: pointer; border: 1px solid transparent; }
+        .picker-item:hover { border-color: var(--gold); background: #333; }
+        .picker-item img { max-width: 20px; max-height: 20px; }
+        .picker-item span { font-size: 8px; color: var(--gold); margin-top: 2px; }
+        
+        /* شبكة إدخال الأدوات في المزامنة */
+        .tools-sync-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .tool-sync-row { display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
+        .tool-sync-icon { width: 25px; text-align: center; font-size: 16px; margin-left: 5px; }
+        .tool-sync-inputs { display: flex; flex: 1; gap: 4px; }
+        .tool-sync-inputs input { width: 100%; padding: 4px; text-align: center; background: #000; color: #FFF; border: 1px solid #444; border-radius: 4px; font-size: 11px; }
+        
+        /* ================= الاحتفال ================= */
+        .celebration-content { text-align: center; }
+        .celeb-img-container { font-size: 80px; margin-bottom: 15px; animation: bounce-celeb 1s infinite alternate; filter: drop-shadow(0 0 20px var(--gold)); display: flex; justify-content: center; }
+        .celeb-img-container img { max-width: 100px; max-height: 100px; }
+        @keyframes bounce-celeb { from { transform: translateY(0) scale(1); } to { transform: translateY(-15px) scale(1.1); } }
+        
+        /* ================= شاشات الإدارة ================= */
+        .admin-tabs { display: flex; gap: 4px; margin-bottom: 15px; }
+        .admin-tab-btn { flex: 1; padding: 8px 4px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .admin-tab-btn.active { background: var(--red); color: white; border-color: var(--red-dark); }
         .admin-section { display: none; }
-        .admin-section.active { display: block; }
-        .leaderboard-item { display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 6px; }
-        .rank-badge { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: var(--gold); }
+        .admin-section.active { display: block; animation: fade-in 0.3s; }
+        
+        .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .admin-animal-edit { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2); }
+        .admin-animal-edit img { width: 24px; height: 24px; object-fit: contain; }
+        .admin-animal-edit input { flex: 1; background: #000; border: 1px solid #333; color: #FFF; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+        
+        /* كلاسات مخفية */
         .hidden { display: none !important; }
-        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--gold); animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
-    <div class="app">
-        <!-- شاشة البداية -->
-        <div id="splash" class="screen active">
-            <div class="cave">
-                <div class="cave-entrance"></div>
-                <div class="scorpion-logo">🦂</div>
-            </div>
-            <div class="splash-title">مساعد عقروب V1.15</div>
-            <div class="splash-loader"><div></div></div>
-        </div>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مساعد عقروب V1.15 - المحاكي الاستراتيجي</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        
+        /* الألوان الأساسية للمتغيرات */
+        :root {
+            --gold: #D4AF37; 
+            --gold-dark: #B8860B;
+            --red: #C41E3A; 
+            --red-dark: #8B0000;
+            --text: #F5F5DC; 
+            --muted: #8B7355; 
+            --bg: #0a0a0a;
+            --panel-bg: rgba(20, 20, 20, 0.95);
+        }
+        
+        /* ضبط الشاشة لمنع التمرير الخارجي */
+        html, body { 
+            height: 100%; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            overflow: hidden; 
+            position: fixed; 
+            width: 100%; 
+        }
+        
+        .app { 
+            max-width: 420px; 
+            margin: 0 auto; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            overflow: hidden; 
+            background: radial-gradient(circle at top, #1a1a1a, #000); 
+        }
+        
+        /* إدارة الشاشات (الصفحات) */
+        .screen { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 100; flex-direction: column; }
+        .screen.active { display: flex; }
+        
+        /* ================= شاشة الدخول (Splash) ================= */
+        #splash { background: radial-gradient(ellipse at center bottom, #2a0a00 0%, #000 70%, #000 100%); justify-content: center; align-items: center; z-index: 200; }
+        .cave { position: relative; width: 250px; height: 200px; display: flex; justify-content: center; align-items: flex-end; }
+        .cave-entrance { position: absolute; bottom: 0; width: 160px; height: 140px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(212, 175, 55, 0.2); }
+        .logo-img { position: relative; max-width: 100px; max-height: 100px; z-index: 10; animation: logo-reveal 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.8)); opacity: 0; transform: translateY(30px) scale(0.5); }
+        @keyframes logo-reveal { to { opacity: 1; transform: translateY(-10px) scale(1); } }
+        .splash-title { font-size: 26px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #FFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        
+        /* ================= العناصر العامة (الأزرار والمدخلات) ================= */
+        .btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; font-weight: 900; border: none; padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3); transition: transform 0.1s; }
+        .btn:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); box-shadow: none; }
+        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; box-shadow: 0 4px 10px rgba(196, 30, 58, 0.3); }
+        
+        .input { width: 100%; background: rgba(0,0,0,0.7); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 10px; color: white; text-align: center; font-size: 13px; margin-bottom: 8px; outline: none; transition: border-color 0.3s; }
+        .input:focus { border-color: #FFF; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
+        
+        /* ================= التخطيط الداخلي (Main Content) ================= */
+        .main-content { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; display: flex; flex-direction: column; gap: 8px; }
+        .main-content::-webkit-scrollbar { width: 4px; } 
+        .main-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 4px; }
+        
+        /* ================= شريط التنقل السفلي ================= */
+        .navbar { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: linear-gradient(180deg, rgba(10,10,10,0.95), #000); border-top: 1px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: space-around; align-items: center; z-index: 50; padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(10px); }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #666; cursor: pointer; border-radius: 8px; width: 60px; transition: color 0.3s; }
+        .nav-btn.active { color: var(--gold); transform: translateY(-3px); }
+        .nav-btn i { font-size: 20px; margin-bottom: 4px; }
+        .nav-btn span { font-size: 10px; font-weight: bold; }
+        
+        /* ================= التبويبات ================= */
+        .tab { display: none; flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; } 
+        .tab.active { display: flex; flex-direction: column; gap: 10px; }
+        
+        /* ================= الشريط العلوي والإحصائيات ================= */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.2); }
+        .timer-box { display: flex; align-items: center; gap: 4px; color: var(--gold); font-size: 11px; font-weight: bold; }
+        .timer-val { background: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 4px; min-width: 26px; text-align: center; font-variant-numeric: tabular-nums; }
+        .sync-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;}
+        .sync-btn:active { transform: scale(0.95); background: var(--gold); color: #000; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .stat-card { background: linear-gradient(145deg, #111, #080808); border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 8px; padding: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+        .stat-title { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
+        .stat-val { font-size: 15px; font-weight: 900; color: #FFF; }
+        
+        .energy-wrap { position: relative; padding-top: 4px; }
+        .energy-progress { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #222; border-radius: 3px; overflow: hidden; }
+        .energy-fill { height: 100%; background: var(--gold); width: 100%; transition: width 0.3s, background 0.3s; }
+        .energy-fill.low { background: var(--red); }
+        
+        /* ================= شريط الأدوات الذكي ================= */
+        .tools-rack { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; justify-content: space-between; }
+        .tools-rack::-webkit-scrollbar { display: none; }
+        .tool-item { flex: 1; min-width: 55px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 6px 2px; text-align: center; position: relative; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; }
+        .tool-item:active { transform: scale(0.95); }
+        .tool-item.active { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
+        .tool-item.empty { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
+        .tool-icon { width: 20px; height: 20px; object-fit: contain; display: block; margin-bottom: 2px; font-size: 16px; }
+        .tool-name { font-size: 8px; color: var(--gold); display: block; white-space: nowrap; }
+        .tool-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 6px; border: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 2; }
+        .tool-limit { font-size: 7px; color: #aaa; margin-top: 2px; }
 
-        <!-- شاشة تسجيل الدخول -->
-        <div id="loginScreen" class="screen">
-            <div class="popup-box" style="margin: auto;">
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div id="loginLogoDefault" style="font-size: 50px;">🦂</div>
-                    <div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="loginAppName">مساعد عقروب V1.15</div>
-                    <div style="font-size: 10px; color: var(--muted);">أدخل بياناتك للدخول</div>
-                </div>
-                <input type="text" id="loginUser" class="input" placeholder="اسم المستخدم">
-                <input type="password" id="loginPass" class="input" placeholder="كلمة المرور">
-                <button class="btn" id="loginBtn" style="width: 100%;">دخول 🚀</button>
-                <div id="loginErr" class="hidden" style="color: #ef4444; font-size: 10px; text-align: center; margin-top: 8px;"></div>
-            </div>
-        </div>
+        /* ================= الشبكة (اللوحة) والحيوانات ================= */
+        .board-container { aspect-ratio: 1; width: 100%; max-width: 350px; margin: 0 auto; background: #050505; padding: 6px; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.2); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .cell { background: #151515; border-radius: 8px; display: flex; justify-content: center; align-items: center; position: relative; font-size: 24px; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: transform 0.1s; }
+        .cell img { max-width: 75%; max-height: 75%; object-fit: contain; user-select: none; pointer-events: none; }
+        .cell:active { transform: scale(0.92); }
+        .cell .lvl-num { position: absolute; bottom: 2px; right: 4px; font-size: 10px; font-weight: 900; color: #FFF; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.4); padding: 0 4px; border-radius: 4px; }
+        
+        /* حركة نبض عند اختيار أداة (المخلب/العجلة/الترقية) */
+        .cell.target-tool { border: 2px dashed var(--gold); animation: pulse-border 1s infinite; z-index: 5; }
+        @keyframes pulse-border { 0%, 100% { border-color: var(--gold); box-shadow: inset 0 0 10px rgba(212,175,55,0.5); } 50% { border-color: transparent; box-shadow: none; } }
+        
+        /* تلوين المستويات بدقة */
+        .lvl-0 { background: #111; }
+        .lvl-1 { background: radial-gradient(circle, #2d3748, #1a202c); }
+        .lvl-2 { background: radial-gradient(circle, #2b6cb0, #1a365d); }
+        .lvl-3 { background: radial-gradient(circle, #2f855a, #1c4532); }
+        .lvl-4 { background: radial-gradient(circle, #b7791f, #744210); }
+        .lvl-5 { background: radial-gradient(circle, #c53030, #742a2a); }
+        .lvl-6 { background: radial-gradient(circle, #805ad5, #44337a); }
+        .lvl-7 { background: radial-gradient(circle, #d53f8c, #702459); }
+        .lvl-8 { background: radial-gradient(circle, #38b2ac, #234e52); }
+        .lvl-9 { background: radial-gradient(circle, #ed8936, #7b341e); }
+        .lvl-10 { background: radial-gradient(circle, #e53e3e, #822727); box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
+        
+        /* المستوى 11 - التاج */
+        .lvl-11 { background: radial-gradient(circle, var(--gold), #8B6508); border: 2px solid #FFF !important; box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); animation: glow-11 2s infinite; }
+        @keyframes glow-11 { 0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.5); transform: scale(1); } 50% { box-shadow: 0 0 25px rgba(212,175,55,1); transform: scale(1.02); } }
 
-        <!-- شاشة الشروط -->
-        <div id="termsScreen" class="screen">
-            <div class="popup-box">
-                <div style="font-size: 14px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 10px;" id="termsTitle">📜 ميثاق الشرف</div>
-                <div style="font-size: 10px; line-height: 1.8; max-height: 50vh; overflow-y: auto; margin-bottom: 10px; text-align: right;" id="termsText">
-                    <b>🦂 مرحباً بك!</b><br><br>
-                    <b>📌 البرنامج:</b> مساعد لعبة بهجة الحيوانات<br><br>
-                    <b>🎯 الهدف:</b> تحقيق 3 دمجات للمستوى 11 في جولة واحدة<br><br>
-                    <b>⚡ الطاقة:</b> 200 وحدة، تستهلك 1 لكل حركة<br><br>
-                    <b>🛠️ الأدوات:</b><br>
-                    🔄 تحديث مجاني - 💎 جوهر - ⬆️ ترقية - 🦅 مخلب - 🎡 عجلة<br><br>
-                    <b>🏆 عند دمج 11:</b> +2048 نقطة + يختفي الحيوان
-                </div>
-                <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 10px;">
-                    <input type="checkbox" id="agreeCheck">
-                    أوافق على الشروط
-                </label>
-                <button class="btn" id="acceptTerms" disabled style="width: 100%;">متابعة ←</button>
-            </div>
-        </div>
-
-        <!-- التطبيق الرئيسي -->
-        <div id="mainApp" class="screen">
-            <div class="header-title">
-                <h1 id="headerTitle">🦂 مساعد عقروب V1.15</h1>
-            </div>
-            <div class="main-content">
-                <div class="timer-box" id="timerBox">
-                    <span>⏰</span>
-                    <div><div class="timer-val" id="tDay">1</div><div class="timer-label">يوم</div></div>
-                    <div><div class="timer-val" id="tHour">21</div><div class="timer-label">ساعة</div></div>
-                    <div><div class="timer-val" id="tMin">28</div><div class="timer-label">دقيقة</div></div>
-                    <div><div class="timer-val" id="tSec">10</div><div class="timer-label">ثانية</div></div>
-                </div>
-                <div class="player-stats">
-                    <div class="stat-box clickable" onclick="showProfile()">
-                        <div class="stat-label">اللاعب</div>
-                        <div class="stat-value" id="playerName" style="font-size: 10px;">---</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">نقاط الجولة</div>
-                        <div class="stat-value" id="sessionScore">0</div>
-                    </div>
-                    <div class="stat-box energy-box">
-                        <div class="energy-bar" id="energyBar" style="width: 100%;"></div>
-                        <div class="stat-label">الطاقة ⚡</div>
-                        <div class="stat-value red">
-                            <input type="number" id="energy" value="200" max="200" min="0" class="energy-input">
-                        </div>
-                    </div>
-                </div>
-                <div class="quick-stats">
-                    <span>تحركات: <b id="mMoves" style="color: var(--gold);">0</b></span>
-                    <span>أعلى: <b id="mMax" style="color: var(--red);">0</b></span>
-                    <span>دمجات 11: <b id="mL11" style="color: var(--gold);">0</b>/3</span>
-                </div>
-                <div class="tools-bar" id="toolsBar">
-                    <div class="tool-btn" id="toolFree" onclick="useTool('free')">
-                        <span class="tool-icon">🔄</span>
-                        <span class="tool-name">تحديث</span>
-                        <span class="tool-count">∞</span>
-                    </div>
-                    <div class="tool-btn" id="toolGem" onclick="useTool('gem')">
-                        <span class="tool-icon">💎</span>
-                        <span class="tool-name">جوهر</span>
-                        <span class="tool-count" id="cntGem">0</span>
-                    </div>
-                    <div class="tool-btn" id="toolUpgrade" onclick="useTool('upgrade')">
-                        <span class="tool-icon">⬆️</span>
-                        <span class="tool-name">ترقية</span>
-                        <span class="tool-count" id="cntUpg">0</span>
-                    </div>
-                    <div class="tool-btn" id="toolClaw" onclick="useTool('claw')">
-                        <span class="tool-icon">🦅</span>
-                        <span class="tool-name">مخلب</span>
-                        <span class="tool-count" id="cntClaw">0</span>
-                    </div>
-                    <div class="tool-btn" id="toolWheel" onclick="useTool('wheel')">
-                        <span class="tool-icon">🎡</span>
-                        <span class="tool-name">عجلة</span>
-                        <span class="tool-count" id="cntWheel">0</span>
-                    </div>
-                </div>
-                <div class="section">
-                    <div class="section-title">🎨 اختر مستوى للإضافة</div>
-                    <div class="palette" id="palette"></div>
-                    <div style="display: flex; gap: 4px; margin-top: 6px;">
-                        <select id="aiDepth" style="flex: 1; background: #000; border: 1px solid rgba(212,175,55,0.3); border-radius: 6px; padding: 6px; color: var(--gold); font-size: 9px;">
-                            <option value="1">سريع</option>
-                            <option value="2">متوسط</option>
-                            <option value="3" selected>تكتيكي</option>
-                            <option value="4">عميق</option>
-                        </select>
-                        <button class="ctrl-btn ctrl-undo" onclick="undo()" style="flex: 1;">↩️ تراجع</button>
-                        <button class="ctrl-btn ctrl-reset" onclick="resetGrid()" style="flex: 1;">🗑️ تصفير</button>
-                    </div>
-                </div>
-                <div class="grid-4x4" id="gridBox"></div>
-                <div class="arrows">
-                    <button class="arrow-btn" onclick="manualMove('UP')">⬆️</button>
-                    <button class="arrow-btn" onclick="manualMove('DOWN')">⬇️</button>
-                    <button class="arrow-btn" onclick="manualMove('LEFT')">➡️</button>
-                    <button class="arrow-btn" onclick="manualMove('RIGHT')">⬅️</button>
-                </div>
-                <button class="smart-btn" id="smartBtn"><span>✨ دمج ذكي</span></button>
-                <div id="resultBox" class="result-box hidden">
-                    <div class="result-direction" id="resultDir"></div>
-                    <div class="result-reason" id="resultReason"></div>
-                </div>
-                <div id="aiBox" class="ai-analysis hidden">
-                    <div class="ai-header"><i class="fas fa-brain"></i><span>تحليل ذكي</span></div>
-                    <div id="aiText"></div>
-                </div>
-            </div>
-            <nav class="navbar">
-                <div class="nav-btn active" onclick="goTab('play')"><i class="fas fa-gamepad"></i><span>اللعب</span></div>
-                <div class="nav-btn" onclick="goTab('rank')"><i class="fas fa-trophy"></i><span>المتصدرين</span></div>
-                <div class="nav-btn" onclick="goTab('tools')"><i class="fas fa-toolbox"></i><span>الأدوات</span></div>
-                <div class="nav-btn" onclick="goTab('more')"><i class="fas fa-ellipsis-h"></i><span>المزيد</span></div>
-            </nav>
-            <button class="admin-fab" id="adminFab" onclick="showAdmin()">⚙️</button>
-        </div>
-
-        <!-- صفحة المتصدرين -->
-        <div id="tabRank" class="tab">
-            <div class="main-content">
-                <div class="header-title"><h1>🏆 المتصدرين</h1></div>
-                <div id="rankList"></div>
-            </div>
-        </div>
-
-        <!-- صفحة الأدوات -->
-        <div id="tabTools" class="tab">
-            <div class="main-content">
-                <div class="header-title"><h1>🛠️ الأدوات المساعدة</h1></div>
-                <div class="section">
-                    <div class="section-title">💎 الجوهر - زيادة الطاقة</div>
-                    <div style="font-size: 10px;">الامتلاك: <b id="tGemOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tGemLimit" style="color: var(--gold);">999/999</b></div>
-                    <button class="btn" onclick="useTool('gem')" style="margin-top: 6px; padding: 6px 12px;">استخدام +15⚡</button>
-                </div>
-                <div class="section">
-                    <div class="section-title">⬆️ الترقية - رفع مستوى حيوان</div>
-                    <div style="font-size: 10px;">الامتلاك: <b id="tUpgOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tUpgLimit" style="color: var(--gold);">20/20</b></div>
-                    <button class="btn" onclick="useTool('upgrade')" style="margin-top: 6px; padding: 6px 12px;">استخدام</button>
-                </div>
-                <div class="section">
-                    <div class="section-title">🦅 المخلب - حذف حيوان</div>
-                    <div style="font-size: 10px;">الامتلاك: <b id="tClawOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tClawLimit" style="color: var(--gold);">20/20</b></div>
-                    <button class="btn" onclick="useTool('claw')" style="margin-top: 6px; padding: 6px 12px;">استخدام</button>
-                </div>
-                <div class="section">
-                    <div class="section-title">🎡 العجلة - تبديل المواقع</div>
-                    <div style="font-size: 10px;">الامتلاك: <b id="tWheelOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tWheelLimit" style="color: var(--gold);">20/20</b></div>
-                    <button class="btn" onclick="useTool('wheel')" style="margin-top: 6px; padding: 6px 12px;">استخدام</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- صفحة المزيد -->
-        <div id="tabMore" class="tab">
-            <div class="main-content">
-                <div class="header-title"><h1>⚙️ المزيد</h1></div>
-                <div class="section">
-                    <div class="section-title">📊 إحصائياتي</div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
-                        <div><div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myScore">0</div><div style="font-size: 8px; color: var(--muted);">أعلى نقاط</div></div>
-                        <div><div style="font-size: 16px; font-weight: 900; color: var(--red);" id="myMax">0</div><div style="font-size: 8px; color: var(--muted);">أعلى مستوى</div></div>
-                        <div><div style="font-size: 16px; font-weight: 900; color: #60a5fa;" id="myMoves">0</div><div style="font-size: 8px; color: var(--muted);">التحركات</div></div>
-                        <div><div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myL11">0</div><div style="font-size: 8px; color: var(--muted);">دمجات 11</div></div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                    <div class="section" onclick="showProfile()" style="cursor: pointer; text-align: center;"><div style="font-size: 24px;">👤</div><div style="font-size: 10px; font-weight: bold;">بياناتي</div></div>
-                    <div class="section" onclick="showReview()" style="cursor: pointer; text-align: center;"><div style="font-size: 24px;">⭐</div><div style="font-size: 10px; font-weight: bold;">تقييم</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- النوافذ المنبثقة -->
-        <div class="celebration" id="celebration">
-            <div class="celeb-content">
-                <div class="celeb-icon">👑</div>
-                <div class="celeb-title">تهانينا! وصلت للمستوى 11!</div>
-                <div style="font-size: 12px; color: var(--muted); margin-bottom: 15px;">+2048 نقطة</div>
-                <button class="btn" onclick="closeCelebration()">متابعة</button>
-            </div>
-        </div>
-
-        <div class="popup" id="profilePopup">
-            <div class="popup-box">
-                <div style="font-size: 14px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 10px;">👤 الملف الشخصي</div>
-                <input type="text" id="profileDisplayName" class="input" placeholder="الاسم الظاهري">
-                <input type="text" id="profileKingdom" class="input" placeholder="المملكة">
-                <input type="text" id="profileAlliance" class="input" placeholder="التحالف">
-                <div style="display: flex; gap: 6px;">
-                    <button class="btn" onclick="saveProfile()" style="flex: 1;">حفظ</button>
-                    <button class="btn btn-red" onclick="closePopup('profilePopup')" style="flex: 1;">إلغاء</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="popup" id="adminPopup">
-            <div class="popup-box" style="max-width: 400px;">
-                <div style="font-size: 14px; font-weight: 900; color: var(--red); text-align: center; margin-bottom: 10px;">⚙️ لوحة الإدارة</div>
-                <div class="admin-tabs">
-                    <div class="admin-tab active" onclick="goAdminTab('users')">المستخدمين</div>
-                    <div class="admin-tab" onclick="goAdminTab('settings')">الإعدادات</div>
-                    <div class="admin-tab" onclick="goAdminTab('archive')">الأرشيف</div>
-                </div>
-                <div id="adminUsers" class="admin-section active"></div>
-                <div id="adminSettings" class="admin-section"></div>
-                <div id="adminArchive" class="admin-section"></div>
-                <button class="btn btn-red" onclick="closePopup('adminPopup')" style="width: 100%; margin-top: 10px;">إغلاق</button>
-            </div>
-        </div>
-    </div>
+        /* ================= أزرار التحكم والذكاء الاصطناعي ================= */
+        .controls-row { display: flex; gap: 8px; align-items: stretch; margin-top: auto; }
+        
+        /* أسهم التحريك (D-Pad) */
+        .dpad { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 30px); gap: 3px; justify-content: center; }
+        .dpad-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; transition: background 0.1s; }
+        .dpad-btn:active { background: var(--gold); color: #000; transform: scale(0.9); }
+        .dpad-up { grid-column: 2; grid-row: 1; } 
+        .dpad-down { grid-column: 2; grid-row: 3; }
+        .dpad-left { grid-column: 1; grid-row: 2; } 
+        .dpad-right { grid-column: 3; grid-row: 2; }
+        
+        /* أزرار التحليل */
+        .ai-actions { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .ai-btn { flex: 1; background: linear-gradient(135deg, #18181b, #09090b); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold); font-weight: 900; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.1s; }
+        .ai-btn:active { transform: scale(0.97); }
+        .ai-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
+        
+        /* صندوق رسائل الذكاء الاصطناعي */
+        .ai-response-box { background: rgba(212,175,55,0.1); border: 1px solid var(--gold); border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.6; position: relative; overflow: hidden; }
+        .ai-response-box::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--gold); }
+        .ai-option { background: rgba(0,0,0,0.5); padding: 6px; border-radius: 6px; margin-top: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* ================= النوافذ المنبثقة (Modals) ================= */
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(5px); }
+        .modal.show { display: flex; animation: fade-in 0.2s; }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-box { background: linear-gradient(145deg, #18181b, #09090b); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .modal-box::-webkit-scrollbar { width: 4px; } .modal-box::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
+        
+        .modal-title { font-size: 18px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 15px; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px; }
+        
+        /* شبكة المزامنة البصرية */
+        .sync-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; background: #000; padding: 6px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); }
+        .sync-cell { aspect-ratio: 1; background: #1a1a1a; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: 1px solid #333; position: relative; }
+        .sync-cell img { max-width: 70%; max-height: 70%; }
+        .sync-cell:hover { border-color: var(--gold); }
+        .sync-cell .lvl-num { position: absolute; bottom: 2px; right: 2px; font-size: 8px; font-weight: bold; color: var(--gold); }
+        
+        /* قائمة اختيار الحيوان أثناء المزامنة */
+        .animal-picker { display: none; grid-template-columns: repeat(4, 1fr); gap: 4px; position: absolute; background: #111; border: 2px solid var(--gold); border-radius: 8px; padding: 6px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
+        .animal-picker.show { display: grid; }
+        .picker-item { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #222; border-radius: 4px; cursor: pointer; border: 1px solid transparent; }
+        .picker-item:hover { border-color: var(--gold); background: #333; }
+        .picker-item img { max-width: 20px; max-height: 20px; }
+        .picker-item span { font-size: 8px; color: var(--gold); margin-top: 2px; }
+        
+        /* شبكة إدخال الأدوات في المزامنة */
+        .tools-sync-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .tool-sync-row { display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
+        .tool-sync-icon { width: 25px; text-align: center; font-size: 16px; margin-left: 5px; }
+        .tool-sync-inputs { display: flex; flex: 1; gap: 4px; }
+        .tool-sync-inputs input { width: 100%; padding: 4px; text-align: center; background: #000; color: #FFF; border: 1px solid #444; border-radius: 4px; font-size: 11px; }
+        
+        /* ================= الاحتفال ================= */
+        .celebration-content { text-align: center; }
+        .celeb-img-container { font-size: 80px; margin-bottom: 15px; animation: bounce-celeb 1s infinite alternate; filter: drop-shadow(0 0 20px var(--gold)); display: flex; justify-content: center; }
+        .celeb-img-container img { max-width: 100px; max-height: 100px; }
+        @keyframes bounce-celeb { from { transform: translateY(0) scale(1); } to { transform: translateY(-15px) scale(1.1); } }
+        
+        /* ================= شاشات الإدارة ================= */
+        .admin-tabs { display: flex; gap: 4px; margin-bottom: 15px; }
+        .admin-tab-btn { flex: 1; padding: 8px 4px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .admin-tab-btn.active { background: var(--red); color: white; border-color: var(--red-dark); }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; animation: fade-in 0.3s; }
+        
+        .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .admin-animal-edit { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2); }
+        .admin-animal-edit img { width: 24px; height: 24px; object-fit: contain; }
+        .admin-animal-edit input { flex: 1; background: #000; border: 1px solid #333; color: #FFF; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+        
+        /* كلاسات مخفية */
+        .hidden { display: none !important; }
+    </style>
+</head>
 <script>
 // ============================================
-// المتغيرات العامة
+// المتغيرات وحالة اللعبة الأساسية
 // ============================================
 let user = null;
-let grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-let selectedLevel = 0;
-let activeTool = null;
-let wheelFirst = null;
-let history = [];
+let grid = Array(4).fill().map(() => Array(4).fill(0));
+let tempSyncGrid = Array(4).fill().map(() => Array(4).fill(0));
+let syncTargetCell = null;
 let animals = {};
 let settings = {};
+let activeTool = null;
+let wheelFirstCell = null;
+let currentStars = 5;
 
 // ============================================
-// التهيئة
+// التهيئة والدخول
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     await loadSettings();
-    initGrid();
-    initPalette();
-    initEvents();
-    
+    initGridUI();
+    initVisualSyncGrid();
+    initAnimalPicker();
+
     setTimeout(() => {
         document.getElementById('splash').classList.remove('active');
         document.getElementById('loginScreen').classList.add('active');
-    }, 2500);
+    }, 2000);
 });
 
 async function loadSettings() {
@@ -411,9 +470,10 @@ async function loadSettings() {
         const res = await fetch('/api/settings');
         settings = await res.json();
         animals = settings.animals || getDefaultAnimals();
-        if (settings.appName) {
-            document.getElementById('loginAppName').textContent = settings.appName;
-            document.getElementById('headerTitle').textContent = '🦂 ' + settings.appName;
+        if(settings.logoUrl) document.getElementById('splashLogo').src = settings.logoUrl;
+        if(settings.appName) {
+            document.getElementById('uiTitleSplash').textContent = settings.appName;
+            document.getElementById('uiTitleLogin').textContent = settings.appName;
         }
     } catch (e) {
         animals = getDefaultAnimals();
@@ -422,832 +482,708 @@ async function loadSettings() {
 
 function getDefaultAnimals() {
     return {
-        '0': { icon: '', name: 'فارغ' },
-        '1': { icon: '🐭', name: 'فأر' },
-        '2': { icon: '🐰', name: 'أرنب' },
-        '3': { icon: '🦊', name: 'ثعلب' },
-        '4': { icon: '🐺', name: 'ذئب' },
-        '5': { icon: '🦁', name: 'أسد' },
-        '6': { icon: '🐯', name: 'نمر' },
-        '7': { icon: '🦅', name: 'نسر' },
-        '8': { icon: '🐉', name: 'تنين' },
-        '9': { icon: '🔥', name: 'عنقاء' },
-        '10': { icon: '⚡', name: 'برق' },
-        '11': { icon: '👑', name: 'ملك' }
+        '0': { icon: '' }, '1': { icon: '🐭' }, '2': { icon: '🐰' }, '3': { icon: '🦊' },
+        '4': { icon: '🐺' }, '5': { icon: '🦁' }, '6': { icon: '🐯' }, '7': { icon: '🦅' },
+        '8': { icon: '🐉' }, '9': { icon: '🔥' }, '10': { icon: '⚡' }, '11': { icon: '👑' }
     };
 }
 
-// دالة لمعالجة روابط الصور والإيموجي
-function renderIcon(iconStr, size = '100%') {
+function renderIcon(iconStr) {
     if (!iconStr) return '';
     if (iconStr.startsWith('/') || iconStr.startsWith('http') || iconStr.startsWith('data:')) {
-        return `<img src="${iconStr}" style="width: ${size}; height: ${size}; object-fit: contain;">`;
+        return `<img src="${iconStr}">`;
     }
     return iconStr;
 }
 
-function initGrid() {
-    const gridBox = document.getElementById('gridBox');
-    gridBox.innerHTML = '';
-    for (let i = 0; i < 16; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell lvl-0';
-        cell.dataset.row = Math.floor(i / 4);
-        cell.dataset.col = i % 4;
-        cell.onclick = () => onCellClick(cell);
-        gridBox.appendChild(cell);
-    }
-    renderGrid();
-}
-
-function initPalette() {
-    const palette = document.getElementById('palette');
-    palette.innerHTML = '';
-    for (let i = 1; i <= 11; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell lvl-' + i;
-        cell.innerHTML = `<span>${renderIcon(animals[i]?.icon, '20px')}</span><span class="lvl-num">${i}</span>`;
-        cell.dataset.level = i;
-        cell.onclick = () => selectLevel(i);
-        palette.appendChild(cell);
-    }
-}
-
-function initEvents() {
-    document.getElementById('loginBtn').onclick = login;
-    document.getElementById('agreeCheck').onchange = (e) => {
-        document.getElementById('acceptTerms').disabled = !e.target.checked;
-    };
-    document.getElementById('acceptTerms').onclick = acceptTerms;
-    document.getElementById('smartBtn').onclick = smartMerge;
-    document.getElementById('energy').oninput = updateEnergyBar;
-    
-    document.getElementById('loginPass').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') login();
-    });
-}
-
-// ============================================
-// تسجيل الدخول
-// ============================================
 async function login() {
     const username = document.getElementById('loginUser').value.trim();
     const password = document.getElementById('loginPass').value;
+    const errBox = document.getElementById('loginErr');
     
     if (!username || !password) {
-        showError('أدخل البيانات كاملة');
+        errBox.textContent = 'أدخل البيانات كاملة';
+        errBox.classList.remove('hidden');
         return;
     }
     
     try {
         const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
         const data = await res.json();
         
         if (data.success) {
-            user = { username, password, ...data.userData };
+            user = { username, password, isAdmin: data.isAdmin, ...data.userData };
+            if(user.grid && user.grid.length === 4) grid = user.grid;
+            
+            // التأكد من وجود الأدوات والحدود الافتراضية
+            if(!user.tools) user.tools = {};
+            ['gem', 'upgrade', 'claw', 'wheel'].forEach(t => {
+                if(!user.tools[t]) user.tools[t] = { owned: 0, dailyLimit: (t==='gem'?999:20), used: 0 };
+            });
+
             document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('mainApp').classList.add('active');
             
-            // لو أول مرة، إظهار ميثاق الشرف
-            if(!user.displayName) {
-                document.getElementById('termsScreen').classList.add('active');
-            } else {
-                document.getElementById('mainApp').classList.add('active');
-            }
+            if(user.isAdmin) document.getElementById('adminNavBtn').style.display = 'flex';
             
-            if (user.grid && user.grid.length) grid = user.grid;
-            renderGrid();
             updateUI();
-            
-            if (data.isAdmin) {
-                document.getElementById('adminFab').style.display = 'block';
-            }
+            startRegenTimer();
+            startCountdownTimer();
         } else {
-            showError(data.message || 'خطأ في الدخول');
+            errBox.textContent = data.message || 'خطأ في بيانات الدخول';
+            errBox.classList.remove('hidden');
         }
     } catch (e) {
-        showError('خطأ في الاتصال، ربما قاعدة البيانات غير متصلة');
+        errBox.textContent = 'خطأ في الاتصال بالخادم!';
+        errBox.classList.remove('hidden');
     }
 }
 
-function showError(msg) {
-    const err = document.getElementById('loginErr');
-    err.textContent = msg;
-    err.classList.remove('hidden');
-    setTimeout(() => err.classList.add('hidden'), 3000);
-}
-
-function acceptTerms() {
-    document.getElementById('termsScreen').classList.remove('active');
-    document.getElementById('mainApp').classList.add('active');
-}
-
 // ============================================
-// الشبكة
+// اللوحة وتحديث الواجهة
 // ============================================
-function renderGrid() {
-    const cells = document.querySelectorAll('#gridBox .cell');
-    cells.forEach((cell, i) => {
-        const row = Math.floor(i / 4);
-        const col = i % 4;
-        const val = grid[row][col];
-        cell.className = 'cell lvl-' + val;
-        cell.innerHTML = '';
-        
-        if (val > 0 && animals[val]) {
-            cell.innerHTML = `<span>${renderIcon(animals[val].icon, '80%')}</span>`;
+function initGridUI() {
+    const box = document.getElementById('gridBox');
+    box.innerHTML = '';
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell lvl-0';
+            cell.id = `cell_${r}_${c}`;
+            cell.onclick = () => handleCellClick(r, c);
+            box.appendChild(cell);
         }
-        if (val > 0) {
-            cell.innerHTML += `<span class="lvl-num">${val}</span>`;
-        }
-    });
+    }
 }
 
-function selectLevel(level) {
-    selectedLevel = level;
-    document.querySelectorAll('#palette .cell').forEach(c => c.classList.remove('selected'));
-    document.querySelector(`#palette .cell[data-level="${level}"]`).classList.add('selected');
-    activeTool = null;
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-}
-
-function onCellClick(cell) {
-    const row = parseInt(cell.dataset.row);
-    const col = parseInt(cell.dataset.col);
+function updateUI() {
+    if(!user) return;
     
-    if (activeTool === 'upgrade') {
-        if (grid[row][col] > 0 && grid[row][col] < 11) {
-            saveHistory();
-            grid[row][col]++;
-            renderGrid();
-            checkLevel11(row, col);
-            saveGame();
-            deactivateTool();
+    // تحديث المربعات
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const val = grid[r][c];
+            const cell = document.getElementById(`cell_${r}_${c}`);
+            cell.className = `cell lvl-${val}`;
+            cell.innerHTML = val > 0 ? `${renderIcon(animals[val]?.icon)}<span class="lvl-num">${val}</span>` : '';
         }
-    } else if (activeTool === 'claw') {
-        if (grid[row][col] > 0) {
-            saveHistory();
-            grid[row][col] = 0;
-            renderGrid();
-            saveGame();
-            deactivateTool();
-        }
-    } else if (activeTool === 'wheel') {
-        if (grid[row][col] > 0) {
-            if (wheelFirst === null) {
-                wheelFirst = { row, col };
-                cell.classList.add('selected-tool');
-            } else {
-                saveHistory();
-                const temp = grid[row][col];
-                grid[row][col] = grid[wheelFirst.row][wheelFirst.col];
-                grid[wheelFirst.row][wheelFirst.col] = temp;
-                renderGrid();
-                saveGame();
-                wheelFirst = null;
-                deactivateTool();
-            }
-        }
-    } else if (selectedLevel > 0) {
-        saveHistory();
-        grid[row][col] = selectedLevel;
-        renderGrid();
-        checkLevel11(row, col);
-        saveGame();
     }
+
+    // تحديث النقاط والطاقة
+    document.getElementById('uiScore').textContent = user.sessionScore || 0;
+    const nrg = user.energy || 0;
+    document.getElementById('uiEnergy').textContent = nrg;
+    const nrgBar = document.getElementById('uiEnergyBar');
+    nrgBar.style.width = `${Math.min(100, (nrg/200)*100)}%`;
+    nrgBar.className = nrg < 50 ? 'energy-fill low' : 'energy-fill';
+
+    // تحديث شريط الأدوات
+    updateToolUI('Gem', user.tools.gem);
+    updateToolUI('Upg', user.tools.upgrade);
+    updateToolUI('Claw', user.tools.claw);
+    updateToolUI('Wheel', user.tools.wheel);
 }
 
-function checkLevel11(row, col) {
-    if (grid[row][col] === 11) {
-        showCelebration();
+function updateToolUI(idSuffix, toolObj) {
+    const owned = toolObj?.owned || 0;
+    const limit = toolObj?.dailyLimit || 0;
+    const used = toolObj?.used || 0;
+    const remain = Math.max(0, limit - used);
+    
+    document.getElementById(`bdg${idSuffix}`).textContent = owned;
+    document.getElementById(`lim${idSuffix}`).textContent = `${used}/${limit}`;
+    
+    const btn = document.getElementById(`btn${idSuffix}`);
+    if (owned <= 0 || remain <= 0) {
+        btn.classList.add('empty');
+    } else {
+        btn.classList.remove('empty');
     }
-}
-
-function showCelebration() {
-    document.getElementById('celebration').classList.add('show');
-}
-
-function closeCelebration() {
-    document.getElementById('celebration').classList.remove('show');
 }
 
 // ============================================
-// الأدوات
+// منطق اللعبة والدمج
 // ============================================
-function useTool(tool) {
-    if (activeTool === tool) {
-        deactivateTool();
-        return;
+function spawnRandom() {
+    let empty = [];
+    for(let r=0; r<4; r++) for(let c=0; c<4; c++) if(grid[r][c] === 0) empty.push({r,c});
+    if(empty.length > 0) {
+        let spot = empty[Math.floor(Math.random() * empty.length)];
+        // الحيوان العشوائي من 1 إلى 7
+        grid[spot.r][spot.c] = Math.floor(Math.random() * 7) + 1; 
     }
-    
-    deactivateTool();
-    
-    if (tool === 'free') {
-        if (confirm('هل تريد إنهاء الجولة وبدء واحدة جديدة؟')) {
-            resetSession();
-        }
-        return;
-    }
-    
-    if (tool === 'gem') {
-        addEnergy(15);
-        updateUI();
-        return;
-    }
-    
-    activeTool = tool;
-    document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1)).classList.add('active');
 }
 
-function deactivateTool() {
-    activeTool = null;
-    wheelFirst = null;
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected-tool'));
+function calcScore(level) {
+    return Math.pow(2, level + 1); // 1+1=2(4 نقطة)، 10+10=11(2048 نقطة)
 }
 
-// ============================================
-// الحركة والدمج الكامل
-// ============================================
 function manualMove(direction) {
-    saveHistory();
+    if(user.energy <= 0) { alert("الطاقة غير كافية! يرجى الانتظار أو استخدام جوهر."); return; }
     
     let moved = false;
+    let gainedScore = 0;
     const newGrid = JSON.parse(JSON.stringify(grid));
     
-    if (direction === 'UP') {
-        for (let col = 0; col < 4; col++) {
-            let merged = [false, false, false, false];
-            for (let row = 1; row < 4; row++) {
-                if (newGrid[row][col] === 0) continue;
-                let targetRow = row;
-                while (targetRow > 0 && newGrid[targetRow - 1][col] === 0) targetRow--;
-                if (targetRow > 0 && newGrid[targetRow - 1][col] === newGrid[row][col] && !merged[targetRow - 1]) {
-                    newGrid[targetRow - 1][col]++;
-                    newGrid[row][col] = 0;
-                    merged[targetRow - 1] = true;
-                    moved = true;
-                } else if (targetRow !== row) {
-                    newGrid[targetRow][col] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                    moved = true;
-                }
+    const slide = (row) => {
+        let arr = row.filter(val => val);
+        let missing = 4 - arr.length;
+        let zeros = Array(missing).fill(0);
+        return arr.concat(zeros);
+    }
+    const combine = (row) => {
+        for (let i = 0; i < 3; i++) {
+            if (row[i] !== 0 && row[i] === row[i + 1] && row[i] < 11) {
+                row[i]++;
+                gainedScore += calcScore(row[i]);
+                row[i + 1] = 0;
+                moved = true;
             }
         }
-    } else if (direction === 'DOWN') {
-        for (let col = 0; col < 4; col++) {
-            let merged = [false, false, false, false];
-            for (let row = 2; row >= 0; row--) {
-                if (newGrid[row][col] === 0) continue;
-                let targetRow = row;
-                while (targetRow < 3 && newGrid[targetRow + 1][col] === 0) targetRow++;
-                if (targetRow < 3 && newGrid[targetRow + 1][col] === newGrid[row][col] && !merged[targetRow + 1]) {
-                    newGrid[targetRow + 1][col]++;
-                    newGrid[row][col] = 0;
-                    merged[targetRow + 1] = true;
-                    moved = true;
-                } else if (targetRow !== row) {
-                    newGrid[targetRow][col] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                    moved = true;
-                }
-            }
+        return row;
+    }
+
+    if (direction === 'LEFT' || direction === 'RIGHT') {
+        for (let r = 0; r < 4; r++) {
+            let row = newGrid[r];
+            if(direction === 'RIGHT') row.reverse();
+            let slid = slide(row);
+            let combined = slide(combine(slid));
+            if(direction === 'RIGHT') combined.reverse();
+            newGrid[r] = combined;
         }
-    } else if (direction === 'LEFT') {
-        for (let row = 0; row < 4; row++) {
-            let merged = [false, false, false, false];
-            for (let col = 1; col < 4; col++) {
-                if (newGrid[row][col] === 0) continue;
-                let targetCol = col;
-                while (targetCol > 0 && newGrid[row][targetCol - 1] === 0) targetCol--;
-                if (targetCol > 0 && newGrid[row][targetCol - 1] === newGrid[row][col] && !merged[targetCol - 1]) {
-                    newGrid[row][targetCol - 1]++;
-                    newGrid[row][col] = 0;
-                    merged[targetCol - 1] = true;
-                    moved = true;
-                } else if (targetCol !== col) {
-                    newGrid[row][targetCol] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                    moved = true;
-                }
-            }
-        }
-    } else if (direction === 'RIGHT') {
-        for (let row = 0; row < 4; row++) {
-            let merged = [false, false, false, false];
-            for (let col = 2; col >= 0; col--) {
-                if (newGrid[row][col] === 0) continue;
-                let targetCol = col;
-                while (targetCol < 3 && newGrid[row][targetCol + 1] === 0) targetCol++;
-                if (targetCol < 3 && newGrid[row][targetCol + 1] === newGrid[row][col] && !merged[targetCol + 1]) {
-                    newGrid[row][targetCol + 1]++;
-                    newGrid[row][col] = 0;
-                    merged[targetCol + 1] = true;
-                    moved = true;
-                } else if (targetCol !== col) {
-                    newGrid[row][targetCol] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                    moved = true;
-                }
-            }
+    } else if (direction === 'UP' || direction === 'DOWN') {
+        for (let c = 0; c < 4; c++) {
+            let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]];
+            if(direction === 'DOWN') col.reverse();
+            let slid = slide(col);
+            let combined = slide(combine(slid));
+            if(direction === 'DOWN') combined.reverse();
+            for(let r=0; r<4; r++) newGrid[r][c] = combined[r];
         }
     }
-    
+
+    if (JSON.stringify(grid) !== JSON.stringify(newGrid)) moved = true;
+
     if (moved) {
         grid = newGrid;
-        
-        // فحص المستوى 11 وإزالته
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                if (grid[r][c] === 11) {
-                    showCelebration();
-                    grid[r][c] = 0;
-                }
+        user.sessionScore += gainedScore;
+        user.energy--;
+        spawnRandom();
+        checkForLevel11();
+        updateUI();
+        saveState();
+    }
+}
+
+function checkForLevel11() {
+    let found = false;
+    let iconHTML = '';
+    for(let r=0; r<4; r++){
+        for(let c=0; c<4; c++){
+            if(grid[r][c] === 11) {
+                found = true;
+                iconHTML = renderIcon(animals[11]?.icon) || '👑';
+                grid[r][c] = 0; // يختفي بعد الدمج كما طلبت
+                user.sessionScore += 2048;
+                
+                // المكافأة: زيادة الحد اليومي لاستخدام الأدوات
+                user.tools.claw.dailyLimit += 20;
+                user.tools.wheel.dailyLimit += 20;
+                user.tools.upgrade.dailyLimit += 20;
             }
         }
-        
-        renderGrid();
-        consumeEnergy();
-        saveGame();
+    }
+    if(found) {
+        document.getElementById('celebIconContainer').innerHTML = iconHTML;
+        document.getElementById('celebModal').classList.add('show');
     }
 }
 
 // ============================================
-// الدمج الذكي (Expectimax) الكامل
+// نظام الأدوات
+// ============================================
+function useTool(tool) {
+    if (tool === 'free') {
+        if(confirm("تحذير: هذا الخيار سيصفر اللوحة والنقاط وتبدأ من جديد. هل أنت متأكد؟")) {
+            grid = Array(4).fill().map(() => Array(4).fill(0));
+            user.sessionScore = 0;
+            updateUI();
+            saveState();
+        }
+        return;
+    }
+
+    let tData = user.tools[tool];
+    if(tData.owned <= 0) { alert("لا تملك هذا العنصر في رصيدك!"); return; }
+    if(tData.used >= tData.dailyLimit) { alert("لقد استنفذت الحد اليومي لاستخدام هذا العنصر."); return; }
+
+    if (tool === 'gem') {
+        tData.owned--;
+        tData.used++;
+        user.energy = Math.min(200, user.energy + 15);
+        updateUI();
+        saveState();
+        return;
+    }
+
+    // لأدوات اللوحة
+    if(activeTool === tool) {
+        deactivateTools();
+    } else {
+        deactivateTools();
+        activeTool = tool;
+        document.getElementById(`btn${tool.charAt(0).toUpperCase() + tool.slice(1)}`).classList.add('active');
+    }
+}
+
+function deactivateTools() {
+    activeTool = null;
+    wheelFirstCell = null;
+    document.querySelectorAll('.tool-item').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.cell').forEach(e => e.classList.remove('target-tool'));
+}
+
+function handleCellClick(r, c) {
+    if(!activeTool) return;
+    const cellVal = grid[r][c];
+    let tData = user.tools[activeTool];
+
+    if (activeTool === 'upgrade') {
+        if (cellVal > 0 && cellVal < 7) {
+            grid[r][c]++;
+            tData.owned--; tData.used++;
+            deactivateTools();
+            updateUI(); saveState();
+        } else {
+            alert("لا يمكن ترقية هذا العنصر. الترقية للحيوانات الأقل من 7 فقط.");
+        }
+    } 
+    else if (activeTool === 'claw') {
+        if (cellVal > 0) {
+            grid[r][c] = 0;
+            tData.owned--; tData.used++;
+            deactivateTools();
+            updateUI(); saveState();
+        }
+    }
+    else if (activeTool === 'wheel') {
+        if (cellVal > 0) {
+            if (!wheelFirstCell) {
+                wheelFirstCell = {r, c};
+                document.getElementById(`cell_${r}_${c}`).classList.add('target-tool');
+            } else {
+                let temp = grid[r][c];
+                grid[r][c] = grid[wheelFirstCell.r][wheelFirstCell.c];
+                grid[wheelFirstCell.r][wheelFirstCell.c] = temp;
+                tData.owned--; tData.used++;
+                deactivateTools();
+                updateUI(); saveState();
+            }
+        }
+    }
+}
+
+// ============================================
+// المزامنة البصرية 🔄
+// ============================================
+function initVisualSyncGrid() {
+    const cont = document.getElementById('syncVisualGrid');
+    cont.innerHTML = '';
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'sync-cell';
+            cell.id = `syncCell_${r}_${c}`;
+            cell.onclick = (e) => openAnimalPicker(r, c, e);
+            cont.appendChild(cell);
+        }
+    }
+}
+
+function initAnimalPicker() {
+    const picker = document.getElementById('animalPicker');
+    picker.innerHTML = '';
+    for (let i = 0; i <= 11; i++) {
+        const item = document.createElement('div');
+        item.className = 'picker-item';
+        item.innerHTML = i === 0 ? `<span style="font-size:14px; margin:0;">❌</span>` : renderIcon(animals[i]?.icon);
+        item.innerHTML += `<span>${i===0 ? 'فارغ' : i}</span>`;
+        item.onclick = () => selectSyncAnimal(i);
+        picker.appendChild(item);
+    }
+}
+
+function openSyncModal() {
+    // نسخ اللوحة الحالية
+    tempSyncGrid = JSON.parse(JSON.stringify(grid));
+    renderVisualSyncGrid();
+
+    // جلب باقي البيانات
+    document.getElementById('syncScore').value = user.sessionScore;
+    document.getElementById('syncEnergy').value = user.energy;
+    
+    document.getElementById('syncGemO').value = user.tools.gem.owned; document.getElementById('syncGemU').value = user.tools.gem.used;
+    document.getElementById('syncUpgO').value = user.tools.upgrade.owned; document.getElementById('syncUpgU').value = user.tools.upgrade.used;
+    document.getElementById('syncClawO').value = user.tools.claw.owned; document.getElementById('syncClawU').value = user.tools.claw.used;
+    document.getElementById('syncWheelO').value = user.tools.wheel.owned; document.getElementById('syncWheelU').value = user.tools.wheel.used;
+    
+    document.getElementById('syncModal').classList.add('show');
+}
+
+function renderVisualSyncGrid() {
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const val = tempSyncGrid[r][c];
+            const cell = document.getElementById(`syncCell_${r}_${c}`);
+            cell.innerHTML = val > 0 ? `${renderIcon(animals[val]?.icon)}<span class="lvl-num">${val}</span>` : '';
+        }
+    }
+}
+
+function openAnimalPicker(r, c, event) {
+    syncTargetCell = {r, c};
+    const picker = document.getElementById('animalPicker');
+    picker.style.top = (event.clientY - 100) + 'px';
+    picker.style.left = (event.clientX - 100) + 'px';
+    picker.classList.add('show');
+}
+
+function selectSyncAnimal(level) {
+    if(syncTargetCell) {
+        tempSyncGrid[syncTargetCell.r][syncTargetCell.c] = level;
+        renderVisualSyncGrid();
+    }
+    document.getElementById('animalPicker').classList.remove('show');
+    syncTargetCell = null;
+}
+
+// إغلاق قائمة الحيوانات إذا تم النقر خارجها
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.sync-cell') && !e.target.closest('.animal-picker')) {
+        document.getElementById('animalPicker').classList.remove('show');
+    }
+});
+
+function applySync() {
+    grid = JSON.parse(JSON.stringify(tempSyncGrid));
+    user.sessionScore = parseInt(document.getElementById('syncScore').value) || 0;
+    user.energy = Math.min(200, parseInt(document.getElementById('syncEnergy').value) || 0);
+    
+    user.tools.gem.owned = parseInt(document.getElementById('syncGemO').value)||0; user.tools.gem.used = parseInt(document.getElementById('syncGemU').value)||0;
+    user.tools.upgrade.owned = parseInt(document.getElementById('syncUpgO').value)||0; user.tools.upgrade.used = parseInt(document.getElementById('syncUpgU').value)||0;
+    user.tools.claw.owned = parseInt(document.getElementById('syncClawO').value)||0; user.tools.claw.used = parseInt(document.getElementById('syncClawU').value)||0;
+    user.tools.wheel.owned = parseInt(document.getElementById('syncWheelO').value)||0; user.tools.wheel.used = parseInt(document.getElementById('syncWheelU').value)||0;
+    
+    updateUI();
+    saveState();
+    closeModal('syncModal');
+}
+
+// ============================================
+// الذكاء الاصطناعي والخوارزميات (Expectimax)
 // ============================================
 function smartMerge() {
-    const depth = parseInt(document.getElementById('aiDepth').value);
-    const result = expectimax(grid, depth, true);
+    const box = document.getElementById('aiResponseBox');
+    const text = document.getElementById('aiResponseText');
+    box.classList.remove('hidden');
+    text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحساب الرياضي...';
     
-    if (result.move) {
-        document.getElementById('resultBox').classList.remove('hidden');
-        document.getElementById('resultDir').textContent = getArrowDirection(result.move);
-        document.getElementById('resultReason').textContent = result.reason || 'بناءً على حسابات الذكاء الاصطناعي';
-        
-        setTimeout(() => {
-            manualMove(result.move);
-        }, 500);
-    }
-}
-
-function expectimax(g, depth, isMax) {
-    if (depth === 0) return { score: evaluateGrid(g) };
-    
-    if (isMax) {
-        let best = { score: -Infinity, move: null };
+    setTimeout(() => {
+        // حساب الحركة الآمنة رياضياً
+        const depth = 4; // عمق البحث
+        let bestScore = -Infinity;
+        let bestMove = null;
         const moves = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
         
-        for (const move of moves) {
-            const newGrid = simulateMove(g, move);
-            if (JSON.stringify(newGrid) !== JSON.stringify(g)) {
-                const result = expectimax(newGrid, depth - 1, false);
-                if (result.score > best.score) {
-                    best = { score: result.score, move, reason: result.reason };
+        for (let m of moves) {
+            const simulated = simulateMove(grid, m);
+            if (JSON.stringify(simulated) !== JSON.stringify(grid)) {
+                // تقييم النتيجة
+                let score = evaluateGrid(simulated);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = m;
                 }
             }
         }
-        return best;
-    } else {
-        let totalScore = 0;
-        let emptyCells = [];
         
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                if (g[r][c] === 0) emptyCells.push({ r, c });
-            }
+        if (bestMove) {
+            const dirHtml = { UP: '⬆️ أعلى', DOWN: '⬇️ أسفل', LEFT: '➡️ يمين', RIGHT: '⬅️ يسار' };
+            text.innerHTML = `✅ الخوارزمية تنصح بالحركة: <strong style="color:var(--gold); font-size:14px;">${dirHtml[bestMove]}</strong> <br><span style="color:#aaa; font-size:9px;">هذه الحركة توفر أعلى نسبة أمان لتجنب قفل اللوحة.</span>`;
+        } else {
+            text.innerHTML = `⚠️ تحذير: لا توجد حركات متاحة للدمج! استخدم (المخلب) فوراً لإنقاذ اللوحة.`;
         }
-        
-        if (emptyCells.length === 0) return { score: evaluateGrid(g) };
-        
-        for (const cell of emptyCells.slice(0, 6)) {
-            const newGrid = JSON.parse(JSON.stringify(g));
-            newGrid[cell.r][cell.c] = 1;
-            totalScore += expectimax(newGrid, depth - 1, true).score;
-        }
-        
-        return { score: totalScore / Math.min(6, emptyCells.length) };
-    }
+    }, 100);
 }
 
 function simulateMove(g, direction) {
     const newGrid = JSON.parse(JSON.stringify(g));
-    
-    if (direction === 'UP') {
-        for (let col = 0; col < 4; col++) {
-            let merged = [false, false, false, false];
-            for (let row = 1; row < 4; row++) {
-                if (newGrid[row][col] === 0) continue;
-                let targetRow = row;
-                while (targetRow > 0 && newGrid[targetRow - 1][col] === 0) targetRow--;
-                if (targetRow > 0 && newGrid[targetRow - 1][col] === newGrid[row][col] && !merged[targetRow - 1]) {
-                    newGrid[targetRow - 1][col]++;
-                    newGrid[row][col] = 0;
-                    merged[targetRow - 1] = true;
-                } else if (targetRow !== row) {
-                    newGrid[targetRow][col] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                }
-            }
+    const slide = (row) => { let arr = row.filter(v=>v); return arr.concat(Array(4 - arr.length).fill(0)); }
+    const combine = (row) => { for (let i=0; i<3; i++) { if (row[i] && row[i] === row[i + 1] && row[i]<11) { row[i]++; row[i+1] = 0; } } return row; }
+
+    if (direction === 'LEFT' || direction === 'RIGHT') {
+        for (let r = 0; r < 4; r++) {
+            let row = newGrid[r];
+            if(direction === 'RIGHT') row.reverse();
+            let combined = slide(combine(slide(row)));
+            if(direction === 'RIGHT') combined.reverse();
+            newGrid[r] = combined;
         }
-    } else if (direction === 'DOWN') {
-        for (let col = 0; col < 4; col++) {
-            let merged = [false, false, false, false];
-            for (let row = 2; row >= 0; row--) {
-                if (newGrid[row][col] === 0) continue;
-                let targetRow = row;
-                while (targetRow < 3 && newGrid[targetRow + 1][col] === 0) targetRow++;
-                if (targetRow < 3 && newGrid[targetRow + 1][col] === newGrid[row][col] && !merged[targetRow + 1]) {
-                    newGrid[targetRow + 1][col]++;
-                    newGrid[row][col] = 0;
-                    merged[targetRow + 1] = true;
-                } else if (targetRow !== row) {
-                    newGrid[targetRow][col] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                }
-            }
-        }
-    } else if (direction === 'LEFT') {
-        for (let row = 0; row < 4; row++) {
-            let merged = [false, false, false, false];
-            for (let col = 1; col < 4; col++) {
-                if (newGrid[row][col] === 0) continue;
-                let targetCol = col;
-                while (targetCol > 0 && newGrid[row][targetCol - 1] === 0) targetCol--;
-                if (targetCol > 0 && newGrid[row][targetCol - 1] === newGrid[row][col] && !merged[targetCol - 1]) {
-                    newGrid[row][targetCol - 1]++;
-                    newGrid[row][col] = 0;
-                    merged[targetCol - 1] = true;
-                } else if (targetCol !== col) {
-                    newGrid[row][targetCol] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                }
-            }
-        }
-    } else if (direction === 'RIGHT') {
-        for (let row = 0; row < 4; row++) {
-            let merged = [false, false, false, false];
-            for (let col = 2; col >= 0; col--) {
-                if (newGrid[row][col] === 0) continue;
-                let targetCol = col;
-                while (targetCol < 3 && newGrid[row][targetCol + 1] === 0) targetCol++;
-                if (targetCol < 3 && newGrid[row][targetCol + 1] === newGrid[row][col] && !merged[targetCol + 1]) {
-                    newGrid[row][targetCol + 1]++;
-                    newGrid[row][col] = 0;
-                    merged[targetCol + 1] = true;
-                } else if (targetCol !== col) {
-                    newGrid[row][targetCol] = newGrid[row][col];
-                    newGrid[row][col] = 0;
-                    moved = true;
-                }
-            }
+    } else {
+        for (let c = 0; c < 4; c++) {
+            let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]];
+            if(direction === 'DOWN') col.reverse();
+            let combined = slide(combine(slide(col)));
+            if(direction === 'DOWN') combined.reverse();
+            for(let r=0; r<4; r++) newGrid[r][c] = combined[r];
         }
     }
-    
     return newGrid;
 }
 
 function evaluateGrid(g) {
-    let score = 0;
     let emptyCells = 0;
-    let maxVal = 0;
-    
-    const weights = [
-        [15, 14, 13, 12],
-        [8, 9, 10, 11],
-        [7, 6, 5, 4],
-        [0, 1, 2, 3]
-    ];
+    let smoothness = 0;
+    let monotonicity = 0;
     
     for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
-            if (g[r][c] === 0) {
-                emptyCells++;
-            } else {
-                score += g[r][c] * weights[r][c];
-                maxVal = Math.max(maxVal, g[r][c]);
+            if (g[r][c] === 0) emptyCells++;
+            else {
+                if (c < 3 && g[r][c] === g[r][c+1]) smoothness++;
+                if (r < 3 && g[r][c] === g[r+1][c]) smoothness++;
             }
         }
     }
-    
-    score += emptyCells * 10;
-    score += maxVal * 5;
-    
-    for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 3; c++) {
-            if (g[r][c] === g[r][c + 1] && g[r][c] > 0) score += 20;
-        }
-    }
-    for (let c = 0; c < 4; c++) {
-        for (let r = 0; r < 3; r++) {
-            if (g[r][c] === g[r + 1][c] && g[r][c] > 0) score += 20;
-        }
-    }
-    
-    return score;
+    // الوزن الأكبر للمربعات الفارغة لضمان الأمان
+    return (emptyCells * 100) + (smoothness * 10);
 }
 
-function getArrowDirection(move) {
-    const arrows = { UP: '⬆️ للأعلى', DOWN: '⬇️ للأسفل', LEFT: '➡️ لليمين', RIGHT: '⬅️ لليسار' };
-    return arrows[move] || move;
-}
-
-// ============================================
-// التحكم الأساسي
-// ============================================
-function undo() {
-    if (history.length > 0) {
-        grid = history.pop();
-        renderGrid();
-    }
-}
-
-function saveHistory() {
-    history.push(JSON.parse(JSON.stringify(grid)));
-    if (history.length > 10) history.shift();
-}
-
-function resetGrid() {
-    if (confirm('هل تريد تصفير الشبكة؟')) {
-        grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-        renderGrid();
-        saveGame();
-    }
-}
-
-function resetSession() {
-    grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-    renderGrid();
-    saveGame();
-}
-
-// ============================================
-// الطاقة
-// ============================================
-function addEnergy(amount) {
-    const energyInput = document.getElementById('energy');
-    let current = parseInt(energyInput.value) || 0;
-    current = Math.min(200, current + amount);
-    energyInput.value = current;
-    updateEnergyBar();
-    saveGame();
-}
-
-function consumeEnergy() {
-    const energyInput = document.getElementById('energy');
-    let current = parseInt(energyInput.value) || 0;
-    current = Math.max(0, current - 1);
-    energyInput.value = current;
-    updateEnergyBar();
-}
-
-function updateEnergyBar() {
-    const energy = parseInt(document.getElementById('energy').value) || 0;
-    const percent = (energy / 200) * 100;
-    document.getElementById('energyBar').style.width = percent + '%';
-}
-
-// ============================================
-// حفظ وتحميل وتحديث الواجهة
-// ============================================
-async function saveGame() {
-    if (!user) return;
+async function askGemini() {
+    const box = document.getElementById('aiResponseBox');
+    const text = document.getElementById('aiResponseText');
+    box.classList.remove('hidden');
+    text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري استشارة الذكاء الاصطناعي للمخاطر...';
     
     try {
-        await fetch('/api/user/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: user.username,
-                password: user.password,
-                grid: grid,
-                energy: parseInt(document.getElementById('energy').value),
-                sessionScore: parseInt(document.getElementById('sessionScore').textContent) || 0
-            })
+        const prompt = `أنت مساعد استراتيجي في لعبة دمج حيوانات من 1 لـ 11.
+اللوحة الحالية: ${JSON.stringify(grid)}. الطاقة المتبقية: ${user.energy}.
+رصيد الأدوات الممتلكة: مخلب(${user.tools.claw.owned}) يزيل حيوان، ترقية(${user.tools.upgrade.owned}) يرفع رقم أقل من 7، عجلة(${user.tools.wheel.owned}) يبدل مكانين.
+حلل الموقف وأعطني خيارين فقط في سطرين: الخيار الأول (حركة عادية يمين/يسار ونسبة أمانها)، الخيار الثاني (استخدام أداة والسبب). كن دقيقاً جداً.`;
+        
+        const res = await fetch('/api/ai/analyze', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt, username: user.username, password: user.password })
         });
-    } catch (e) {}
-}
-
-function updateUI() {
-    if (!user) return;
-    
-    document.getElementById('playerName').textContent = user.displayName || user.username;
-    document.getElementById('sessionScore').textContent = user.sessionScore || 0;
-    document.getElementById('energy').value = user.energy || 200;
-    updateEnergyBar();
-    
-    if (user.tools) {
-        document.getElementById('cntGem').textContent = user.tools.gem?.owned || 0;
-        document.getElementById('cntUpg').textContent = user.tools.upgrade?.owned || 0;
-        document.getElementById('cntClaw').textContent = user.tools.claw?.owned || 0;
-        document.getElementById('cntWheel').textContent = user.tools.wheel?.owned || 0;
-    }
-    
-    document.getElementById('mMoves').textContent = user.stats?.moves || 0;
-    document.getElementById('mMax').textContent = user.stats?.maxLvl || 0;
-    document.getElementById('mL11').textContent = user.stats?.level11Count || 0;
-    
-    document.getElementById('myScore').textContent = user.highScore || 0;
-    document.getElementById('myMax').textContent = user.stats?.maxLvl || 0;
-    document.getElementById('myMoves').textContent = user.stats?.moves || 0;
-    document.getElementById('myL11').textContent = user.stats?.level11Count || 0;
-}
-
-// ============================================
-// التنقل
-// ============================================
-function goTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    
-    document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-    document.querySelector(`.nav-btn[onclick="goTab('${tab}')"]`).classList.add('active');
-    
-    if (tab === 'rank') loadLeaderboard();
-}
-
-async function loadLeaderboard() {
-    try {
-        const res = await fetch('/api/leaderboard');
         const data = await res.json();
         
-        const rankList = document.getElementById('rankList');
-        rankList.innerHTML = data.map((u, i) => `
-            <div class="leaderboard-item">
-                <div class="rank-badge">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</div>
-                <div class="avatar">${u.displayName?.charAt(0) || u.username.charAt(0)}</div>
-                <div style="flex: 1;">
-                    <div style="font-size: 11px; font-weight: bold;">${u.displayName || u.username}</div>
-                    <div style="font-size: 9px; color: var(--muted);">${u.kingdom || ''} ${u.alliance ? '| ' + u.alliance : ''}</div>
-                </div>
-                <div style="text-align: left;">
-                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">${u.score}</div>
-                    <div style="font-size: 8px; color: var(--muted);">أعلى: ${u.maxLvl}</div>
-                </div>
-            </div>
-        `).join('');
-    } catch (e) {}
+        if (data.success && data.response) {
+            text.innerHTML = data.response.replace(/\n/g, '<br><br>');
+        } else {
+            box.classList.add('hidden'); // إخفاء صامت في حالة الخطأ
+        }
+    } catch (e) {
+        box.classList.add('hidden'); // الاعتمادية الصامتة
+    }
 }
 
 // ============================================
-// النوافذ المنبثقة
+// النوافذ والتقييمات والملف الشخصي
 // ============================================
-function showProfile() {
-    document.getElementById('profileDisplayName').value = user?.displayName || '';
-    document.getElementById('profileKingdom').value = user?.kingdom || '';
-    document.getElementById('profileAlliance').value = user?.alliance || '';
-    document.getElementById('profilePopup').classList.add('show');
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function closeCelebAndShowReview() {
+    closeModal('celebModal');
+    document.getElementById('reviewModal').classList.add('show');
+}
+
+function setStars(n) {
+    currentStars = n;
+    const stars = document.getElementById('starRating').children;
+    for(let i=0; i<5; i++) stars[i].style.color = i < n ? '#FFD700' : '#444';
+}
+
+async function submitReview() {
+    const text = document.getElementById('reviewText').value;
+    try {
+        await fetch('/api/review/add', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: user.username, rating: currentStars, text: text })
+        });
+    } catch(e) {}
+    closeModal('reviewModal');
+}
+
+function openProfile() {
+    document.getElementById('profName').value = user.displayName || user.username;
+    document.getElementById('profKingdom').value = user.kingdom || '';
+    document.getElementById('profAlliance').value = user.alliance || '';
+    document.getElementById('profileModal').classList.add('show');
 }
 
 async function saveProfile() {
-    const displayName = document.getElementById('profileDisplayName').value;
-    const kingdom = document.getElementById('profileKingdom').value;
-    const alliance = document.getElementById('profileAlliance').value;
+    user.displayName = document.getElementById('profName').value;
+    user.kingdom = document.getElementById('profKingdom').value;
+    user.alliance = document.getElementById('profAlliance').value;
+    await saveState();
+    closeModal('profileModal');
+}
+
+// ============================================
+// لوحة الإدارة الشاملة (Admin Panel)
+// ============================================
+function openAdmin() {
+    document.getElementById('admAppName').value = settings.appName || '';
+    document.getElementById('admLogo').value = settings.logoUrl || '';
+    if(settings.eventEndTime) document.getElementById('admEventTime').value = new Date(settings.eventEndTime).toISOString().slice(0,16);
     
-    try {
-        const res = await fetch('/api/profile/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: user.username,
-                password: user.password,
-                displayName,
-                kingdom,
-                alliance
-            })
-        });
-        
-        if ((await res.json()).success) {
-            user.displayName = displayName;
-            user.kingdom = kingdom;
-            user.alliance = alliance;
-            updateUI();
-            closePopup('profilePopup');
-        }
-    } catch (e) {}
+    // إعدادات الأدوات
+    // (يمكن استرجاعها من settings إذا تم حفظها مستقبلاً، هنا مثال افتراضي)
+    document.getElementById('admIconGem').value = "💎"; document.getElementById('admNameGem').value = "جوهر";
+    
+    renderAdminAnimals();
+    document.getElementById('adminModal').classList.add('show');
 }
 
-function showReview() {
-    alert('ميزة التقييم قيد التطوير');
-}
-
-function showAdmin() {
-    loadAdminUsers();
-    document.getElementById('adminPopup').classList.add('show');
-}
-
-function closePopup(id) {
-    document.getElementById(id).classList.remove('show');
-}
-
-function goAdminTab(tab) {
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+function switchAdminTab(tabName) {
+    document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(`admin-${tabName}`).classList.add('active');
     
-    document.querySelector(`.admin-tab[onclick="goAdminTab('${tab}')"]`).classList.add('active');
-    document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    if(tabName === 'users') fetchAdminUsers();
+}
+
+function renderAdminAnimals() {
+    const list = document.getElementById('adminAnimalsList');
+    list.innerHTML = '';
+    for(let i=1; i<=11; i++) {
+        let html = `
+        <div class="admin-animal-edit">
+            <span style="font-size:14px; font-weight:bold; color:var(--gold); width:20px;">${i}</span>
+            <input type="text" id="admAn_icon_${i}" value="${animals[i]?.icon || ''}" placeholder="أيقونة/رابط">
+            <input type="text" id="admAn_name_${i}" value="${animals[i]?.name || ''}" placeholder="الاسم">
+        </div>`;
+        list.innerHTML += html;
+    }
+}
+
+async function saveAdminGeneral() {
+    const newSets = {
+        appName: document.getElementById('admAppName').value,
+        logoUrl: document.getElementById('admLogo').value,
+        eventEndTime: document.getElementById('admEventTime').value
+    };
+    const key = document.getElementById('admGemini').value;
+    if(key) newSets.geminiApiKey = key;
     
-    if (tab === 'users') loadAdminUsers();
-    if (tab === 'archive') loadAdminArchive();
-    if (tab === 'settings') loadAdminSettings();
+    await sendAdminSave(newSets);
 }
 
-async function loadAdminUsers() {
-    try {
-        const res = await fetch('/api/admin/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ adminUser: user.username, adminPass: user.password })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            document.getElementById('adminUsers').innerHTML = `
-                <div style="max-height: 200px; overflow-y: auto;">
-                    ${data.users.map(u => `
-                        <div style="display: flex; justify-content: space-between; padding: 6px; border-bottom: 1px solid rgba(212,175,55,0.1);">
-                            <span style="font-size: 10px;">${u.displayName || u.username}</span>
-                            <span style="font-size: 10px; color: var(--gold);">${u.highScore || 0}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-    } catch (e) {}
+async function saveAdminAnimals() {
+    let newAnimals = JSON.parse(JSON.stringify(animals));
+    for(let i=1; i<=11; i++) {
+        newAnimals[i] = {
+            icon: document.getElementById(`admAn_icon_${i}`).value,
+            name: document.getElementById(`admAn_name_${i}`).value
+        };
+    }
+    await sendAdminSave({ animals: newAnimals });
 }
 
-async function loadAdminArchive() {
-    try {
-        const res = await fetch('/api/admin/achievements', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ adminUser: user.username, adminPass: user.password })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            document.getElementById('adminArchive').innerHTML = `
-                <div style="max-height: 200px; overflow-y: auto;">
-                    ${data.achievements.map(a => `
-                        <div style="padding: 6px; border-bottom: 1px solid rgba(212,175,55,0.1);">
-                            <div style="font-size: 10px; font-weight: bold;">${a.username}</div>
-                            <div style="font-size: 9px; color: var(--muted);">النقاط: ${a.sessionScore} | التحركات: ${a.moves}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-    } catch (e) {}
+async function saveAdminTools() {
+    alert("سيتم تطبيق مسميات وأيقونات الأدوات في التحديث القادم للسيرفر!");
 }
 
-function loadAdminSettings() {
-    document.getElementById('adminSettings').innerHTML = `
-        <div style="font-size: 10px;">
-            <label>اسم التطبيق:</label>
-            <input type="text" id="setAppName" class="input" value="${settings.appName || ''}">
-            <label>Gemini API Key:</label>
-            <input type="text" id="setGeminiKey" class="input" value="${settings.geminiApiKey || ''}" placeholder="أدخل المفتاح">
-            <button class="btn" onclick="saveAdminSettings()" style="width: 100%; margin-top: 8px;">حفظ الإعدادات</button>
-        </div>
-    `;
-}
-
-async function saveAdminSettings() {
+async function sendAdminSave(newSettingsData) {
     try {
         await fetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                adminUser: user.username,
-                adminPass: user.password,
-                newSettings: {
-                    appName: document.getElementById('setAppName').value,
-                    geminiApiKey: document.getElementById('setGeminiKey').value
-                }
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUser: user.username, adminPass: user.password, newSettings: newSettingsData })
         });
-        alert('تم الحفظ');
-    } catch (e) {}
+        alert('تم حفظ التعديلات بنجاح!');
+        loadSettings(); // إعادة تحميل
+    } catch (e) { alert('حدث خطأ'); }
+}
+
+async function fetchAdminUsers() {
+    const list = document.getElementById('adminUsersList');
+    list.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري جلب اللاعبين...';
+    try {
+        const res = await fetch('/api/admin/users', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUser: user.username, adminPass: user.password })
+        });
+        const data = await res.json();
+        if(data.success) {
+            list.innerHTML = data.users.map(u => `
+                <div class="admin-item-row">
+                    <div>
+                        <div style="font-size: 11px; font-weight: bold;">${u.displayName || u.username}</div>
+                        <div style="font-size: 9px; color: var(--muted);">طاقة: ${u.energy} | جوهر: ${u.tools?.gem?.owned||0}</div>
+                    </div>
+                    <div style="color: var(--gold); font-weight: 900;">${u.sessionScore || 0}</div>
+                </div>
+            `).join('');
+        }
+    } catch(e) { list.innerHTML = 'فشل في الجلب'; }
 }
 
 // ============================================
-// العد التنازلي
+// الحفظ في الخلفية والعدادات الزمنية
 // ============================================
-setInterval(async () => {
+async function saveState() {
+    if(!user) return;
     try {
-        const res = await fetch('/api/event/timeleft');
-        const data = await res.json();
-        
-        if (data.success) {
-            document.getElementById('tDay').textContent = data.timeLeft.days;
-            document.getElementById('tHour').textContent = data.timeLeft.hours;
-            document.getElementById('tMin').textContent = data.timeLeft.minutes;
-            document.getElementById('tSec').textContent = data.timeLeft.seconds;
+        await fetch('/api/user/save', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: user.username, password: user.password,
+                grid: grid, energy: user.energy, sessionScore: user.sessionScore, tools: user.tools
+            })
+        });
+    } catch(e) {}
+}
+
+function startRegenTimer() {
+    setInterval(() => {
+        if(user && user.energy < 200) {
+            user.energy++;
+            updateUI();
+            saveState();
         }
-    } catch (e) {}
-}, 1000);
+    }, 72000); // 72 ثانية (دقيقة و 12 ثانية)
+}
+
+function startCountdownTimer() {
+    setInterval(() => {
+        const now = new Date();
+        let target;
+        if(settings.eventEndTime) {
+            target = new Date(settings.eventEndTime);
+        } else {
+            target = new Date(now);
+            target.setHours(2, 0, 0, 0); // الافتراضي 2:00 صباحاً
+            if(now.getHours() >= 2) target.setDate(target.getDate() + 1);
+        }
+        
+        let diff = target - now;
+        if(diff > 0) {
+            document.getElementById('tDay').textContent = Math.floor(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('tHour').textContent = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+            document.getElementById('tMin').textContent = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+            document.getElementById('tSec').textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+        }
+    }, 1000);
+}
+
+function goTab(tab) {
+    // تجهيز لتبويبات مستقبلية مثل المتصدرين (الأوائل)
+}
 </script>
 </body>
 </html>
