@@ -1,7 +1,7 @@
 {
-  "name": "scorpion-helper-v15",
+  "name": "scorpion-helper-v1.15",
   "version": "1.15.0",
-  "description": "مساعد عقروب V1.15",
+  "description": "مساعد عقروب المطور V1.15",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,7 +11,6 @@
     "socket.io": "^4.7.2",
     "mongoose": "^8.0.0",
     "cors": "^2.8.5",
-    "multer": "^1.4.5-lts.1",
     "dotenv": "^16.3.1"
   },
   "engines": {

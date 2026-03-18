@@ -3,470 +3,886 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مساعد عقروب V1.15 - المحاكي الاستراتيجي</title>
-    
+    <title>مساعد عقروب V1.16 - المحاكي الاستراتيجي</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    
+
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         :root {
-            --gold: #D4AF37; --gold-dark: #B8860B;
-            --red: #C41E3A; --red-dark: #8B0000;
-            --text: #F5F5DC; --muted: #8B7355; 
-            --bg: #0a0a0a; --panel-bg: rgba(20, 20, 20, 0.95);
+            --gold: #D4AF37;
+            --gold-dark: #B8860B;
+            --red: #C41E3A;
+            --red-dark: #8B0000;
+            --text: #F5F5DC;
+            --muted: #8B7355;
+            --bg: #0a0a0a;
+            --panel: rgba(20, 20, 20, 0.95);
+            --line: rgba(212, 175, 55, 0.22);
         }
-        
-        html, body { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; position: fixed; width: 100%; }
-        .app { max-width: 420px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; overflow: hidden; background: radial-gradient(circle at top, #1a1a1a, #000); }
-        .screen { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 100; flex-direction: column; }
+
+        html, body {
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+
+        .app {
+            max-width: 420px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at top, #1a1a1a, #000);
+        }
+
+        .screen {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            z-index: 100;
+            flex-direction: column;
+        }
         .screen.active { display: flex; }
-        
-        /* Splash Screen */
-        #splash { background: radial-gradient(ellipse at center bottom, #2a0a00 0%, #000 70%, #000 100%); justify-content: center; align-items: center; z-index: 200; }
+
+        #splash {
+            background: radial-gradient(ellipse at center bottom, #2a0a00 0%, #000 70%, #000 100%);
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
         .cave { position: relative; width: 250px; height: 200px; display: flex; justify-content: center; align-items: flex-end; }
-        .cave-entrance { position: absolute; bottom: 0; width: 160px; height: 140px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(212, 175, 55, 0.2); }
-        .logo-img { position: relative; max-width: 100px; max-height: 100px; z-index: 10; animation: logo-reveal 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.8)); opacity: 0; transform: translateY(30px) scale(0.5); }
+        .cave-entrance { position: absolute; bottom: 0; width: 160px; height: 140px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(212,175,55,0.2); }
+        .logo-img { position: relative; max-width: 100px; max-height: 100px; z-index: 10; animation: logo-reveal 2s cubic-bezier(0.175,0.885,0.32,1.275) forwards; filter: drop-shadow(0 0 15px rgba(212,175,55,0.8)); opacity: 0; transform: translateY(30px) scale(0.5); }
         @keyframes logo-reveal { to { opacity: 1; transform: translateY(-10px) scale(1); } }
-        .splash-title { font-size: 26px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #FFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        
-        /* Buttons & Inputs */
-        .btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; font-weight: 900; border: none; padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3); transition: transform 0.1s; }
-        .btn:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); box-shadow: none; }
-        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; box-shadow: 0 4px 10px rgba(196, 30, 58, 0.3); }
-        .input { width: 100%; background: rgba(0,0,0,0.7); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 10px; color: white; text-align: center; font-size: 13px; margin-bottom: 8px; outline: none; transition: border-color 0.3s; }
-        .input:focus { border-color: #FFF; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
-        
-        /* Layout */
-        .main-content { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; display: flex; flex-direction: column; gap: 8px; }
-        .main-content::-webkit-scrollbar { width: 4px; } .main-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 4px; }
-        
-        /* Navbar */
-        .navbar { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: linear-gradient(180deg, rgba(10,10,10,0.95), #000); border-top: 1px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: space-around; align-items: center; z-index: 50; padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(10px); }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #666; cursor: pointer; border-radius: 8px; width: 60px; transition: color 0.3s; }
-        .nav-btn.active { color: var(--gold); transform: translateY(-3px); }
-        .nav-btn i { font-size: 20px; margin-bottom: 4px; }
-        .nav-btn span { font-size: 10px; font-weight: bold; }
-        
-        /* Top Bar & Stats */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.2); }
-        .timer-box { display: flex; align-items: center; gap: 4px; color: var(--gold); font-size: 11px; font-weight: bold; }
-        .timer-val { background: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 4px; min-width: 26px; text-align: center; font-variant-numeric: tabular-nums; }
-        .sync-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;}
-        .sync-btn:active { transform: scale(0.95); background: var(--gold); color: #000; }
+        .splash-title { font-size: 26px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 20px; }
+
+        .btn {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: #000;
+            font-weight: 900;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.25);
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: #fff; }
+        .btn-dark { background: linear-gradient(135deg, #242424, #101010); color: var(--text); border: 1px solid var(--line); }
+        .btn-outline { background: rgba(212,175,55,0.12); color: var(--gold); border: 1px solid var(--gold); box-shadow: none; }
+
+        .input, .textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 8px;
+            outline: none;
+        }
+        .textarea { text-align: right; resize: none; min-height: 90px; }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            padding-bottom: 84px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .main-content::-webkit-scrollbar { width: 4px; }
+        .main-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.25); border-radius: 4px; }
+
+        .top-bar, .section-card, .quick-stat, .panel, .mini-card {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        .timer-box { display: flex; align-items: center; gap: 4px; color: var(--gold); font-size: 11px; font-weight: bold; flex-wrap: wrap; }
+        .timer-val { background: rgba(255,255,255,0.08); padding: 3px 6px; border-radius: 4px; min-width: 26px; text-align: center; font-variant-numeric: tabular-nums; }
+        .top-actions { display: flex; gap: 6px; }
+        .top-mini-btn {
+            background: rgba(212,175,55,0.12);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 5px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .top-mini-btn.active { background: var(--gold); color: #000; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        .stat-card { background: linear-gradient(145deg, #111, #080808); border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 8px; padding: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
-        .stat-title { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
-        .stat-val { font-size: 15px; font-weight: 900; color: #FFF; }
-        .energy-wrap { position: relative; padding-top: 4px; }
+        .stat-card {
+            background: linear-gradient(145deg, #111, #080808);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 8px 6px;
+            text-align: center;
+        }
+        .stat-title { font-size: 9px; color: var(--muted); margin-bottom: 4px; }
+        .stat-val { font-size: 16px; font-weight: 900; color: #fff; }
+        .energy-wrap { position: relative; padding-top: 5px; }
         .energy-progress { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #222; border-radius: 3px; overflow: hidden; }
-        .energy-fill { height: 100%; background: var(--gold); width: 100%; transition: width 0.3s, background 0.3s; }
+        .energy-fill { height: 100%; background: var(--gold); width: 100%; transition: width .2s, background .2s; }
         .energy-fill.low { background: var(--red); }
-        
-        /* Tools Rack */
-        .tools-rack { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; justify-content: space-between; }
+
+        .tools-rack { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
         .tools-rack::-webkit-scrollbar { display: none; }
-        .tool-item { flex: 1; min-width: 55px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 6px 2px; text-align: center; position: relative; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; }
-        .tool-item:active { transform: scale(0.95); }
-        .tool-item.active { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
-        .tool-item.empty { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-        .tool-icon { width: 20px; height: 20px; object-fit: contain; display: block; margin-bottom: 2px; font-size: 16px; }
-        .tool-name { font-size: 8px; color: var(--gold); display: block; white-space: nowrap; }
-        .tool-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 6px; border: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 2; }
-        .tool-limit { font-size: 7px; color: #aaa; margin-top: 2px; }
+        .tool-item {
+            flex: 1;
+            min-width: 58px;
+            background: rgba(0,0,0,0.52);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 6px 2px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .tool-item.active { background: rgba(212,175,55,0.18); box-shadow: 0 0 12px rgba(212,175,55,0.35); }
+        .tool-item.empty { opacity: 0.42; filter: grayscale(1); cursor: not-allowed; }
+        .tool-icon { width: 20px; height: 20px; object-fit: contain; display: flex; justify-content: center; align-items: center; margin-bottom: 2px; font-size: 16px; }
+        .tool-icon img { width: 20px; height: 20px; object-fit: contain; }
+        .tool-name { font-size: 8px; color: var(--gold); white-space: nowrap; }
+        .tool-limit { font-size: 7px; color: #b6b6b6; margin-top: 2px; }
+        .tool-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: #fff; font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 7px; border: 1px solid #000; }
 
-        /* Board */
-        .board-container { aspect-ratio: 1; width: 100%; max-width: 350px; margin: 0 auto; background: #050505; padding: 6px; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.2); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
-        .cell { background: #151515; border-radius: 8px; display: flex; justify-content: center; align-items: center; position: relative; font-size: 24px; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: transform 0.1s; }
+        .quick-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .quick-stat { padding: 7px 5px; text-align: center; }
+        .quick-stat .label { font-size: 9px; color: var(--muted); }
+        .quick-stat .value { font-size: 13px; font-weight: 900; color: var(--gold); margin-top: 2px; }
+
+        .board-container {
+            aspect-ratio: 1;
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto;
+            background: #050505;
+            padding: 6px;
+            border-radius: 12px;
+            border: 2px solid rgba(212,175,55,0.2);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .cell {
+            background: #151515;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            font-size: 24px;
+            border: 1px solid rgba(255,255,255,0.03);
+            cursor: pointer;
+            transition: transform .1s;
+        }
+        .cell:active { transform: scale(0.94); }
         .cell img { max-width: 75%; max-height: 75%; object-fit: contain; user-select: none; pointer-events: none; }
-        .cell:active { transform: scale(0.92); }
-        .cell .lvl-num { position: absolute; bottom: 2px; right: 4px; font-size: 10px; font-weight: 900; color: #FFF; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.4); padding: 0 4px; border-radius: 4px; }
-        .cell.target-tool { border: 2px dashed var(--gold); animation: pulse-border 1s infinite; z-index: 5; }
-        @keyframes pulse-border { 0%, 100% { border-color: var(--gold); box-shadow: inset 0 0 10px rgba(212,175,55,0.5); } 50% { border-color: transparent; box-shadow: none; } }
-        
-        .lvl-0 { background: #111; } .lvl-1 { background: radial-gradient(circle, #2d3748, #1a202c); } .lvl-2 { background: radial-gradient(circle, #2b6cb0, #1a365d); } .lvl-3 { background: radial-gradient(circle, #2f855a, #1c4532); } .lvl-4 { background: radial-gradient(circle, #b7791f, #744210); } .lvl-5 { background: radial-gradient(circle, #c53030, #742a2a); } .lvl-6 { background: radial-gradient(circle, #805ad5, #44337a); } .lvl-7 { background: radial-gradient(circle, #d53f8c, #702459); } .lvl-8 { background: radial-gradient(circle, #38b2ac, #234e52); } .lvl-9 { background: radial-gradient(circle, #ed8936, #7b341e); } .lvl-10 { background: radial-gradient(circle, #e53e3e, #822727); box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
-        .lvl-11 { background: radial-gradient(circle, var(--gold), #8B6508); border: 2px solid #FFF !important; box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); animation: glow-11 2s infinite; }
-        @keyframes glow-11 { 0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.5); transform: scale(1); } 50% { box-shadow: 0 0 25px rgba(212,175,55,1); transform: scale(1.02); } }
+        .cell .lvl-num { position: absolute; bottom: 2px; right: 4px; font-size: 10px; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.42); padding: 0 4px; border-radius: 4px; }
+        .cell.target-tool { border: 2px dashed var(--gold); animation: pulse-border 1s infinite; }
+        .cell.edit-mode { box-shadow: inset 0 0 0 1px rgba(212,175,55,0.25); }
+        @keyframes pulse-border { 0%,100% { border-color: var(--gold); box-shadow: inset 0 0 10px rgba(212,175,55,.45); } 50% { border-color: transparent; box-shadow: none; } }
 
-        /* Controls */
-        .controls-row { display: flex; gap: 8px; align-items: stretch; margin-top: auto; }
-        .dpad { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 30px); gap: 3px; justify-content: center; }
-        .dpad-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; transition: background 0.1s; }
-        .dpad-btn:active { background: var(--gold); color: #000; transform: scale(0.9); }
-        .dpad-up { grid-column: 2; grid-row: 1; } .dpad-down { grid-column: 2; grid-row: 3; } .dpad-left { grid-column: 1; grid-row: 2; } .dpad-right { grid-column: 3; grid-row: 2; }
-        .ai-actions { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-        .ai-btn { flex: 1; background: linear-gradient(135deg, #18181b, #09090b); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold); font-weight: 900; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.1s; }
-        .ai-btn:active { transform: scale(0.97); } .ai-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
-        .ai-response-box { background: rgba(212,175,55,0.1); border: 1px solid var(--gold); border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.6; position: relative; overflow: hidden; }
+        .lvl-0 { background: #111; }
+        .lvl-1 { background: radial-gradient(circle, #2d3748, #1a202c); }
+        .lvl-2 { background: radial-gradient(circle, #2b6cb0, #1a365d); }
+        .lvl-3 { background: radial-gradient(circle, #2f855a, #1c4532); }
+        .lvl-4 { background: radial-gradient(circle, #b7791f, #744210); }
+        .lvl-5 { background: radial-gradient(circle, #c53030, #742a2a); }
+        .lvl-6 { background: radial-gradient(circle, #805ad5, #44337a); }
+        .lvl-7 { background: radial-gradient(circle, #d53f8c, #702459); }
+        .lvl-8 { background: radial-gradient(circle, #38b2ac, #234e52); }
+        .lvl-9 { background: radial-gradient(circle, #ed8936, #7b341e); }
+        .lvl-10 { background: radial-gradient(circle, #e53e3e, #822727); }
+        .lvl-11 { background: radial-gradient(circle, var(--gold), #8B6508); border: 2px solid #fff !important; box-shadow: 0 0 16px rgba(212,175,55,0.8); animation: glow-11 2s infinite; }
+        @keyframes glow-11 { 0%,100% { box-shadow: 0 0 10px rgba(212,175,55,0.55); } 50% { box-shadow: 0 0 24px rgba(212,175,55,1); } }
+
+        .controls-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .board-hint { font-size: 10px; color: var(--muted); text-align: center; }
+        .dpad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 32px); gap: 4px; justify-content: center; }
+        .dpad-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--line); border-radius: 8px; color: #fff; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; }
+        .dpad-btn:active { background: var(--gold); color: #000; transform: scale(0.95); }
+        .dpad-up { grid-column: 2; grid-row: 1; }
+        .dpad-down { grid-column: 2; grid-row: 3; }
+        .dpad-left { grid-column: 1; grid-row: 2; }
+        .dpad-right { grid-column: 3; grid-row: 2; }
+        .merge-actions { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .merge-btn {
+            background: linear-gradient(135deg, #18181b, #09090b);
+            border: 1px solid var(--gold);
+            border-radius: 9px;
+            color: var(--gold);
+            font-weight: 900;
+            font-size: 11px;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .merge-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
+
+        .ai-response-box { background: rgba(212,175,55,0.1); border: 1px solid var(--gold); border-radius: 10px; padding: 10px; font-size: 11px; line-height: 1.6; position: relative; overflow: hidden; }
         .ai-response-box::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--gold); }
-        
-        /* Modals */
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(5px); }
-        .modal.show { display: flex; animation: fade-in 0.2s; }
+        .hidden { display: none !important; }
+
+        .navbar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: linear-gradient(180deg, rgba(10,10,10,0.95), #000);
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 50;
+            padding-bottom: env(safe-area-inset-bottom);
+            backdrop-filter: blur(10px);
+        }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #666; cursor: pointer; border-radius: 8px; width: 56px; transition: color .2s; }
+        .nav-btn.active { color: var(--gold); transform: translateY(-2px); }
+        .nav-btn i { font-size: 18px; margin-bottom: 4px; }
+        .nav-btn span { font-size: 9px; font-weight: 800; }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 250;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            backdrop-filter: blur(5px);
+        }
+        .modal.show { display: flex; animation: fade-in .2s; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .modal-box { background: linear-gradient(145deg, #18181b, #09090b); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
-        .modal-box::-webkit-scrollbar { width: 4px; } .modal-box::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
+        .modal-box {
+            background: linear-gradient(145deg, #18181b, #09090b);
+            border: 1px solid rgba(212,175,55,0.35);
+            border-radius: 16px;
+            padding: 18px;
+            width: 100%;
+            max-width: 390px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .modal-box::-webkit-scrollbar { width: 4px; }
+        .modal-box::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
         .modal-title { font-size: 18px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 15px; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px; }
-        
-        /* Sync Modals */
+
         .sync-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; background: #000; padding: 6px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); }
         .sync-cell { aspect-ratio: 1; background: #1a1a1a; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: 1px solid #333; position: relative; }
-        .sync-cell img { max-width: 70%; max-height: 70%; } .sync-cell:hover { border-color: var(--gold); }
+        .sync-cell img { max-width: 70%; max-height: 70%; }
         .sync-cell .lvl-num { position: absolute; bottom: 2px; right: 2px; font-size: 8px; font-weight: bold; color: var(--gold); }
-        .animal-picker { display: none; grid-template-columns: repeat(4, 1fr); gap: 4px; position: absolute; background: #111; border: 2px solid var(--gold); border-radius: 8px; padding: 6px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
+
+        .animal-picker {
+            display: none;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            position: fixed;
+            background: #111;
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            padding: 6px;
+            z-index: 300;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+            width: 220px;
+        }
         .animal-picker.show { display: grid; }
         .picker-item { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #222; border-radius: 4px; cursor: pointer; border: 1px solid transparent; }
-        .picker-item:hover { border-color: var(--gold); background: #333; } .picker-item img { max-width: 20px; max-height: 20px; } .picker-item span { font-size: 8px; color: var(--gold); margin-top: 2px; }
-        .tools-sync-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .tool-sync-row { display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
-        .tool-sync-icon { width: 25px; text-align: center; font-size: 16px; margin-left: 5px; }
-        .tool-sync-inputs { display: flex; flex: 1; gap: 4px; }
-        .tool-sync-inputs input { width: 100%; padding: 4px; text-align: center; background: #000; color: #FFF; border: 1px solid #444; border-radius: 4px; font-size: 11px; }
-        
-        /* Celebration */
+        .picker-item:hover { border-color: var(--gold); background: #333; }
+        .picker-item img { max-width: 22px; max-height: 22px; }
+        .picker-item span { font-size: 8px; color: var(--gold); margin-top: 2px; }
+
+        .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; }
+        .avatar-option {
+            aspect-ratio: 1;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            cursor: pointer;
+        }
+        .avatar-option.active { border-color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.35); background: rgba(212,175,55,0.12); }
+
+        .profile-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .avatar-badge {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #1a1a1a, #050505);
+            border: 1px solid var(--gold);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .avatar-badge img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+        .mini-card { padding: 10px 8px; text-align: center; }
+        .mini-card .label { font-size: 10px; color: var(--muted); }
+        .mini-card .value { font-size: 15px; font-weight: 900; color: #fff; margin-top: 4px; }
+
+        .leaderboard-list, .admin-users-list, .reviews-list { display: flex; flex-direction: column; gap: 8px; }
+        .leader-item, .admin-item-row, .review-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 8px;
+        }
+        .rank-badge {
+            min-width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(212,175,55,0.15);
+            border: 1px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            font-size: 12px;
+            font-weight: 900;
+        }
+        .item-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .item-text { min-width: 0; }
+        .item-name { font-size: 12px; font-weight: 900; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-meta { font-size: 9px; color: var(--muted); margin-top: 2px; }
+        .item-score { text-align: left; }
+        .item-score .main { font-size: 15px; font-weight: 900; color: var(--gold); }
+        .item-score .sub { font-size: 9px; color: #ccc; }
+
+        .admin-tabs { display: flex; gap: 4px; margin-bottom: 15px; }
+        .admin-tab-btn { flex: 1; padding: 8px 4px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid transparent; }
+        .admin-tab-btn.active { background: var(--red); color: #fff; border-color: var(--red-dark); }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .admin-animal-edit { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; border: 1px solid var(--line); }
+        .admin-animal-edit input { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+
         .celebration-content { text-align: center; }
         .celeb-img-container { font-size: 80px; margin-bottom: 15px; animation: bounce-celeb 1s infinite alternate; filter: drop-shadow(0 0 20px var(--gold)); display: flex; justify-content: center; }
         .celeb-img-container img { max-width: 100px; max-height: 100px; }
-        @keyframes bounce-celeb { from { transform: translateY(0) scale(1); } to { transform: translateY(-15px) scale(1.1); } }
-        
-        /* Admin */
-        .admin-tabs { display: flex; gap: 4px; margin-bottom: 15px; }
-        .admin-tab-btn { flex: 1; padding: 8px 4px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
-        .admin-tab-btn.active { background: var(--red); color: white; border-color: var(--red-dark); }
-        .admin-section { display: none; } .admin-section.active { display: block; animation: fade-in 0.3s; }
-        .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.05); }
-        .admin-animal-edit { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2); }
-        .admin-animal-edit img { width: 24px; height: 24px; object-fit: contain; }
-        .admin-animal-edit input { flex: 1; background: #000; border: 1px solid #333; color: #FFF; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
-        .hidden { display: none !important; }
+        @keyframes bounce-celeb { from { transform: translateY(0) scale(1); } to { transform: translateY(-12px) scale(1.06); } }
     </style>
 </head>
 <body>
-    <div class="app">
-        
-        <div id="splash" class="screen active">
-            <div class="cave">
-                <div class="cave-entrance"></div>
-                <img id="splashLogo" src="" class="logo-img" alt="Scorpion" onerror="this.outerHTML='<div class=\'logo-img\' style=\'font-size:70px; display:flex; justify-content:center; align-items:center;\'>🦂</div>'">
-            </div>
-            <div class="splash-title" id="uiTitleSplash">مساعد عقروب V1.15</div>
+<div class="app">
+    <div id="splash" class="screen active">
+        <div class="cave">
+            <div class="cave-entrance"></div>
+            <img id="splashLogo" src="" class="logo-img" alt="Scorpion" onerror="this.outerHTML='<div class=\'logo-img\' style=\'font-size:70px; display:flex; justify-content:center; align-items:center;\'>🦂</div>'">
         </div>
-
-        <div id="loginScreen" class="screen" style="justify-content: center; padding: 20px;">
-            <div class="modal-box" style="margin: auto;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: var(--gold); font-size: 20px; font-weight: 900;" id="uiTitleLogin">مساعد عقروب المحاكي</h2>
-                    <p style="color: var(--muted); font-size: 11px; margin-top: 5px;">أدخل بيانات حسابك للمزامنة</p>
-                </div>
-                <input type="text" id="loginUser" class="input" placeholder="اسم المستخدم (Player ID)">
-                <input type="password" id="loginPass" class="input" placeholder="كلمة المرور">
-                <button class="btn" onclick="login()" style="width: 100%; margin-top: 10px; font-size: 16px;">دخول النظام 🚀</button>
-                <div id="loginErr" class="hidden" style="color: #ef4444; font-size: 11px; text-align: center; margin-top: 10px; font-weight: bold;"></div>
-            </div>
-        </div>
-
-        <div id="mainApp" class="screen">
-            <div class="main-content">
-                <div class="top-bar">
-                    <div class="timer-box" title="الوقت المتبقي لانتهاء الحدث">
-                        <i class="fas fa-stopwatch"></i>
-                        <span id="tDay" class="timer-val">0</span>ي
-                        <span id="tHour" class="timer-val">00</span>س
-                        <span id="tMin" class="timer-val">00</span>د
-                        <span id="tSec" class="timer-val">00</span>ث
-                    </div>
-                    <button class="sync-btn" onclick="openSyncModal()"><i class="fas fa-sync-alt"></i> مزامنة اللوحة</button>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card" style="grid-column: span 2;">
-                        <div class="stat-title">النقاط الحالية (Score)</div>
-                        <div class="stat-val" id="uiScore">0</div>
-                    </div>
-                    <div class="stat-card energy-wrap" id="energyCard">
-                        <div class="stat-title">الطاقة ⚡</div>
-                        <div class="stat-val" id="uiEnergy" style="color: var(--gold);">200</div>
-                        <div class="energy-progress"><div class="energy-fill" id="uiEnergyBar"></div></div>
-                    </div>
-                </div>
-
-                <div class="tools-rack">
-                    <div class="tool-item" onclick="useTool('free')">
-                        <span class="tool-icon">🔄</span>
-                        <span class="tool-name">إعادة مجاني</span>
-                        <span class="tool-limit">تصفير</span>
-                    </div>
-                    <div class="tool-item" id="btnGem" onclick="useTool('gem')">
-                        <div class="tool-badge" id="bdgGem">0</div>
-                        <span class="tool-icon" id="iconGem">💎</span>
-                        <span class="tool-name" id="nameGem">جوهر (+15⚡)</span>
-                        <span class="tool-limit" id="limGem">0/0</span>
-                    </div>
-                    <div class="tool-item" id="btnUpg" onclick="useTool('upgrade')">
-                        <div class="tool-badge" id="bdgUpg">0</div>
-                        <span class="tool-icon" id="iconUpg">⬆️</span>
-                        <span class="tool-name" id="nameUpg">ترقية (<7)</span>
-                        <span class="tool-limit" id="limUpg">0/0</span>
-                    </div>
-                    <div class="tool-item" id="btnClaw" onclick="useTool('claw')">
-                        <div class="tool-badge" id="bdgClaw">0</div>
-                        <span class="tool-icon" id="iconClaw">🦅</span>
-                        <span class="tool-name" id="nameClaw">مخلب</span>
-                        <span class="tool-limit" id="limClaw">0/0</span>
-                    </div>
-                    <div class="tool-item" id="btnWheel" onclick="useTool('wheel')">
-                        <div class="tool-badge" id="bdgWheel">0</div>
-                        <span class="tool-icon" id="iconWheel">🎡</span>
-                        <span class="tool-name" id="nameWheel">عجلة</span>
-                        <span class="tool-limit" id="limWheel">0/0</span>
-                    </div>
-                </div>
-
-                <div id="aiResponseBox" class="hidden ai-response-box">
-                    <div style="color: var(--gold); font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">
-                        <span><i class="fas fa-brain"></i> مستشار عقروب (AI):</span>
-                        <i class="fas fa-times" onclick="document.getElementById('aiResponseBox').classList.add('hidden')" style="cursor: pointer; font-size: 14px;"></i>
-                    </div>
-                    <div id="aiResponseText" style="color: #FFF;">جاري التحليل...</div>
-                </div>
-
-                <div class="board-container" id="gridBox"></div>
-
-                <div class="controls-row">
-                    <div class="dpad">
-                        <div class="dpad-btn dpad-up" onclick="manualMove('UP')"><i class="fas fa-chevron-up"></i></div>
-                        <div class="dpad-btn dpad-left" onclick="manualMove('LEFT')"><i class="fas fa-chevron-right"></i></div>
-                        <div class="dpad-btn dpad-right" onclick="manualMove('RIGHT')"><i class="fas fa-chevron-left"></i></div>
-                        <div class="dpad-btn dpad-down" onclick="manualMove('DOWN')"><i class="fas fa-chevron-down"></i></div>
-                    </div>
-                    <div class="ai-actions">
-                        <button class="ai-btn primary" onclick="smartMerge()"><i class="fas fa-bolt"></i> الحركة الآمنة (الخوارزمية)</button>
-                        <button class="ai-btn" onclick="askGemini()"><i class="fas fa-robot"></i> استشارة الخطة (AI + الأدوات)</button>
-                    </div>
-                </div>
-            </div>
-
-            <nav class="navbar">
-                <div class="nav-btn active" onclick="goTab('play')"><i class="fas fa-gamepad"></i><span>اللوحة</span></div>
-                <div class="nav-btn" onclick="openProfile()"><i class="fas fa-user"></i><span>حسابي</span></div>
-                <div class="nav-btn" id="adminNavBtn" onclick="openAdmin()" style="display: none;"><i class="fas fa-cog"></i><span>الإدارة</span></div>
-            </nav>
-        </div>
-
-        <!-- Modals -->
-        <div class="modal" id="syncModal">
-            <div class="modal-box" style="position: relative;">
-                <div class="modal-title">🔄 مزامنة التطبيق مع اللعبة</div>
-                <p style="font-size: 10px; color: var(--muted); text-align: center; margin-bottom: 10px;">اضغط على المربع لتغيير الحيوان ليطابق اللعبة الأصلية بدقة.</p>
-                
-                <div class="sync-grid-container" id="syncVisualGrid"></div>
-
-                <div id="animalPicker" class="animal-picker"></div>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <div style="flex: 1;"><label style="font-size: 10px; color: var(--gold);">النقاط (Score)</label><input type="number" id="syncScore" class="input" style="margin: 0; padding: 6px;"></div>
-                    <div style="flex: 1;"><label style="font-size: 10px; color: var(--gold);">الطاقة (Energy)</label><input type="number" id="syncEnergy" class="input" style="margin: 0; padding: 6px;" max="200"></div>
-                </div>
-
-                <label style="font-size: 10px; color: var(--gold); display: block; margin-bottom: 4px;">الأدوات (الممتلك / المستخدم اليوم):</label>
-                <div class="tools-sync-grid">
-                    <div class="tool-sync-row"><span class="tool-sync-icon">💎</span><div class="tool-sync-inputs"><input type="number" id="syncGemO" title="ممتلك"><input type="number" id="syncGemU" title="مستخدم"></div></div>
-                    <div class="tool-sync-row"><span class="tool-sync-icon">⬆️</span><div class="tool-sync-inputs"><input type="number" id="syncUpgO" title="ممتلك"><input type="number" id="syncUpgU" title="مستخدم"></div></div>
-                    <div class="tool-sync-row"><span class="tool-sync-icon">🦅</span><div class="tool-sync-inputs"><input type="number" id="syncClawO" title="ممتلك"><input type="number" id="syncClawU" title="مستخدم"></div></div>
-                    <div class="tool-sync-row"><span class="tool-sync-icon">🎡</span><div class="tool-sync-inputs"><input type="number" id="syncWheelO" title="ممتلك"><input type="number" id="syncWheelU" title="مستخدم"></div></div>
-                </div>
-
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn" onclick="applySync()" style="flex: 1;"><i class="fas fa-check"></i> حفظ الخطة</button>
-                    <button class="btn btn-red" onclick="closeModal('syncModal')" style="flex: 1;">إلغاء</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal" id="celebModal">
-            <div class="modal-box celebration-content" style="background: radial-gradient(circle, #2a1a00, #000);">
-                <div class="modal-title" style="border: none; font-size: 24px;">👑 إنجاز أسطوري!</div>
-                <div class="celeb-img-container" id="celebIconContainer">👑</div>
-                <div style="font-size: 16px; font-weight: bold; color: #FFF; margin-bottom: 5px;">تم دمج الحيوان الملك بنجاح</div>
-                <div style="font-size: 28px; font-weight: 900; color: #4ade80; margin-bottom: 10px; text-shadow: 0 0 10px rgba(74,222,128,0.5);">+2048 نقطة</div>
-                <div style="font-size: 11px; color: var(--gold); margin-bottom: 20px; background: rgba(212,175,55,0.1); padding: 8px; border-radius: 8px; border: 1px dashed var(--gold);">تم إضافة <b style="color:#FFF;">+20</b> للحد اليومي لاستخدام (الترقية، المخلب، العجلة)!</div>
-                <button class="btn" onclick="closeCelebAndShowReview()" style="width: 100%;">استمرار المسيرة 🔥</button>
-            </div>
-        </div>
-
-        <div class="modal" id="reviewModal">
-            <div class="modal-box">
-                <div class="modal-title">⭐ رأيك يهمنا</div>
-                <p style="font-size: 11px; text-align: center; color: #CCC; margin-bottom: 15px;">بما أنك حققت إنجازاً رائعاً، ما رأيك في أداء المساعد؟</p>
-                <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 28px; color: #444; cursor: pointer;" id="starRating">
-                    <i class="fas fa-star" onclick="setStars(1)"></i><i class="fas fa-star" onclick="setStars(2)"></i><i class="fas fa-star" onclick="setStars(3)"></i><i class="fas fa-star" onclick="setStars(4)"></i><i class="fas fa-star" onclick="setStars(5)"></i>
-                </div>
-                <textarea id="reviewText" class="input" style="height: 80px; resize: none; font-family: inherit;" placeholder="اكتب مقترحك أو رأيك هنا للتحسين..."></textarea>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn" onclick="submitReview()" style="flex: 1;">إرسال التقييم</button>
-                    <button class="btn btn-red" onclick="closeModal('reviewModal')" style="flex: 1;">تخطي</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal" id="profileModal">
-            <div class="modal-box">
-                <div class="modal-title">👤 حسابي</div>
-                <label style="font-size: 10px; color: var(--gold);">الاسم الظاهري:</label>
-                <input type="text" id="profName" class="input">
-                <label style="font-size: 10px; color: var(--gold);">المملكة:</label>
-                <input type="text" id="profKingdom" class="input">
-                <label style="font-size: 10px; color: var(--gold);">التحالف:</label>
-                <input type="text" id="profAlliance" class="input">
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn" onclick="saveProfile()" style="flex: 1;">حفظ التعديلات</button>
-                    <button class="btn btn-red" onclick="closeModal('profileModal')" style="flex: 1;">إغلاق</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal" id="adminModal">
-            <div class="modal-box" style="max-width: 400px;">
-                <div class="modal-title" style="color: var(--red);">⚙️ لوحة الإدارة الشاملة</div>
-                <div class="admin-tabs">
-                    <button class="admin-tab-btn active" onclick="switchAdminTab('general')">عام</button>
-                    <button class="admin-tab-btn" onclick="switchAdminTab('animals')">الحيوانات</button>
-                    <button class="admin-tab-btn" onclick="switchAdminTab('tools')">الأدوات</button>
-                    <button class="admin-tab-btn" onclick="switchAdminTab('users')">اللاعبين</button>
-                </div>
-
-                <div id="admin-general" class="admin-section active">
-                    <label style="font-size: 10px; color: var(--gold);">اسم البرنامج:</label><input type="text" id="admAppName" class="input">
-                    <label style="font-size: 10px; color: var(--gold);">رابط اللوجو (صورة PNG شفافة):</label><input type="text" id="admLogo" class="input" placeholder="رابط URL للوجو">
-                    <label style="font-size: 10px; color: var(--gold);">Gemini API Key:</label><input type="password" id="admGemini" class="input" placeholder="AIzaSy...">
-                    <label style="font-size: 10px; color: var(--gold);">موعد انتهاء الحدث:</label><input type="datetime-local" id="admEventTime" class="input" style="font-family: inherit;">
-                    <button class="btn btn-red" onclick="saveAdminGeneral()" style="width: 100%; margin-top: 10px;">حفظ الإعدادات العامة</button>
-                </div>
-
-                <div id="admin-animals" class="admin-section">
-                    <p style="font-size: 10px; color: var(--muted); margin-bottom: 10px;">ضع رابط صورة أو Emoji.</p>
-                    <div id="adminAnimalsList" style="max-height: 50vh; overflow-y: auto; padding-right: 4px;"></div>
-                    <button class="btn btn-red" onclick="saveAdminAnimals()" style="width: 100%; margin-top: 10px;">حفظ الحيوانات</button>
-                </div>
-
-                <div id="admin-tools" class="admin-section">
-                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">جوهر:</span><input type="text" id="admIconGem" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameGem" placeholder="الاسم"></div>
-                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">ترقية:</span><input type="text" id="admIconUpg" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameUpg" placeholder="الاسم"></div>
-                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">مخلب:</span><input type="text" id="admIconClaw" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameClaw" placeholder="الاسم"></div>
-                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">عجلة:</span><input type="text" id="admIconWheel" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameWheel" placeholder="الاسم"></div>
-                    <button class="btn btn-red" onclick="saveAdminTools()" style="width: 100%; margin-top: 10px;">حفظ الأدوات</button>
-                </div>
-
-                <div id="admin-users" class="admin-section">
-                    <p style="font-size: 10px; color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 8px;">قائمة اللاعبين (تحديث حي):</p>
-                    <div id="adminUsersList" style="max-height: 40vh; overflow-y: auto;"></div>
-                </div>
-
-                <button class="btn" onclick="closeModal('adminModal')" style="width: 100%; margin-top: 15px; background: #333; color: #FFF;">إغلاق لوحة الإدارة</button>
-            </div>
-        </div>
-
+        <div class="splash-title" id="uiTitleSplash">مساعد عقروب V1.16</div>
     </div>
+
+    <div id="loginScreen" class="screen" style="justify-content:center; padding:20px;">
+        <div class="modal-box" style="margin:auto;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <h2 style="color:var(--gold); font-size:20px; font-weight:900;" id="uiTitleLogin">مساعد عقروب المحاكي</h2>
+                <p style="color:var(--muted); font-size:11px; margin-top:5px;">أدخل بيانات حسابك للمزامنة</p>
+            </div>
+            <input type="text" id="loginUser" class="input" placeholder="اسم المستخدم (Player ID)">
+            <input type="password" id="loginPass" class="input" placeholder="كلمة المرور">
+            <button class="btn" onclick="login()" style="width:100%; margin-top:10px; font-size:16px;">دخول النظام 🚀</button>
+            <div id="loginErr" class="hidden" style="color:#ef4444; font-size:11px; text-align:center; margin-top:10px; font-weight:bold;"></div>
+        </div>
+    </div>
+
+    <div id="mainApp" class="screen">
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="timer-box" title="الوقت المتبقي لانتهاء الحدث">
+                    <i class="fas fa-stopwatch"></i>
+                    <span id="tDay" class="timer-val">0</span>ي
+                    <span id="tHour" class="timer-val">00</span>س
+                    <span id="tMin" class="timer-val">00</span>د
+                    <span id="tSec" class="timer-val">00</span>ث
+                </div>
+                <div class="top-actions">
+                    <button class="top-mini-btn" id="editModeBtn" onclick="toggleEditMode()"><i class="fas fa-pen"></i> تحرير</button>
+                    <button class="top-mini-btn" onclick="openSyncModal()"><i class="fas fa-sync-alt"></i> مزامنة</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">نقاط الجولة</div>
+                    <div class="stat-val" id="uiSessionScore">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">أعلى جولة</div>
+                    <div class="stat-val" id="uiBestRound">0</div>
+                </div>
+                <div class="stat-card energy-wrap">
+                    <div class="stat-title">الطاقة ⚡</div>
+                    <div class="stat-val" id="uiEnergy" style="color:var(--gold);">200</div>
+                    <div class="energy-progress"><div class="energy-fill" id="uiEnergyBar"></div></div>
+                </div>
+            </div>
+
+            <div class="quick-stats-row">
+                <div class="quick-stat"><div class="label">عدد الدمجات</div><div class="value" id="uiMovesNow">0</div></div>
+                <div class="quick-stat"><div class="label">أعلى مستوى باللوحة</div><div class="value" id="uiBoardMax">0</div></div>
+                <div class="quick-stat"><div class="label">دمج 11 اليوم</div><div class="value" id="uiLevel11Today">0/3</div></div>
+            </div>
+
+            <div class="tools-rack">
+                <div class="tool-item" onclick="useTool('free')">
+                    <span class="tool-icon">🔄</span>
+                    <span class="tool-name">إعادة الجولة</span>
+                    <span class="tool-limit">تصفير</span>
+                </div>
+                <div class="tool-item" id="btnGem" onclick="useTool('gem')">
+                    <div class="tool-badge" id="bdgGem">0</div>
+                    <span class="tool-icon" id="iconGem">💎</span>
+                    <span class="tool-name" id="nameGem">جوهر (+15⚡)</span>
+                    <span class="tool-limit" id="limGem">0/0</span>
+                </div>
+                <div class="tool-item" id="btnUpg" onclick="useTool('upgrade')">
+                    <div class="tool-badge" id="bdgUpg">0</div>
+                    <span class="tool-icon" id="iconUpg">⬆️</span>
+                    <span class="tool-name" id="nameUpg">ترقية (&lt;7)</span>
+                    <span class="tool-limit" id="limUpg">0/0</span>
+                </div>
+                <div class="tool-item" id="btnClaw" onclick="useTool('claw')">
+                    <div class="tool-badge" id="bdgClaw">0</div>
+                    <span class="tool-icon" id="iconClaw">🦅</span>
+                    <span class="tool-name" id="nameClaw">مخلب</span>
+                    <span class="tool-limit" id="limClaw">0/0</span>
+                </div>
+                <div class="tool-item" id="btnWheel" onclick="useTool('wheel')">
+                    <div class="tool-badge" id="bdgWheel">0</div>
+                    <span class="tool-icon" id="iconWheel">🎡</span>
+                    <span class="tool-name" id="nameWheel">عجلة</span>
+                    <span class="tool-limit" id="limWheel">0/0</span>
+                </div>
+            </div>
+
+            <div class="board-container" id="gridBox"></div>
+            <div class="board-hint" id="boardHint">استخدم الأسهم للدمج، أو فعّل وضع التحرير لإضافة/تعديل الحيوانات مباشرة.</div>
+
+            <div class="controls-row">
+                <div class="dpad">
+                    <div class="dpad-btn dpad-up" onclick="manualMove('UP')"><i class="fas fa-chevron-up"></i></div>
+                    <div class="dpad-btn dpad-left" onclick="manualMove('LEFT')"><i class="fas fa-chevron-left"></i></div>
+                    <div class="dpad-btn dpad-right" onclick="manualMove('RIGHT')"><i class="fas fa-chevron-right"></i></div>
+                    <div class="dpad-btn dpad-down" onclick="manualMove('DOWN')"><i class="fas fa-chevron-down"></i></div>
+                </div>
+                <div class="merge-actions">
+                    <button class="merge-btn primary" onclick="smartMerge()"><i class="fas fa-bolt"></i> دمج آمن</button>
+                    <button class="merge-btn" onclick="askGemini()"><i class="fas fa-robot"></i> خطة المساعد</button>
+                </div>
+            </div>
+
+            <div id="aiResponseBox" class="hidden ai-response-box">
+                <div style="color:var(--gold); font-weight:bold; margin-bottom:4px; display:flex; justify-content:space-between;">
+                    <span><i class="fas fa-brain"></i> مستشار عقروب:</span>
+                    <i class="fas fa-times" onclick="document.getElementById('aiResponseBox').classList.add('hidden')" style="cursor:pointer; font-size:14px;"></i>
+                </div>
+                <div id="aiResponseText" style="color:#fff;">جاري التحليل...</div>
+            </div>
+        </div>
+
+        <nav class="navbar">
+            <div class="nav-btn active" data-tab="play" onclick="setActiveNav('play')"><i class="fas fa-gamepad"></i><span>اللعب</span></div>
+            <div class="nav-btn" data-tab="leaderboard" onclick="openLeaderboard()"><i class="fas fa-trophy"></i><span>المتصدرين</span></div>
+            <div class="nav-btn" data-tab="support" onclick="openSupport()"><i class="fas fa-life-ring"></i><span>الدعم</span></div>
+            <div class="nav-btn" data-tab="profile" onclick="openProfile()"><i class="fas fa-user"></i><span>حسابي</span></div>
+            <div class="nav-btn" id="adminNavBtn" data-tab="admin" onclick="openAdmin()" style="display:none;"><i class="fas fa-cog"></i><span>الإدارة</span></div>
+        </nav>
+    </div>
+
+    <div class="modal" id="syncModal">
+        <div class="modal-box" style="position:relative;">
+            <div class="modal-title">🔄 مزامنة التطبيق مع اللعبة</div>
+            <p style="font-size:10px; color:var(--muted); text-align:center; margin-bottom:10px;">اضغط على أي مربع لتعديل الحيوان أو المستوى يدويًا.</p>
+            <div class="sync-grid-container" id="syncVisualGrid"></div>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1;"><label style="font-size:10px; color:var(--gold);">نقاط الجولة</label><input type="number" id="syncScore" class="input" style="margin:0; padding:6px;"></div>
+                <div style="flex:1;"><label style="font-size:10px; color:var(--gold);">الطاقة</label><input type="number" id="syncEnergy" class="input" style="margin:0; padding:6px;" max="200"></div>
+            </div>
+            <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:4px;">الأدوات (الممتلك / المستخدم اليوم)</label>
+            <div class="sync-grid-container" style="grid-template-columns:1fr 1fr;">
+                <div class="admin-animal-edit"><span style="width:25px;">💎</span><input type="number" id="syncGemO" placeholder="ممتلك"><input type="number" id="syncGemU" placeholder="مستخدم"></div>
+                <div class="admin-animal-edit"><span style="width:25px;">⬆️</span><input type="number" id="syncUpgO" placeholder="ممتلك"><input type="number" id="syncUpgU" placeholder="مستخدم"></div>
+                <div class="admin-animal-edit"><span style="width:25px;">🦅</span><input type="number" id="syncClawO" placeholder="ممتلك"><input type="number" id="syncClawU" placeholder="مستخدم"></div>
+                <div class="admin-animal-edit"><span style="width:25px;">🎡</span><input type="number" id="syncWheelO" placeholder="ممتلك"><input type="number" id="syncWheelU" placeholder="مستخدم"></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn" onclick="applySync()" style="flex:1;"><i class="fas fa-check"></i> حفظ</button>
+                <button class="btn btn-red" onclick="closeModal('syncModal')" style="flex:1;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="leaderboardModal">
+        <div class="modal-box">
+            <div class="modal-title">🏆 المتصدرون</div>
+            <div id="leaderboardList" class="leaderboard-list"></div>
+            <button class="btn btn-dark" onclick="closeModal('leaderboardModal')" style="width:100%; margin-top:12px;">إغلاق</button>
+        </div>
+    </div>
+
+    <div class="modal" id="supportModal">
+        <div class="modal-box">
+            <div class="modal-title">⭐ التقييم والدعم</div>
+            <p style="font-size:11px; text-align:center; color:#ccc; margin-bottom:14px;">يمكنك الآن تقييم البرنامج أو إرسال ملاحظة أو شكوى في أي وقت.</p>
+            <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px; font-size:28px; color:#444; cursor:pointer;" id="starRating">
+                <i class="fas fa-star" onclick="setStars(1)"></i>
+                <i class="fas fa-star" onclick="setStars(2)"></i>
+                <i class="fas fa-star" onclick="setStars(3)"></i>
+                <i class="fas fa-star" onclick="setStars(4)"></i>
+                <i class="fas fa-star" onclick="setStars(5)"></i>
+            </div>
+            <textarea id="reviewText" class="textarea" placeholder="اكتب تقييمك أو اقتراحك أو أي مشكلة واجهتك..."></textarea>
+            <div style="display:flex; gap:10px;">
+                <button class="btn" onclick="submitReview()" style="flex:1;">إرسال</button>
+                <button class="btn btn-red" onclick="closeModal('supportModal')" style="flex:1;">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="profileModal">
+        <div class="modal-box">
+            <div class="modal-title">👤 حسابي</div>
+            <div class="profile-header">
+                <div class="avatar-badge" id="profileAvatarPreview">🦂</div>
+                <div>
+                    <div style="font-size:14px; font-weight:900; color:#fff;" id="profileHeaderName">-</div>
+                    <div style="font-size:10px; color:var(--muted); margin-top:4px;" id="profileHeaderMeta">-</div>
+                </div>
+            </div>
+
+            <label style="font-size:10px; color:var(--gold);">الصورة الشخصية:</label>
+            <div class="avatar-grid" id="avatarGrid"></div>
+            <input type="text" id="profAvatarCustom" class="input" placeholder="أو ضع Emoji / رابط صورة للصورة الشخصية">
+
+            <label style="font-size:10px; color:var(--gold);">الاسم الظاهري:</label>
+            <input type="text" id="profName" class="input">
+            <label style="font-size:10px; color:var(--gold);">المملكة:</label>
+            <input type="text" id="profKingdom" class="input">
+            <label style="font-size:10px; color:var(--gold);">التحالف:</label>
+            <input type="text" id="profAlliance" class="input">
+
+            <div class="profile-stats">
+                <div class="mini-card"><div class="label">النقاط الإجمالية</div><div class="value" id="profTotalScore">0</div></div>
+                <div class="mini-card"><div class="label">أعلى جولة</div><div class="value" id="profBestRound">0</div></div>
+                <div class="mini-card"><div class="label">أعلى مستوى</div><div class="value" id="profHighestLevel">0</div></div>
+                <div class="mini-card"><div class="label">إجمالي الدمجات</div><div class="value" id="profTotalMoves">0</div></div>
+                <div class="mini-card" style="grid-column:span 2;"><div class="label">عدد مرات دمج المستوى 11</div><div class="value" id="profLevel11Count">0</div></div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="btn" onclick="saveProfile()" style="flex:1;">حفظ</button>
+                <button class="btn btn-red" onclick="closeModal('profileModal')" style="flex:1;">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="celebModal">
+        <div class="modal-box celebration-content" style="background:radial-gradient(circle, #2a1a00, #000);">
+            <div class="modal-title" style="border:none; font-size:24px;">👑 إنجاز أسطوري!</div>
+            <div class="celeb-img-container" id="celebIconContainer">👑</div>
+            <div style="font-size:16px; font-weight:bold; color:#fff; margin-bottom:5px;">تم دمج المستوى 11 بنجاح</div>
+            <div style="font-size:28px; font-weight:900; color:#4ade80; margin-bottom:10px;">+2048 نقطة</div>
+            <div style="font-size:11px; color:var(--gold); margin-bottom:18px; background:rgba(212,175,55,0.1); padding:8px; border-radius:8px; border:1px dashed var(--gold);">تم إضافة +20 إلى الحد اليومي لاستخدام الترقية والمخلب والعجلة.</div>
+            <button class="btn" onclick="closeCelebAndShowSupport()" style="width:100%;">استمرار 🔥</button>
+        </div>
+    </div>
+
+    <div class="modal" id="adminModal">
+        <div class="modal-box" style="max-width:400px;">
+            <div class="modal-title" style="color:var(--red);">⚙️ لوحة الإدارة</div>
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" onclick="switchAdminTab('general', event)">عام</button>
+                <button class="admin-tab-btn" onclick="switchAdminTab('animals', event)">الحيوانات</button>
+                <button class="admin-tab-btn" onclick="switchAdminTab('tools', event)">الأدوات</button>
+                <button class="admin-tab-btn" onclick="switchAdminTab('users', event)">اللاعبون</button>
+            </div>
+
+            <div id="admin-general" class="admin-section active">
+                <label style="font-size:10px; color:var(--gold);">اسم البرنامج:</label>
+                <input type="text" id="admAppName" class="input">
+                <label style="font-size:10px; color:var(--gold);">رابط اللوجو:</label>
+                <input type="text" id="admLogo" class="input" placeholder="رابط URL للوجو">
+                <label style="font-size:10px; color:var(--gold);">هدف دمج 11 اليومي:</label>
+                <input type="number" id="admDailyGoal" class="input" min="1" max="20">
+                <label style="font-size:10px; color:var(--gold);">Gemini API Key:</label>
+                <input type="password" id="admGemini" class="input" placeholder="AIzaSy...">
+                <label style="font-size:10px; color:var(--gold);">موعد انتهاء الحدث:</label>
+                <input type="datetime-local" id="admEventTime" class="input" style="font-family:inherit;">
+                <button class="btn btn-red" onclick="saveAdminGeneral()" style="width:100%; margin-top:10px;">حفظ الإعدادات العامة</button>
+            </div>
+
+            <div id="admin-animals" class="admin-section">
+                <p style="font-size:10px; color:var(--muted); margin-bottom:10px;">ضع رابط صورة أو Emoji لكل مستوى.</p>
+                <div id="adminAnimalsList"></div>
+                <button class="btn btn-red" onclick="saveAdminAnimals()" style="width:100%; margin-top:10px;">حفظ الحيوانات</button>
+            </div>
+
+            <div id="admin-tools" class="admin-section">
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">جوهر:</span><input type="text" id="admIconGem" placeholder="أيقونة"><input type="text" id="admNameGem" placeholder="الاسم"></div>
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">ترقية:</span><input type="text" id="admIconUpg" placeholder="أيقونة"><input type="text" id="admNameUpg" placeholder="الاسم"></div>
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">مخلب:</span><input type="text" id="admIconClaw" placeholder="أيقونة"><input type="text" id="admNameClaw" placeholder="الاسم"></div>
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">عجلة:</span><input type="text" id="admIconWheel" placeholder="أيقونة"><input type="text" id="admNameWheel" placeholder="الاسم"></div>
+                <button class="btn btn-red" onclick="saveAdminTools()" style="width:100%; margin-top:10px;">حفظ الأدوات</button>
+            </div>
+
+            <div id="admin-users" class="admin-section">
+                <p style="font-size:10px; color:var(--gold); margin-bottom:8px;">يمكنك ترقية أي حساب إلى Admin أو سحب الصلاحية منه.</p>
+                <div id="adminUsersList" class="admin-users-list"></div>
+            </div>
+
+            <button class="btn btn-dark" onclick="closeModal('adminModal')" style="width:100%; margin-top:14px;">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="animalPicker" class="animal-picker"></div>
+</div>
 
 <script>
 let user = null;
-let grid = Array(4).fill().map(() => Array(4).fill(0));
-let tempSyncGrid = Array(4).fill().map(() => Array(4).fill(0));
+let grid = createEmptyGrid();
+let tempSyncGrid = createEmptyGrid();
 let syncTargetCell = null;
+let pickerContext = null;
 let animals = {};
 let settings = {};
 let activeTool = null;
 let wheelFirstCell = null;
 let currentStars = 5;
+let editMode = false;
+let selectedAvatar = '🦂';
 
-document.addEventListener('DOMContentLoaded', async () => {
+const defaultAvatarOptions = ['🦂','🐉','🦅','🦁','🐺','🐯','🦊','🐰','🐻','👑'];
+
+const toolIdMap = {
+    gem: 'btnGem',
+    upgrade: 'btnUpg',
+    claw: 'btnClaw',
+    wheel: 'btnWheel'
+};
+
+const rawToolDefaults = {
+    gem: { icon: '💎', name: 'جوهر (+15⚡)' },
+    upgrade: { icon: '⬆️', name: 'ترقية (<7)' },
+    claw: { icon: '🦅', name: 'مخلب' },
+    wheel: { icon: '🎡', name: 'عجلة' }
+};
+
+window.addEventListener('DOMContentLoaded', async () => {
     await loadSettings();
     initGridUI();
     initVisualSyncGrid();
     initAnimalPicker();
+    renderAvatarGrid();
+    setStars(5);
 
     setTimeout(() => {
         document.getElementById('splash').classList.remove('active');
         document.getElementById('loginScreen').classList.add('active');
-    }, 2000);
+    }, 1800);
 });
+
+function createEmptyGrid() {
+    return Array.from({ length: 4 }, () => Array(4).fill(0));
+}
+
+function cloneGrid(g) {
+    return JSON.parse(JSON.stringify(g));
+}
+
+function isValidGrid(g) {
+    return Array.isArray(g) && g.length === 4 && g.every(row => Array.isArray(row) && row.length === 4);
+}
+
+function isGridEmpty(g) {
+    return !isValidGrid(g) || g.every(row => row.every(cell => !cell));
+}
+
+function getDefaultAnimals() {
+    return {
+        '0': { icon: '' },
+        '1': { icon: '🐭', name: 'المستوى 1' },
+        '2': { icon: '🐰', name: 'المستوى 2' },
+        '3': { icon: '🦊', name: 'المستوى 3' },
+        '4': { icon: '🐺', name: 'المستوى 4' },
+        '5': { icon: '🦁', name: 'المستوى 5' },
+        '6': { icon: '🐯', name: 'المستوى 6' },
+        '7': { icon: '🦅', name: 'المستوى 7' },
+        '8': { icon: '🐉', name: 'المستوى 8' },
+        '9': { icon: '🔥', name: 'المستوى 9' },
+        '10': { icon: '⚡', name: 'المستوى 10' },
+        '11': { icon: '👑', name: 'المستوى 11' }
+    };
+}
+
+function getToolConfig(toolKey) {
+    return settings.toolsConfig?.[toolKey] || rawToolDefaults[toolKey];
+}
+
+function renderIcon(iconStr) {
+    if (!iconStr) return '';
+    const trimmed = String(iconStr).trim();
+    if (trimmed.startsWith('/') || trimmed.startsWith('http') || trimmed.startsWith('data:')) {
+        return `<img src="${trimmed}" alt="icon">`;
+    }
+    return trimmed;
+}
+
+function renderAvatar(avatar) {
+    return renderIcon(avatar || '🦂') || '🦂';
+}
+
+function applyToolLabels() {
+    ['gem', 'upgrade', 'claw', 'wheel'].forEach(key => {
+        const config = getToolConfig(key);
+        const iconEl = document.getElementById(`icon${key === 'upgrade' ? 'Upg' : key.charAt(0).toUpperCase() + key.slice(1)}`);
+        const nameEl = document.getElementById(`name${key === 'upgrade' ? 'Upg' : key.charAt(0).toUpperCase() + key.slice(1)}`);
+        if (iconEl) iconEl.innerHTML = renderIcon(config.icon);
+        if (nameEl) nameEl.textContent = config.name;
+    });
+}
 
 async function loadSettings() {
     try {
         const res = await fetch('/api/settings');
         settings = await res.json();
         animals = settings.animals || getDefaultAnimals();
-        if(settings.logoUrl) document.getElementById('splashLogo').src = settings.logoUrl;
-        if(settings.appName) {
+        if (settings.logoUrl) document.getElementById('splashLogo').src = settings.logoUrl;
+        if (settings.appName) {
             document.getElementById('uiTitleSplash').textContent = settings.appName;
             document.getElementById('uiTitleLogin').textContent = settings.appName;
         }
-        
-        // تحميل مسميات الأدوات من الإعدادات إن وجدت
-        if(settings.toolsConfig) {
-            if(settings.toolsConfig.gem) { document.getElementById('iconGem').textContent = settings.toolsConfig.gem.icon; document.getElementById('nameGem').textContent = settings.toolsConfig.gem.name; }
-            if(settings.toolsConfig.upgrade) { document.getElementById('iconUpg').textContent = settings.toolsConfig.upgrade.icon; document.getElementById('nameUpg').textContent = settings.toolsConfig.upgrade.name; }
-            if(settings.toolsConfig.claw) { document.getElementById('iconClaw').textContent = settings.toolsConfig.claw.icon; document.getElementById('nameClaw').textContent = settings.toolsConfig.claw.name; }
-            if(settings.toolsConfig.wheel) { document.getElementById('iconWheel').textContent = settings.toolsConfig.wheel.icon; document.getElementById('nameWheel').textContent = settings.toolsConfig.wheel.name; }
-        }
-    } catch (e) {
+        applyToolLabels();
+    } catch {
+        settings = { dailyLevel11Goal: 3 };
         animals = getDefaultAnimals();
+        applyToolLabels();
     }
-}
-
-function getDefaultAnimals() {
-    return {
-        '0': { icon: '' }, '1': { icon: '🐭' }, '2': { icon: '🐰' }, '3': { icon: '🦊' },
-        '4': { icon: '🐺' }, '5': { icon: '🦁' }, '6': { icon: '🐯' }, '7': { icon: '🦅' },
-        '8': { icon: '🐉' }, '9': { icon: '🔥' }, '10': { icon: '⚡' }, '11': { icon: '👑' }
-    };
-}
-
-function renderIcon(iconStr) {
-    if (!iconStr) return '';
-    if (iconStr.startsWith('/') || iconStr.startsWith('http') || iconStr.startsWith('data:')) return `<img src="${iconStr}">`;
-    return iconStr;
 }
 
 async function login() {
     const username = document.getElementById('loginUser').value.trim();
     const password = document.getElementById('loginPass').value;
     const errBox = document.getElementById('loginErr');
-    
-    if (!username || !password) { errBox.textContent = 'أدخل البيانات كاملة'; errBox.classList.remove('hidden'); return; }
-    
+
+    if (!username || !password) {
+        errBox.textContent = 'أدخل البيانات كاملة';
+        errBox.classList.remove('hidden');
+        return;
+    }
+
     try {
         const res = await fetch('/api/login', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
         const data = await res.json();
-        
-        if (data.success) {
-            user = { username, password, isAdmin: data.isAdmin, ...data.userData };
-            if(user.grid && user.grid.length === 4) grid = user.grid;
-            
-            if(!user.tools) user.tools = {};
-            ['gem', 'upgrade', 'claw', 'wheel'].forEach(t => {
-                if(!user.tools[t]) user.tools[t] = { owned: 0, dailyLimit: (t==='gem'?999:20), used: 0 };
-            });
-
-            document.getElementById('loginScreen').classList.remove('active');
-            document.getElementById('mainApp').classList.add('active');
-            
-            if(user.isAdmin) document.getElementById('adminNavBtn').style.display = 'flex';
-            
-            updateUI();
-            startRegenTimer();
-            startCountdownTimer();
-        } else {
-            errBox.textContent = data.message || 'خطأ في بيانات الدخول'; errBox.classList.remove('hidden');
+        if (!data.success) {
+            errBox.textContent = data.message || 'خطأ في بيانات الدخول';
+            errBox.classList.remove('hidden');
+            return;
         }
-    } catch (e) {
-        errBox.textContent = 'خطأ في الاتصال بالخادم!'; errBox.classList.remove('hidden');
+
+        user = {
+            username,
+            password,
+            ...data.userData,
+            isAdmin: data.isAdmin
+        };
+
+        ensureUserShape();
+        grid = cloneGrid(user.grid);
+        selectedAvatar = user.avatar || '🦂';
+
+        document.getElementById('loginScreen').classList.remove('active');
+        document.getElementById('mainApp').classList.add('active');
+        document.getElementById('adminNavBtn').style.display = user.isAdmin ? 'flex' : 'none';
+
+        setActiveNav('play');
+        updateUI();
+        startRegenTimer();
+        startCountdownTimer();
+        errBox.classList.add('hidden');
+    } catch {
+        errBox.textContent = 'خطأ في الاتصال بالخادم!';
+        errBox.classList.remove('hidden');
     }
+}
+
+function ensureUserShape() {
+    if (!user.tools) user.tools = {};
+    ['gem', 'upgrade', 'claw', 'wheel'].forEach(t => {
+        if (!user.tools[t]) user.tools[t] = { owned: 0, dailyLimit: t === 'gem' ? 999 : 20, used: 0 };
+    });
+    if (!isValidGrid(user.grid) || isGridEmpty(user.grid)) {
+        user.grid = createEmptyGrid();
+        spawnRandomOnUserGrid();
+        spawnRandomOnUserGrid();
+    }
+    user.sessionScore = Number(user.sessionScore) || 0;
+    user.highScore = Number(user.highScore) || 0;
+    user.totalScore = Number(user.totalScore) || 0;
+    user.highestLevel = Number(user.highestLevel) || getMaxLevel(grid);
+    user.totalMoves = Number(user.totalMoves) || 0;
+    user.movesThisRound = Number(user.movesThisRound) || 0;
+    user.level11Count = Number(user.level11Count) || 0;
+    user.level11Today = Number(user.level11Today) || 0;
+    user.energy = Math.max(0, Math.min(200, Number(user.energy) || 0));
+    user.avatar = user.avatar || '🦂';
 }
 
 function initGridUI() {
@@ -477,157 +893,8 @@ function initGridUI() {
             const cell = document.createElement('div');
             cell.className = 'cell lvl-0';
             cell.id = `cell_${r}_${c}`;
-            cell.onclick = () => handleCellClick(r, c);
+            cell.onclick = (event) => handleCellClick(r, c, event);
             box.appendChild(cell);
-        }
-    }
-}
-
-function updateUI() {
-    if(!user) return;
-    for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-            const val = grid[r][c];
-            const cell = document.getElementById(`cell_${r}_${c}`);
-            cell.className = `cell lvl-${val}`;
-            cell.innerHTML = val > 0 ? `${renderIcon(animals[val]?.icon)}<span class="lvl-num">${val}</span>` : '';
-        }
-    }
-    document.getElementById('uiScore').textContent = user.sessionScore || 0;
-    const nrg = user.energy || 0;
-    document.getElementById('uiEnergy').textContent = nrg;
-    const nrgBar = document.getElementById('uiEnergyBar');
-    nrgBar.style.width = `${Math.min(100, (nrg/200)*100)}%`;
-    nrgBar.className = nrg < 50 ? 'energy-fill low' : 'energy-fill';
-
-    updateToolUI('Gem', user.tools.gem); updateToolUI('Upg', user.tools.upgrade);
-    updateToolUI('Claw', user.tools.claw); updateToolUI('Wheel', user.tools.wheel);
-}
-
-function updateToolUI(idSuffix, toolObj) {
-    const owned = toolObj?.owned || 0;
-    const limit = toolObj?.dailyLimit || 0;
-    const used = toolObj?.used || 0;
-    const remain = Math.max(0, limit - used);
-    
-    document.getElementById(`bdg${idSuffix}`).textContent = owned;
-    document.getElementById(`lim${idSuffix}`).textContent = `${used}/${limit}`;
-    
-    const btn = document.getElementById(`btn${idSuffix}`);
-    if (owned <= 0 || remain <= 0) btn.classList.add('empty'); else btn.classList.remove('empty');
-}
-
-function spawnRandom() {
-    let empty = [];
-    for(let r=0; r<4; r++) for(let c=0; c<4; c++) if(grid[r][c] === 0) empty.push({r,c});
-    if(empty.length > 0) {
-        let spot = empty[Math.floor(Math.random() * empty.length)];
-        grid[spot.r][spot.c] = Math.floor(Math.random() * 7) + 1; 
-    }
-}
-
-function calcScore(level) { return Math.pow(2, level + 1); }
-
-function manualMove(direction) {
-    if(user.energy <= 0) { alert("الطاقة غير كافية! يرجى الانتظار أو استخدام جوهر."); return; }
-    
-    let moved = false; let gainedScore = 0;
-    const newGrid = JSON.parse(JSON.stringify(grid));
-    const slide = (row) => { let arr = row.filter(val => val); let zeros = Array(4 - arr.length).fill(0); return arr.concat(zeros); }
-    const combine = (row) => {
-        for (let i = 0; i < 3; i++) {
-            if (row[i] !== 0 && row[i] === row[i + 1] && row[i] < 11) {
-                row[i]++; gainedScore += calcScore(row[i]); row[i + 1] = 0; moved = true;
-            }
-        } return row;
-    }
-
-    if (direction === 'LEFT' || direction === 'RIGHT') {
-        for (let r = 0; r < 4; r++) {
-            let row = newGrid[r]; if(direction === 'RIGHT') row.reverse();
-            let slid = slide(row); let combined = slide(combine(slid));
-            if(direction === 'RIGHT') combined.reverse(); newGrid[r] = combined;
-        }
-    } else if (direction === 'UP' || direction === 'DOWN') {
-        for (let c = 0; c < 4; c++) {
-            let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]];
-            if(direction === 'DOWN') col.reverse();
-            let slid = slide(col); let combined = slide(combine(slid));
-            if(direction === 'DOWN') combined.reverse();
-            for(let r=0; r<4; r++) newGrid[r][c] = combined[r];
-        }
-    }
-
-    if (JSON.stringify(grid) !== JSON.stringify(newGrid)) moved = true;
-
-    if (moved) {
-        grid = newGrid; user.sessionScore += gainedScore; user.energy--;
-        spawnRandom(); checkForLevel11(); updateUI(); saveState();
-    }
-}
-
-function checkForLevel11() {
-    let found = false; let iconHTML = '';
-    for(let r=0; r<4; r++){
-        for(let c=0; c<4; c++){
-            if(grid[r][c] === 11) {
-                found = true; iconHTML = renderIcon(animals[11]?.icon) || '👑'; grid[r][c] = 0; 
-                user.sessionScore += 2048;
-                user.tools.claw.dailyLimit += 20; user.tools.wheel.dailyLimit += 20; user.tools.upgrade.dailyLimit += 20;
-            }
-        }
-    }
-    if(found) {
-        document.getElementById('celebIconContainer').innerHTML = iconHTML;
-        document.getElementById('celebModal').classList.add('show');
-    }
-}
-
-function useTool(tool) {
-    if (tool === 'free') {
-        if(confirm("تحذير: هذا الخيار سيصفر اللوحة والنقاط. متأكد؟")) {
-            grid = Array(4).fill().map(() => Array(4).fill(0));
-            user.sessionScore = 0; updateUI(); saveState();
-        } return;
-    }
-    let tData = user.tools[tool];
-    if(tData.owned <= 0) { alert("لا تملك هذا العنصر في رصيدك!"); return; }
-    if(tData.used >= tData.dailyLimit) { alert("وصلت للحد اليومي للاستخدام."); return; }
-
-    if (tool === 'gem') {
-        tData.owned--; tData.used++; user.energy = Math.min(200, user.energy + 15);
-        updateUI(); saveState(); return;
-    }
-
-    if(activeTool === tool) { deactivateTools(); } 
-    else {
-        deactivateTools(); activeTool = tool;
-        document.getElementById(`btn${tool.charAt(0).toUpperCase() + tool.slice(1)}`).classList.add('active');
-    }
-}
-
-function deactivateTools() {
-    activeTool = null; wheelFirstCell = null;
-    document.querySelectorAll('.tool-item').forEach(e => e.classList.remove('active'));
-    document.querySelectorAll('.cell').forEach(e => e.classList.remove('target-tool'));
-}
-
-function handleCellClick(r, c) {
-    if(!activeTool) return;
-    const cellVal = grid[r][c]; let tData = user.tools[activeTool];
-
-    if (activeTool === 'upgrade') {
-        if (cellVal > 0 && cellVal < 7) { grid[r][c]++; tData.owned--; tData.used++; deactivateTools(); updateUI(); saveState(); } 
-        else { alert("الترقية للحيوانات الأقل من 7 فقط."); }
-    } else if (activeTool === 'claw') {
-        if (cellVal > 0) { grid[r][c] = 0; tData.owned--; tData.used++; deactivateTools(); updateUI(); saveState(); }
-    } else if (activeTool === 'wheel') {
-        if (cellVal > 0) {
-            if (!wheelFirstCell) { wheelFirstCell = {r, c}; document.getElementById(`cell_${r}_${c}`).classList.add('target-tool'); } 
-            else {
-                let temp = grid[r][c]; grid[r][c] = grid[wheelFirstCell.r][wheelFirstCell.c]; grid[wheelFirstCell.r][wheelFirstCell.c] = temp;
-                tData.owned--; tData.used++; deactivateTools(); updateUI(); saveState();
-            }
         }
     }
 }
@@ -637,30 +904,383 @@ function initVisualSyncGrid() {
     cont.innerHTML = '';
     for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
-            const cell = document.createElement('div'); cell.className = 'sync-cell'; cell.id = `syncCell_${r}_${c}`;
-            cell.onclick = (e) => openAnimalPicker(r, c, e); cont.appendChild(cell);
+            const cell = document.createElement('div');
+            cell.className = 'sync-cell';
+            cell.id = `syncCell_${r}_${c}`;
+            cell.onclick = (event) => openAnimalPicker(r, c, event, 'sync');
+            cont.appendChild(cell);
         }
     }
 }
 
 function initAnimalPicker() {
-    const picker = document.getElementById('animalPicker'); picker.innerHTML = '';
+    const picker = document.getElementById('animalPicker');
+    picker.innerHTML = '';
     for (let i = 0; i <= 11; i++) {
-        const item = document.createElement('div'); item.className = 'picker-item';
-        item.innerHTML = i === 0 ? `<span style="font-size:14px; margin:0;">❌</span>` : renderIcon(animals[i]?.icon);
-        item.innerHTML += `<span>${i===0 ? 'فارغ' : i}</span>`;
-        item.onclick = () => selectSyncAnimal(i); picker.appendChild(item);
+        const item = document.createElement('div');
+        item.className = 'picker-item';
+        item.innerHTML = i === 0 ? `<span style="font-size:14px; margin:0;">❌</span><span>فارغ</span>` : `${renderIcon(animals[i]?.icon)}<span>${i}</span>`;
+        item.onclick = () => selectAnimal(i);
+        picker.appendChild(item);
     }
 }
 
+function renderAvatarGrid() {
+    const box = document.getElementById('avatarGrid');
+    box.innerHTML = '';
+    defaultAvatarOptions.forEach(avatar => {
+        const item = document.createElement('div');
+        item.className = `avatar-option ${selectedAvatar === avatar ? 'active' : ''}`;
+        item.innerHTML = renderAvatar(avatar);
+        item.onclick = () => selectAvatar(avatar);
+        box.appendChild(item);
+    });
+}
+
+function selectAvatar(avatar) {
+    selectedAvatar = avatar;
+    document.getElementById('profAvatarCustom').value = avatar;
+    document.getElementById('profileAvatarPreview').innerHTML = renderAvatar(avatar);
+    renderAvatarGrid();
+}
+
+function getMaxLevel(g) {
+    if (!isValidGrid(g)) return 0;
+    return Math.max(0, ...g.flat().map(v => Number(v) || 0));
+}
+
+function updateUI() {
+    if (!user) return;
+
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const val = grid[r][c];
+            const cell = document.getElementById(`cell_${r}_${c}`);
+            cell.className = `cell lvl-${val}`;
+            if (editMode) cell.classList.add('edit-mode');
+            cell.innerHTML = val > 0 ? `${renderIcon(animals[val]?.icon)}<span class="lvl-num">${val}</span>` : '';
+        }
+    }
+
+    user.highScore = Math.max(user.highScore || 0, user.sessionScore || 0);
+    user.highestLevel = Math.max(user.highestLevel || 0, getMaxLevel(grid));
+
+    document.getElementById('uiSessionScore').textContent = user.sessionScore || 0;
+    document.getElementById('uiBestRound').textContent = user.highScore || 0;
+    document.getElementById('uiMovesNow').textContent = user.movesThisRound || 0;
+    document.getElementById('uiBoardMax').textContent = getMaxLevel(grid);
+    document.getElementById('uiLevel11Today').textContent = `${user.level11Today || 0}/${settings.dailyLevel11Goal || 3}`;
+
+    const nrg = user.energy || 0;
+    document.getElementById('uiEnergy').textContent = nrg;
+    const nrgBar = document.getElementById('uiEnergyBar');
+    nrgBar.style.width = `${Math.min(100, (nrg / 200) * 100)}%`;
+    nrgBar.className = nrg < 50 ? 'energy-fill low' : 'energy-fill';
+
+    updateToolUI('Gem', user.tools.gem);
+    updateToolUI('Upg', user.tools.upgrade);
+    updateToolUI('Claw', user.tools.claw);
+    updateToolUI('Wheel', user.tools.wheel);
+
+    document.getElementById('editModeBtn').classList.toggle('active', editMode);
+    document.getElementById('boardHint').textContent = editMode
+        ? 'وضع التحرير مفعّل: اضغط على أي خانة لإضافة أو تعديل الحيوان.'
+        : 'استخدم الأسهم للدمج، أو فعّل وضع التحرير لإضافة/تعديل الحيوانات مباشرة.';
+}
+
+function updateToolUI(idSuffix, toolObj) {
+    const owned = toolObj?.owned || 0;
+    const limit = toolObj?.dailyLimit || 0;
+    const used = toolObj?.used || 0;
+    const remain = Math.max(0, limit - used);
+
+    document.getElementById(`bdg${idSuffix}`).textContent = owned;
+    document.getElementById(`lim${idSuffix}`).textContent = `${used}/${limit}`;
+
+    const btn = document.getElementById(`btn${idSuffix}`);
+    if (!btn) return;
+    btn.classList.toggle('empty', owned <= 0 || remain <= 0);
+}
+
+function spawnRandomOnUserGrid() {
+    const empty = [];
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (grid[r][c] === 0) empty.push({ r, c });
+        }
+    }
+    if (!empty.length) return false;
+    const spot = empty[Math.floor(Math.random() * empty.length)];
+    grid[spot.r][spot.c] = Math.floor(Math.random() * 7) + 1;
+    return true;
+}
+
+function calcScore(level) {
+    return Math.pow(2, level + 1);
+}
+
+function performMove(sourceGrid, direction) {
+    let moved = false;
+    let gainedScore = 0;
+    const newGrid = cloneGrid(sourceGrid);
+
+    const slide = (row) => {
+        const arr = row.filter(Boolean);
+        const zeros = Array(4 - arr.length).fill(0);
+        return arr.concat(zeros);
+    };
+
+    const combine = (row) => {
+        for (let i = 0; i < 3; i++) {
+            if (row[i] !== 0 && row[i] === row[i + 1] && row[i] < 11) {
+                row[i]++;
+                gainedScore += calcScore(row[i]);
+                row[i + 1] = 0;
+                moved = true;
+            }
+        }
+        return row;
+    };
+
+    if (direction === 'LEFT' || direction === 'RIGHT') {
+        for (let r = 0; r < 4; r++) {
+            let row = [...newGrid[r]];
+            if (direction === 'RIGHT') row.reverse();
+            const combined = slide(combine(slide(row)));
+            if (direction === 'RIGHT') combined.reverse();
+            newGrid[r] = combined;
+        }
+    } else {
+        for (let c = 0; c < 4; c++) {
+            let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]];
+            if (direction === 'DOWN') col.reverse();
+            const combined = slide(combine(slide(col)));
+            if (direction === 'DOWN') combined.reverse();
+            for (let r = 0; r < 4; r++) newGrid[r][c] = combined[r];
+        }
+    }
+
+    if (JSON.stringify(sourceGrid) !== JSON.stringify(newGrid)) moved = true;
+    return { moved, gainedScore, grid: newGrid };
+}
+
+function manualMove(direction) {
+    if (!user) return;
+    if (editMode) {
+        alert('أغلق وضع التحرير أولاً ثم ابدأ الدمج.');
+        return;
+    }
+    if (user.energy <= 0) {
+        alert('الطاقة غير كافية! استخدم جوهر أو انتظر التجدد.');
+        return;
+    }
+
+    const result = performMove(grid, direction);
+    if (!result.moved) return;
+
+    grid = result.grid;
+    user.sessionScore += result.gainedScore;
+    user.totalScore += result.gainedScore;
+    user.movesThisRound += 1;
+    user.totalMoves += 1;
+    user.energy -= 1;
+    spawnRandomOnUserGrid();
+    checkForLevel11();
+    updateUI();
+    saveState();
+}
+
+function checkForLevel11() {
+    let found = false;
+    let iconHTML = '';
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (grid[r][c] === 11) {
+                found = true;
+                iconHTML = renderIcon(animals[11]?.icon) || '👑';
+                grid[r][c] = 0;
+                user.sessionScore += 2048;
+                user.totalScore += 2048;
+                user.level11Count += 1;
+                user.level11Today += 1;
+                user.tools.claw.dailyLimit += 20;
+                user.tools.wheel.dailyLimit += 20;
+                user.tools.upgrade.dailyLimit += 20;
+            }
+        }
+    }
+    if (found) {
+        document.getElementById('celebIconContainer').innerHTML = iconHTML;
+        openSupport(false);
+        document.getElementById('celebModal').classList.add('show');
+    }
+}
+
+function useTool(tool) {
+    if (!user) return;
+
+    if (tool === 'free') {
+        if (confirm('سيتم تصفير الجولة الحالية فقط مع إنشاء لوحة جديدة. متابعة؟')) {
+            grid = createEmptyGrid();
+            spawnRandomOnUserGrid();
+            spawnRandomOnUserGrid();
+            user.sessionScore = 0;
+            user.movesThisRound = 0;
+            deactivateTools();
+            updateUI();
+            saveState();
+        }
+        return;
+    }
+
+    if (editMode) {
+        alert('أغلق وضع التحرير قبل استخدام الأدوات.');
+        return;
+    }
+
+    const tData = user.tools[tool];
+    if (!tData || tData.owned <= 0) {
+        alert('لا تملك هذا العنصر في رصيدك.');
+        return;
+    }
+    if (tData.used >= tData.dailyLimit) {
+        alert('وصلت للحد اليومي للاستخدام.');
+        return;
+    }
+
+    if (tool === 'gem') {
+        tData.owned -= 1;
+        tData.used += 1;
+        user.energy = Math.min(200, user.energy + 15);
+        updateUI();
+        saveState();
+        return;
+    }
+
+    if (activeTool === tool) {
+        deactivateTools();
+        return;
+    }
+
+    deactivateTools();
+    activeTool = tool;
+    const btnId = toolIdMap[tool];
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('active');
+}
+
+function deactivateTools() {
+    activeTool = null;
+    wheelFirstCell = null;
+    document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.cell').forEach(el => el.classList.remove('target-tool'));
+}
+
+function toggleEditMode() {
+    editMode = !editMode;
+    if (editMode) deactivateTools();
+    updateUI();
+}
+
+function handleCellClick(r, c, event) {
+    if (!user) return;
+
+    if (editMode) {
+        openAnimalPicker(r, c, event, 'board');
+        return;
+    }
+
+    if (!activeTool) return;
+    const cellVal = grid[r][c];
+    const tData = user.tools[activeTool];
+
+    if (activeTool === 'upgrade') {
+        if (cellVal > 0 && cellVal < 7) {
+            grid[r][c] += 1;
+            tData.owned -= 1;
+            tData.used += 1;
+            deactivateTools();
+            updateUI();
+            saveState();
+        } else {
+            alert('الترقية تعمل على المستويات الأقل من 7 فقط.');
+        }
+    } else if (activeTool === 'claw') {
+        if (cellVal > 0) {
+            grid[r][c] = 0;
+            tData.owned -= 1;
+            tData.used += 1;
+            deactivateTools();
+            updateUI();
+            saveState();
+        }
+    } else if (activeTool === 'wheel') {
+        if (cellVal > 0) {
+            if (!wheelFirstCell) {
+                wheelFirstCell = { r, c };
+                document.getElementById(`cell_${r}_${c}`).classList.add('target-tool');
+            } else {
+                const temp = grid[r][c];
+                grid[r][c] = grid[wheelFirstCell.r][wheelFirstCell.c];
+                grid[wheelFirstCell.r][wheelFirstCell.c] = temp;
+                tData.owned -= 1;
+                tData.used += 1;
+                deactivateTools();
+                updateUI();
+                saveState();
+            }
+        }
+    }
+}
+
+function openAnimalPicker(r, c, event, context) {
+    pickerContext = { r, c, context };
+    const picker = document.getElementById('animalPicker');
+    const x = Math.min(window.innerWidth - 230, Math.max(10, event.clientX - 110));
+    const y = Math.min(window.innerHeight - 230, Math.max(10, event.clientY - 110));
+    picker.style.left = `${x}px`;
+    picker.style.top = `${y}px`;
+    picker.classList.add('show');
+}
+
+function selectAnimal(level) {
+    if (!pickerContext) return;
+    const { r, c, context } = pickerContext;
+    if (context === 'sync') {
+        tempSyncGrid[r][c] = level;
+        renderVisualSyncGrid();
+    } else {
+        grid[r][c] = level;
+        updateUI();
+        saveState();
+    }
+    closeAnimalPicker();
+}
+
+function closeAnimalPicker() {
+    document.getElementById('animalPicker').classList.remove('show');
+    pickerContext = null;
+}
+
+window.addEventListener('click', (event) => {
+    if (!event.target.closest('.sync-cell') && !event.target.closest('.cell') && !event.target.closest('.animal-picker')) {
+        closeAnimalPicker();
+    }
+});
+
 function openSyncModal() {
-    tempSyncGrid = JSON.parse(JSON.stringify(grid));
+    tempSyncGrid = cloneGrid(grid);
     renderVisualSyncGrid();
-    document.getElementById('syncScore').value = user.sessionScore; document.getElementById('syncEnergy').value = user.energy;
-    document.getElementById('syncGemO').value = user.tools.gem.owned; document.getElementById('syncGemU').value = user.tools.gem.used;
-    document.getElementById('syncUpgO').value = user.tools.upgrade.owned; document.getElementById('syncUpgU').value = user.tools.upgrade.used;
-    document.getElementById('syncClawO').value = user.tools.claw.owned; document.getElementById('syncClawU').value = user.tools.claw.used;
-    document.getElementById('syncWheelO').value = user.tools.wheel.owned; document.getElementById('syncWheelU').value = user.tools.wheel.used;
+    document.getElementById('syncScore').value = user.sessionScore || 0;
+    document.getElementById('syncEnergy').value = user.energy || 0;
+    document.getElementById('syncGemO').value = user.tools.gem.owned || 0;
+    document.getElementById('syncGemU').value = user.tools.gem.used || 0;
+    document.getElementById('syncUpgO').value = user.tools.upgrade.owned || 0;
+    document.getElementById('syncUpgU').value = user.tools.upgrade.used || 0;
+    document.getElementById('syncClawO').value = user.tools.claw.owned || 0;
+    document.getElementById('syncClawU').value = user.tools.claw.used || 0;
+    document.getElementById('syncWheelO').value = user.tools.wheel.owned || 0;
+    document.getElementById('syncWheelU').value = user.tools.wheel.used || 0;
     document.getElementById('syncModal').classList.add('show');
 }
 
@@ -673,199 +1293,433 @@ function renderVisualSyncGrid() {
     }
 }
 
-function openAnimalPicker(r, c, event) {
-    syncTargetCell = {r, c}; const picker = document.getElementById('animalPicker');
-    picker.style.top = (event.clientY - 100) + 'px'; picker.style.left = (event.clientX - 100) + 'px'; picker.classList.add('show');
-}
-
-function selectSyncAnimal(level) {
-    if(syncTargetCell) { tempSyncGrid[syncTargetCell.r][syncTargetCell.c] = level; renderVisualSyncGrid(); }
-    document.getElementById('animalPicker').classList.remove('show'); syncTargetCell = null;
-}
-
-window.addEventListener('click', (e) => {
-    if (!e.target.closest('.sync-cell') && !e.target.closest('.animal-picker')) document.getElementById('animalPicker').classList.remove('show');
-});
-
 function applySync() {
-    grid = JSON.parse(JSON.stringify(tempSyncGrid));
-    user.sessionScore = parseInt(document.getElementById('syncScore').value) || 0;
-    user.energy = Math.min(200, parseInt(document.getElementById('syncEnergy').value) || 0);
-    user.tools.gem.owned = parseInt(document.getElementById('syncGemO').value)||0; user.tools.gem.used = parseInt(document.getElementById('syncGemU').value)||0;
-    user.tools.upgrade.owned = parseInt(document.getElementById('syncUpgO').value)||0; user.tools.upgrade.used = parseInt(document.getElementById('syncUpgU').value)||0;
-    user.tools.claw.owned = parseInt(document.getElementById('syncClawO').value)||0; user.tools.claw.used = parseInt(document.getElementById('syncClawU').value)||0;
-    user.tools.wheel.owned = parseInt(document.getElementById('syncWheelO').value)||0; user.tools.wheel.used = parseInt(document.getElementById('syncWheelU').value)||0;
-    updateUI(); saveState(); closeModal('syncModal');
+    grid = cloneGrid(tempSyncGrid);
+    user.sessionScore = parseInt(document.getElementById('syncScore').value, 10) || 0;
+    user.energy = Math.min(200, parseInt(document.getElementById('syncEnergy').value, 10) || 0);
+    user.tools.gem.owned = parseInt(document.getElementById('syncGemO').value, 10) || 0;
+    user.tools.gem.used = parseInt(document.getElementById('syncGemU').value, 10) || 0;
+    user.tools.upgrade.owned = parseInt(document.getElementById('syncUpgO').value, 10) || 0;
+    user.tools.upgrade.used = parseInt(document.getElementById('syncUpgU').value, 10) || 0;
+    user.tools.claw.owned = parseInt(document.getElementById('syncClawO').value, 10) || 0;
+    user.tools.claw.used = parseInt(document.getElementById('syncClawU').value, 10) || 0;
+    user.tools.wheel.owned = parseInt(document.getElementById('syncWheelO').value, 10) || 0;
+    user.tools.wheel.used = parseInt(document.getElementById('syncWheelU').value, 10) || 0;
+    updateUI();
+    saveState();
+    closeModal('syncModal');
 }
 
 function smartMerge() {
-    const box = document.getElementById('aiResponseBox'); const text = document.getElementById('aiResponseText');
-    box.classList.remove('hidden'); text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحساب الرياضي...';
-    
+    const box = document.getElementById('aiResponseBox');
+    const text = document.getElementById('aiResponseText');
+    box.classList.remove('hidden');
+    text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري حساب أفضل دمج...';
+
     setTimeout(() => {
-        let bestScore = -Infinity; let bestMove = null; const moves = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
-        for (let m of moves) {
-            const simulated = simulateMove(grid, m);
-            if (JSON.stringify(simulated) !== JSON.stringify(grid)) {
-                let score = evaluateGrid(simulated);
-                if (score > bestScore) { bestScore = score; bestMove = m; }
+        let bestScore = -Infinity;
+        let bestMove = null;
+        const moves = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+        for (const move of moves) {
+            const simulated = performMove(grid, move);
+            if (simulated.moved) {
+                const score = evaluateGrid(simulated.grid);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
             }
         }
-        if (bestMove) {
-            const dirHtml = { UP: '⬆️ أعلى', DOWN: '⬇️ أسفل', LEFT: '➡️ يمين', RIGHT: '⬅️ يسار' };
-            text.innerHTML = `✅ الحركة الآمنة رياضياً: <strong style="color:var(--gold); font-size:14px;">${dirHtml[bestMove]}</strong> <br><span style="color:#aaa; font-size:9px;">هذه الحركة توفر أعلى نسبة أمان لتجنب قفل اللوحة.</span>`;
-        } else { text.innerHTML = `⚠️ تحذير: اللوحة مقفلة! استخدم (المخلب أو العجلة) فوراً لإنقاذ الجولة.`; }
-    }, 100);
-}
-
-function simulateMove(g, direction) {
-    const newGrid = JSON.parse(JSON.stringify(g));
-    const slide = (row) => { let arr = row.filter(v=>v); return arr.concat(Array(4 - arr.length).fill(0)); }
-    const combine = (row) => { for (let i=0; i<3; i++) { if (row[i] && row[i] === row[i + 1] && row[i]<11) { row[i]++; row[i+1] = 0; } } return row; }
-
-    if (direction === 'LEFT' || direction === 'RIGHT') {
-        for (let r = 0; r < 4; r++) {
-            let row = newGrid[r]; if(direction === 'RIGHT') row.reverse();
-            let combined = slide(combine(slide(row))); if(direction === 'RIGHT') combined.reverse(); newGrid[r] = combined;
+        if (!bestMove) {
+            text.innerHTML = '⚠️ اللوحة شبه مقفلة. فكر في المخلب أو العجلة لإنقاذ الجولة.';
+            return;
         }
-    } else {
-        for (let c = 0; c < 4; c++) {
-            let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]]; if(direction === 'DOWN') col.reverse();
-            let combined = slide(combine(slide(col))); if(direction === 'DOWN') combined.reverse(); for(let r=0; r<4; r++) newGrid[r][c] = combined[r];
-        }
-    } return newGrid;
+        const dirText = { UP: '⬆️ أعلى', DOWN: '⬇️ أسفل', LEFT: '⬅️ يسار', RIGHT: '➡️ يمين' };
+        text.innerHTML = `✅ أفضل دمج آمن الآن: <strong style="color:var(--gold); font-size:14px;">${dirText[bestMove]}</strong><br><span style="color:#aaa; font-size:9px;">الاختيار مبني على المساحات الفارغة وفرص الدمج التالية.</span>`;
+    }, 120);
 }
 
 function evaluateGrid(g) {
-    let emptyCells = 0; let smoothness = 0;
+    let emptyCells = 0;
+    let adjacency = 0;
     for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
             if (g[r][c] === 0) emptyCells++;
-            else { if (c < 3 && g[r][c] === g[r][c+1]) smoothness++; if (r < 3 && g[r][c] === g[r+1][c]) smoothness++; }
+            if (c < 3 && g[r][c] !== 0 && g[r][c] === g[r][c + 1]) adjacency++;
+            if (r < 3 && g[r][c] !== 0 && g[r][c] === g[r + 1][c]) adjacency++;
         }
-    } return (emptyCells * 100) + (smoothness * 10);
+    }
+    return (emptyCells * 100) + (adjacency * 12);
 }
 
 async function askGemini() {
-    const box = document.getElementById('aiResponseBox'); const text = document.getElementById('aiResponseText');
-    box.classList.remove('hidden'); text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري استشارة الذكاء الاصطناعي...';
-    
-    try {
-        let toolsInfo = `مخلب: ${user.tools.claw.owned}, ترقية: ${user.tools.upgrade.owned}, عجلة: ${user.tools.wheel.owned}`;
-        let aiPrompt = `أنت مستشار للعبة دمج حيوانات 4x4.
-اللوحة الحالية: ${JSON.stringify(grid)}. الطاقة: ${user.energy}.
-رصيد أدواته: ${toolsInfo}.
-**تعليمات صارمة جداً:**
-1. إذا كان رصيد الأدوات 0، أعطه خطة تعتمد على أسهم التحريك فقط.
-2. الأدوات نادرة، لا تقترح استخدامها إلا في الطوارئ (اللوحة مقفلة) أو فرصة ذهبية لدمج 11.
-أعطني الخطة في سطرين بحد أقصى بالعربية.`;
+    const box = document.getElementById('aiResponseBox');
+    const text = document.getElementById('aiResponseText');
+    box.classList.remove('hidden');
+    text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري استشارة الذكاء الاصطناعي...';
 
-        const res = await fetch('/api/ai/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: aiPrompt, username: user.username, password: user.password }) });
+    try {
+        const toolsInfo = `مخلب: ${user.tools.claw.owned}, ترقية: ${user.tools.upgrade.owned}, عجلة: ${user.tools.wheel.owned}`;
+        const prompt = `أنت مستشار للعبة دمج حيوانات 4x4. اللوحة الحالية: ${JSON.stringify(grid)}. الطاقة: ${user.energy}. عدد الدمجات الحالية: ${user.movesThisRound}. رصيد الأدوات: ${toolsInfo}. إذا كان رصيد الأدوات 0 أعطني خطة تعتمد على الدمج فقط. لا تقترح الأدوات إلا في الطوارئ أو عند فرصة ممتازة للوصول إلى 11. أجب بالعربية في سطرين كحد أقصى.`;
+        const res = await fetch('/api/ai/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, username: user.username, password: user.password })
+        });
         const data = await res.json();
-        if (data.success && data.response) { text.innerHTML = data.response.replace(/\n/g, '<br>'); } 
-        else { box.classList.add('hidden'); }
-    } catch (e) { box.classList.add('hidden'); }
+        if (data.success && data.response) {
+            text.innerHTML = data.response.replace(/\n/g, '<br>');
+        } else {
+            box.classList.add('hidden');
+        }
+    } catch {
+        box.classList.add('hidden');
+    }
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-function closeCelebAndShowReview() { closeModal('celebModal'); document.getElementById('reviewModal').classList.add('show'); }
-function setStars(n) { currentStars = n; const stars = document.getElementById('starRating').children; for(let i=0; i<5; i++) stars[i].style.color = i < n ? '#FFD700' : '#444'; }
+function setActiveNav(tab) {
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+}
+
+async function openLeaderboard() {
+    setActiveNav('leaderboard');
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المتصدرين...</div>';
+    document.getElementById('leaderboardModal').classList.add('show');
+    try {
+        const res = await fetch('/api/leaderboard');
+        const data = await res.json();
+        if (!data.success || !Array.isArray(data.users) || !data.users.length) {
+            list.innerHTML = '<div class="leader-item"><div class="item-name">لا توجد بيانات بعد.</div></div>';
+            return;
+        }
+        list.innerHTML = data.users.map((u, index) => `
+            <div class="leader-item">
+                <div class="item-main">
+                    <div class="rank-badge">${index + 1}</div>
+                    <div class="avatar-badge" style="width:44px; height:44px; font-size:22px;">${renderAvatar(u.avatar)}</div>
+                    <div class="item-text">
+                        <div class="item-name">${escapeHtml(u.displayName || u.username)}</div>
+                        <div class="item-meta">${escapeHtml(u.kingdom || 'بدون مملكة')} • ${escapeHtml(u.alliance || 'بدون تحالف')}</div>
+                    </div>
+                </div>
+                <div class="item-score">
+                    <div class="main">${u.highScore || 0}</div>
+                    <div class="sub">إجمالي: ${u.totalScore || 0}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch {
+        list.innerHTML = '<div class="leader-item"><div class="item-name">تعذر تحميل المتصدرين.</div></div>';
+    }
+}
+
+function openSupport(markActive = true) {
+    if (markActive) setActiveNav('support');
+    document.getElementById('supportModal').classList.add('show');
+}
+
+function closeCelebAndShowSupport() {
+    closeModal('celebModal');
+    openSupport(false);
+}
+
+function setStars(n) {
+    currentStars = n;
+    const stars = document.getElementById('starRating').children;
+    for (let i = 0; i < stars.length; i++) {
+        stars[i].style.color = i < n ? '#FFD700' : '#444';
+    }
+}
 
 async function submitReview() {
-    const text = document.getElementById('reviewText').value;
-    try { await fetch('/api/review/add', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: user.username, rating: currentStars, text: text }) }); } catch(e) {}
-    closeModal('reviewModal');
+    const text = document.getElementById('reviewText').value.trim();
+    try {
+        await fetch('/api/review/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user?.username || 'guest', rating: currentStars, text })
+        });
+        alert('تم إرسال رسالتك. شكرًا لك 🌟');
+        document.getElementById('reviewText').value = '';
+        closeModal('supportModal');
+    } catch {
+        alert('تعذر إرسال الرسالة الآن.');
+    }
 }
 
 function openProfile() {
-    document.getElementById('profName').value = user.displayName || user.username; document.getElementById('profKingdom').value = user.kingdom || ''; document.getElementById('profAlliance').value = user.alliance || '';
+    setActiveNav('profile');
+    selectedAvatar = user.avatar || '🦂';
+    document.getElementById('profName').value = user.displayName || user.username || '';
+    document.getElementById('profKingdom').value = user.kingdom || '';
+    document.getElementById('profAlliance').value = user.alliance || '';
+    document.getElementById('profAvatarCustom').value = selectedAvatar;
+    document.getElementById('profileAvatarPreview').innerHTML = renderAvatar(selectedAvatar);
+    document.getElementById('profileHeaderName').textContent = user.displayName || user.username;
+    document.getElementById('profileHeaderMeta').textContent = `${user.kingdom || 'بدون مملكة'} • ${user.alliance || 'بدون تحالف'}`;
+    document.getElementById('profTotalScore').textContent = user.totalScore || 0;
+    document.getElementById('profBestRound').textContent = user.highScore || 0;
+    document.getElementById('profHighestLevel').textContent = user.highestLevel || 0;
+    document.getElementById('profTotalMoves').textContent = user.totalMoves || 0;
+    document.getElementById('profLevel11Count').textContent = user.level11Count || 0;
+    renderAvatarGrid();
     document.getElementById('profileModal').classList.add('show');
 }
+
 async function saveProfile() {
-    user.displayName = document.getElementById('profName').value; user.kingdom = document.getElementById('profKingdom').value; user.alliance = document.getElementById('profAlliance').value;
-    await saveState(); closeModal('profileModal');
+    user.displayName = document.getElementById('profName').value.trim() || user.username;
+    user.kingdom = document.getElementById('profKingdom').value.trim();
+    user.alliance = document.getElementById('profAlliance').value.trim();
+    user.avatar = document.getElementById('profAvatarCustom').value.trim() || selectedAvatar || '🦂';
+    selectedAvatar = user.avatar;
+    await saveState();
+    closeModal('profileModal');
+    updateUI();
 }
 
 function openAdmin() {
-    document.getElementById('admAppName').value = settings.appName || ''; document.getElementById('admLogo').value = settings.logoUrl || '';
-    if(settings.eventEndTime) document.getElementById('admEventTime').value = new Date(settings.eventEndTime).toISOString().slice(0,16);
-    
-    document.getElementById('admIconGem').value = document.getElementById('iconGem').textContent; document.getElementById('admNameGem').value = document.getElementById('nameGem').textContent;
-    document.getElementById('admIconUpg').value = document.getElementById('iconUpg').textContent; document.getElementById('admNameUpg').value = document.getElementById('nameUpg').textContent;
-    document.getElementById('admIconClaw').value = document.getElementById('iconClaw').textContent; document.getElementById('admNameClaw').value = document.getElementById('nameClaw').textContent;
-    document.getElementById('admIconWheel').value = document.getElementById('iconWheel').textContent; document.getElementById('admNameWheel').value = document.getElementById('nameWheel').textContent;
-    
-    renderAdminAnimals(); document.getElementById('adminModal').classList.add('show');
+    if (!user?.isAdmin) return;
+    setActiveNav('admin');
+    document.getElementById('admAppName').value = settings.appName || '';
+    document.getElementById('admLogo').value = settings.logoUrl || '';
+    document.getElementById('admDailyGoal').value = settings.dailyLevel11Goal || 3;
+    if (settings.eventEndTime) {
+        const value = new Date(settings.eventEndTime).toISOString().slice(0,16);
+        document.getElementById('admEventTime').value = value;
+    } else {
+        document.getElementById('admEventTime').value = '';
+    }
+
+    ['gem','upgrade','claw','wheel'].forEach(key => {
+        const config = getToolConfig(key);
+        const suffix = key === 'upgrade' ? 'Upg' : key.charAt(0).toUpperCase() + key.slice(1);
+        document.getElementById(`admIcon${suffix}`).value = config.icon || '';
+        document.getElementById(`admName${suffix}`).value = config.name || '';
+    });
+
+    renderAdminAnimals();
+    document.getElementById('adminModal').classList.add('show');
 }
 
-function switchAdminTab(tabName) {
-    document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-    event.target.classList.add('active'); document.getElementById(`admin-${tabName}`).classList.add('active');
-    if(tabName === 'users') fetchAdminUsers();
+function switchAdminTab(tabName, evt) {
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
+    evt.target.classList.add('active');
+    document.getElementById(`admin-${tabName}`).classList.add('active');
+    if (tabName === 'users') fetchAdminUsers();
 }
 
 function renderAdminAnimals() {
-    const list = document.getElementById('adminAnimalsList'); list.innerHTML = '';
-    for(let i=1; i<=11; i++) {
-        list.innerHTML += `<div class="admin-animal-edit"><span style="font-size:14px; font-weight:bold; color:var(--gold); width:20px;">${i}</span><input type="text" id="admAn_icon_${i}" value="${animals[i]?.icon || ''}" placeholder="أيقونة/رابط"><input type="text" id="admAn_name_${i}" value="${animals[i]?.name || ''}" placeholder="الاسم"></div>`;
+    const list = document.getElementById('adminAnimalsList');
+    list.innerHTML = '';
+    for (let i = 1; i <= 11; i++) {
+        list.innerHTML += `
+            <div class="admin-animal-edit">
+                <span style="font-size:14px; font-weight:bold; color:var(--gold); width:20px;">${i}</span>
+                <input type="text" id="admAn_icon_${i}" value="${escapeAttr(animals[i]?.icon || '')}" placeholder="أيقونة/رابط">
+                <input type="text" id="admAn_name_${i}" value="${escapeAttr(animals[i]?.name || '')}" placeholder="الاسم">
+            </div>
+        `;
     }
 }
 
 async function saveAdminGeneral() {
-    const newSets = { appName: document.getElementById('admAppName').value, logoUrl: document.getElementById('admLogo').value, eventEndTime: document.getElementById('admEventTime').value };
-    const key = document.getElementById('admGemini').value; if(key) newSets.geminiApiKey = key;
-    await sendAdminSave(newSets);
+    const newSettings = {
+        appName: document.getElementById('admAppName').value.trim(),
+        logoUrl: document.getElementById('admLogo').value.trim(),
+        dailyLevel11Goal: parseInt(document.getElementById('admDailyGoal').value, 10) || 3,
+        eventEndTime: document.getElementById('admEventTime').value || null
+    };
+    const key = document.getElementById('admGemini').value.trim();
+    if (key) newSettings.geminiApiKey = key;
+    await sendAdminSave(newSettings);
 }
+
 async function saveAdminAnimals() {
-    let newAnimals = JSON.parse(JSON.stringify(animals));
-    for(let i=1; i<=11; i++) newAnimals[i] = { icon: document.getElementById(`admAn_icon_${i}`).value, name: document.getElementById(`admAn_name_${i}`).value };
+    const newAnimals = JSON.parse(JSON.stringify(animals));
+    for (let i = 1; i <= 11; i++) {
+        newAnimals[i] = {
+            icon: document.getElementById(`admAn_icon_${i}`).value.trim(),
+            name: document.getElementById(`admAn_name_${i}`).value.trim()
+        };
+    }
     await sendAdminSave({ animals: newAnimals });
 }
+
 async function saveAdminTools() {
-    let tConfig = {
-        gem: { icon: document.getElementById('admIconGem').value, name: document.getElementById('admNameGem').value },
-        upgrade: { icon: document.getElementById('admIconUpg').value, name: document.getElementById('admNameUpg').value },
-        claw: { icon: document.getElementById('admIconClaw').value, name: document.getElementById('admNameClaw').value },
-        wheel: { icon: document.getElementById('admIconWheel').value, name: document.getElementById('admNameWheel').value }
+    const toolsConfig = {
+        gem: { icon: document.getElementById('admIconGem').value.trim(), name: document.getElementById('admNameGem').value.trim() },
+        upgrade: { icon: document.getElementById('admIconUpg').value.trim(), name: document.getElementById('admNameUpg').value.trim() },
+        claw: { icon: document.getElementById('admIconClaw').value.trim(), name: document.getElementById('admNameClaw').value.trim() },
+        wheel: { icon: document.getElementById('admIconWheel').value.trim(), name: document.getElementById('admNameWheel').value.trim() }
     };
-    await sendAdminSave({ toolsConfig: tConfig });
+    await sendAdminSave({ toolsConfig });
 }
-async function sendAdminSave(newSettingsData) {
+
+async function sendAdminSave(newSettings) {
     try {
-        await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: user.username, adminPass: user.password, newSettings: newSettingsData }) });
-        alert('تم الحفظ! سيتم تطبيق التعديلات عند تحديث الصفحة.'); loadSettings();
-    } catch (e) { alert('حدث خطأ'); }
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUser: user.username, adminPass: user.password, newSettings })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error('save failed');
+        await loadSettings();
+        updateUI();
+        alert('تم الحفظ بنجاح.');
+    } catch {
+        alert('حدث خطأ أثناء الحفظ.');
+    }
 }
 
 async function fetchAdminUsers() {
-    const list = document.getElementById('adminUsersList'); list.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الجلب...';
+    const list = document.getElementById('adminUsersList');
+    list.innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> جاري جلب اللاعبين...</div>';
     try {
-        const res = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: user.username, adminPass: user.password }) });
+        const res = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUser: user.username, adminPass: user.password })
+        });
         const data = await res.json();
-        if(data.success) { list.innerHTML = data.users.map(u => `<div class="admin-item-row"><div><div style="font-size: 11px; font-weight: bold;">${u.displayName || u.username}</div><div style="font-size: 9px; color: var(--muted);">طاقة: ${u.energy} | جوهر: ${u.tools?.gem?.owned||0}</div></div><div style="color: var(--gold); font-weight: 900;">${u.sessionScore || 0}</div></div>`).join(''); }
-    } catch(e) { list.innerHTML = 'فشل في الجلب'; }
+        if (!data.success) throw new Error('failed');
+        list.innerHTML = data.users.map(u => `
+            <div class="admin-item-row">
+                <div class="item-main">
+                    <div class="avatar-badge" style="width:42px; height:42px; font-size:20px;">${renderAvatar(u.avatar)}</div>
+                    <div class="item-text">
+                        <div class="item-name">${escapeHtml(u.displayName || u.username)}</div>
+                        <div class="item-meta">أفضل جولة: ${u.highScore || 0} • إجمالي: ${u.totalScore || 0}</div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                    <div style="font-size:10px; color:${u.isAdmin ? 'var(--gold)' : '#aaa'}; font-weight:900;">${u.isAdmin ? 'Admin' : 'Player'}</div>
+                    ${u.username !== 'admin' ? `<button class="top-mini-btn ${u.isAdmin ? 'active' : ''}" onclick="toggleUserAdmin('${escapeJs(u.username)}', ${!u.isAdmin})">${u.isAdmin ? 'سحب الصلاحية' : 'ترقية'}</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch {
+        list.innerHTML = '<div class="admin-item-row"><div class="item-name">تعذر جلب اللاعبين.</div></div>';
+    }
+}
+
+async function toggleUserAdmin(targetUsername, makeAdmin) {
+    try {
+        const res = await fetch('/api/admin/set-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUser: user.username, adminPass: user.password, targetUsername, isAdmin: makeAdmin })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            alert(data.message || 'تعذر تحديث الصلاحية.');
+            return;
+        }
+        if (targetUsername === user.username) {
+            user.isAdmin = makeAdmin;
+            document.getElementById('adminNavBtn').style.display = user.isAdmin ? 'flex' : 'none';
+        }
+        fetchAdminUsers();
+    } catch {
+        alert('تعذر تحديث الصلاحية.');
+    }
 }
 
 async function saveState() {
-    if(!user) return;
-    try { await fetch('/api/user/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user.username, password: user.password, grid: grid, energy: user.energy, sessionScore: user.sessionScore, tools: user.tools }) }); } catch(e) {}
+    if (!user) return;
+    user.highestLevel = Math.max(user.highestLevel || 0, getMaxLevel(grid));
+    const payload = {
+        username: user.username,
+        password: user.password,
+        grid,
+        energy: user.energy,
+        sessionScore: user.sessionScore,
+        totalScore: user.totalScore,
+        highestLevel: user.highestLevel,
+        totalMoves: user.totalMoves,
+        movesThisRound: user.movesThisRound,
+        level11Count: user.level11Count,
+        level11Today: user.level11Today,
+        tools: user.tools,
+        displayName: user.displayName,
+        kingdom: user.kingdom,
+        alliance: user.alliance,
+        avatar: user.avatar
+    };
+    try {
+        const res = await fetch('/api/user/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+            user = { ...user, ...data.user, password: user.password };
+        }
+    } catch {}
 }
 
-function startRegenTimer() { setInterval(() => { if(user && user.energy < 200) { user.energy++; updateUI(); saveState(); } }, 72000); }
-
-function startCountdownTimer() {
+let regenTimerStarted = false;
+function startRegenTimer() {
+    if (regenTimerStarted) return;
+    regenTimerStarted = true;
     setInterval(() => {
-        const now = new Date(); let target;
-        if(settings.eventEndTime) target = new Date(settings.eventEndTime);
-        else { target = new Date(now); target.setHours(2, 0, 0, 0); if(now.getHours() >= 2) target.setDate(target.getDate() + 1); }
-        let diff = target - now;
-        if(diff > 0) {
-            document.getElementById('tDay').textContent = Math.floor(diff / (1000 * 60 * 60 * 24)); document.getElementById('tHour').textContent = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
-            document.getElementById('tMin').textContent = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0'); document.getElementById('tSec').textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+        if (user && user.energy < 200) {
+            user.energy += 1;
+            updateUI();
+            saveState();
+        }
+    }, 72000);
+}
+
+let countdownStarted = false;
+function startCountdownTimer() {
+    if (countdownStarted) return;
+    countdownStarted = true;
+    setInterval(() => {
+        const now = new Date();
+        let target;
+        if (settings.eventEndTime) {
+            target = new Date(settings.eventEndTime);
+        } else {
+            target = new Date(now);
+            target.setHours(2, 0, 0, 0);
+            if (now.getHours() >= 2) target.setDate(target.getDate() + 1);
+        }
+        const diff = target - now;
+        if (diff > 0) {
+            document.getElementById('tDay').textContent = Math.floor(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('tHour').textContent = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+            document.getElementById('tMin').textContent = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+            document.getElementById('tSec').textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
         }
     }, 1000);
 }
-function goTab(tab) { /* Placeholder for future tabs */ }
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    if (id !== 'leaderboardModal' && id !== 'supportModal' && id !== 'profileModal' && id !== 'adminModal') return;
+    setActiveNav('play');
+}
+
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(str) {
+    return escapeHtml(str);
+}
+
+function escapeJs(str) {
+    return String(str ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
 </script>
 </body>
 </html>
