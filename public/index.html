@@ -2,702 +2,794 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">البرنامج المساعد عقروب</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="pageTitle">مساعد عقروب V13</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        :root { --bg-body: #09090b; --bg-panel: #18181b; --color-primary: #ea580c; --color-secondary: #dc2626; --color-text: #f8fafc; }
-        body { background-color: var(--bg-body); color: var(--color-text); font-family: system-ui, -apple-system, sans-serif; touch-action: manipulation; overflow-x: hidden; }
-        .theme-panel { background-color: var(--bg-panel) !important; border: 1px solid rgba(234, 88, 12, 0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-        .theme-primary-bg { background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)) !important; color: white !important; border: none !important; }
-        .theme-primary-text { color: var(--color-primary) !important; }
+        :root { 
+            --bg-body: #0a0a0a; 
+            --bg-panel: #141414; 
+            --color-gold: #D4AF37;
+            --color-gold-dark: #B8860B;
+            --color-red: #C41E3A;
+            --color-text: #F5F5DC;
+            --color-text-muted: #8B7355;
+        }
         
-        .scorpion-glow { box-shadow: 0 0 15px var(--color-primary), inset 0 0 10px var(--color-secondary); }
-        .dynamic-slide { animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        .grid-container { border-radius: 1rem; padding: 0.5rem; background: #121212; border: 1px solid rgba(234, 88, 12, 0.1); }
-        .cell { border-radius: 0.75rem; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); user-select: none; position: relative; overflow: hidden; background-color: #27272a; }
-        .cell:active { transform: scale(0.90); }
-        .cell:hover { border-color: var(--color-primary); }
+        html, body { 
+            height: 100%; margin: 0; padding: 0; background-color: var(--bg-body); 
+            color: var(--color-text); font-family: 'Segoe UI', system-ui, sans-serif; 
+            touch-action: manipulation; overflow: hidden; position: fixed; width: 100%;
+        }
         
-        #gameGrid .cell { height: 4.5rem; font-size: 2rem; border: 1px solid rgba(255,255,255,0.05); }
-        #palette .cell { height: 3.5rem; font-size: 1.5rem; }
-        .lvl-badge { position: absolute; bottom: 2px; right: 4px; font-size: 0.6rem; font-weight: bold; background: rgba(0,0,0,0.8); padding: 0 5px; border-radius: 4px; color: white; z-index: 5; border: 1px solid rgba(255,255,255,0.2);}
-        .cell-img { width: 85%; height: 85%; object-fit: contain; z-index: 2; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+        .theme-panel { 
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d); 
+            border: 1px solid rgba(212, 175, 55, 0.3); 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8); 
+            border-radius: 16px;
+        }
         
-        .lvl-0 { background-color: #18181b; } .lvl-1 { background: radial-gradient(circle, #4ade80, #14532d); } .lvl-2 { background: radial-gradient(circle, #38bdf8, #0c4a6e); } .lvl-3 { background: radial-gradient(circle, #60a5fa, #1e3a8a); } .lvl-4 { background: radial-gradient(circle, #a78bfa, #4c1d95); } .lvl-5 { background: radial-gradient(circle, #d946ef, #701a75); } .lvl-6 { background: radial-gradient(circle, #f472b6, #831843); } .lvl-7 { background: radial-gradient(circle, #fbbf24, #78350f); } .lvl-8 { background: radial-gradient(circle, #ea580c, #7c2d12); } .lvl-9 { background: radial-gradient(circle, #ef4444, #7f1d1d); } .lvl-10{ background: radial-gradient(circle, #dc2626, #450a0a); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); } .lvl-11{ background: radial-gradient(circle, #fcd34d, #b45309); box-shadow: 0 0 15px #f59e0b, inset 0 0 20px #78350f; border: 1px solid #fef08a; animation: pulse-max 2s infinite;} 
-        @keyframes pulse-max { 0% { box-shadow: 0 0 10px #f59e0b; } 50% { box-shadow: 0 0 25px #f59e0b, inset 0 0 20px #78350f; } 100% { box-shadow: 0 0 10px #f59e0b; } }
-
-        .palette-btn.selected { border: 2px solid var(--color-primary); transform: scale(1.15); box-shadow: 0 0 15px var(--color-primary); z-index: 10; }
-        @keyframes pulse-border { 0% { border-color: var(--color-primary); box-shadow: 0 0 5px var(--color-primary); } 50% { border-color: transparent; box-shadow: none; } 100% { border-color: var(--color-primary); box-shadow: 0 0 5px var(--color-primary); } }
-        .waiting-input { border: 2px solid var(--color-primary); animation: pulse-border 1.5s infinite; }
-        .overlay-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; overflow-y: auto;}
+        .btn-gold {
+            background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark));
+            color: #000; font-weight: bold; border: none; padding: 12px 24px;
+            border-radius: 12px; cursor: pointer; transition: all 0.3s; width: 100%;
+        }
+        .btn-gold:hover { transform: scale(1.02); box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); }
+        .btn-gold:active { transform: scale(0.98); }
         
-        #chatWidget { position: fixed; bottom: 20px; left: 20px; z-index: 40; }
-        #chatBtn { width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 20px rgba(234, 88, 12, 0.4); font-size: 26px; transition: transform 0.3s;}
-        #chatBtn:hover { transform: scale(1.15) rotate(10deg); }
-        #chatBox { position: absolute; bottom: 75px; left: 0; width: 340px; height: 480px; border-radius: 20px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8); border: 1px solid rgba(234,88,12,0.3); }
-        .chat-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.9rem; }
-        .msg { max-width: 85%; padding: 10px 14px; border-radius: 15px; line-height: 1.4; position: relative;}
-        .msg.user { background: linear-gradient(135deg, var(--color-primary), #b45309); color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .msg.bot { background: #27272a; border: 1px solid #3f3f46; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg.other { background: #1e1e24; border: 1px solid #3f3f46; align-self: flex-end; border-bottom-right-radius: 2px; }
+        /* ============================================ */
+        /* شاشة البداية - Splash Screen */
+        /* ============================================ */
+        #splashScreen {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at center, #1a1000 0%, #0a0500 50%, #000 100%);
+            z-index: 9999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            animation: splashFadeIn 0.5s ease;
+        }
+        #splashScreen.fade-out { animation: splashFadeOut 0.8s ease forwards; }
+        @keyframes splashFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes splashFadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
         
+        .splash-logo-container {
+            width: 120px; height: 120px;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+        @keyframes logoFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
+        
+        .splash-logo { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.8)); }
+        .splash-default-icon { font-size: 60px; color: var(--color-gold); text-shadow: 0 0 30px rgba(212, 175, 55, 0.8); }
+        
+        .splash-title {
+            font-size: 20px; font-weight: 900; margin-top: 20px;
+            background: linear-gradient(135deg, #D4AF37, #FFD700, #D4AF37);
+            background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: gradientMove 3s ease infinite;
+        }
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .splash-subtitle { font-size: 11px; color: var(--color-text-muted); margin-top: 5px; }
+        
+        .splash-loader { margin-top: 25px; width: 180px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        .splash-loader-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--color-gold), #FFD700); animation: loadProgress 2s ease forwards; }
+        @keyframes loadProgress { from { width: 0%; } to { width: 100%; } }
+        
+        /* ============================================ */
+        /* Overlay عام */
+        /* ============================================ */
+        .overlay-screen { 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); 
+            z-index: 200; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; padding: 16px; 
+        }
+        
+        /* ============================================ */
+        /* شاشة تسجيل الدخول */
+        /* ============================================ */
+        .login-container {
+            max-width: 340px; width: 100%; text-align: center;
+        }
+        .login-icon { font-size: 50px; margin-bottom: 10px; }
+        .login-title { font-size: 18px; font-weight: 900; color: var(--color-gold); margin-bottom: 5px; }
+        .login-subtitle { font-size: 11px; color: var(--color-text-muted); margin-bottom: 15px; }
+        .login-input { 
+            width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px; padding: 12px; margin-bottom: 10px;
+            color: white; text-align: center; font-weight: bold; font-size: 14px;
+            outline: none;
+        }
+        .login-input:focus { border-color: var(--color-gold); }
+        .login-error { color: #ef4444; font-size: 11px; margin-top: 10px; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 8px; }
+        
+        /* ============================================ */
+        /* شاشة الشروط */
+        /* ============================================ */
+        .terms-container { max-width: 340px; width: 100%; max-height: 80vh; display: flex; flex-direction: column; }
+        .terms-title { font-size: 16px; font-weight: 900; color: var(--color-gold); text-align: center; padding-bottom: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); margin-bottom: 10px; }
+        .terms-content { flex: 1; overflow-y: auto; font-size: 11px; line-height: 1.8; margin-bottom: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 12px; }
+        .terms-checkbox { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 10px; }
+        .terms-checkbox input { width: 18px; height: 18px; accent-color: var(--color-gold); }
+        
+        /* ============================================ */
+        /* الجولة التعريفية */
+        /* ============================================ */
+        #onboardingOverlay { z-index: 250; display: none; }
+        #onboardingOverlay.show { display: flex; }
+        .onboarding-slide { text-align: center; max-width: 320px; animation: slideIn 0.5s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+        .onboarding-icon { font-size: 50px; margin-bottom: 15px; }
+        .onboarding-title { font-size: 18px; font-weight: 900; color: var(--color-gold); margin-bottom: 12px; }
+        .onboarding-text { font-size: 12px; line-height: 1.8; margin-bottom: 15px; }
+        .onboarding-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 15px; }
+        .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(212, 175, 55, 0.3); transition: all 0.3s; }
+        .onboarding-dot.active { background: var(--color-gold); transform: scale(1.3); }
+        .onboarding-buttons { display: flex; gap: 10px; justify-content: center; }
+        .onboarding-btn { padding: 10px 25px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .onboarding-btn-skip { background: transparent; border: 1px solid rgba(212, 175, 55, 0.3); color: var(--color-text-muted); }
+        .onboarding-btn-next { background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark)); color: #000; border: none; }
+        
+        /* ============================================ */
+        /* التطبيق الرئيسي */
+        /* ============================================ */
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
+        .tab-content { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 70px; }
+        .tab-page { display: none; }
+        .tab-page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* ============================================ */
+        /* عداد الوقت */
+        /* ============================================ */
+        .event-timer {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(196, 30, 58, 0.1));
+            border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px;
+            padding: 8px 10px; display: flex; align-items: center; justify-content: center;
+            gap: 4px; margin-bottom: 10px;
+        }
+        .timer-unit { display: flex; flex-direction: column; align-items: center; min-width: 32px; }
+        .timer-value { font-size: 14px; font-weight: 900; color: var(--color-gold); background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; min-width: 26px; text-align: center; }
+        .timer-label { font-size: 8px; color: var(--color-text-muted); }
+        .timer-separator { font-size: 12px; color: var(--color-gold); font-weight: bold; }
+        
+        /* ============================================ */
+        /* شبكة اللعب */
+        /* ============================================ */
+        .game-area {
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            border-radius: 14px; padding: 10px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            margin-bottom: 10px;
+        }
+        .game-area-title { font-size: 10px; font-weight: bold; color: var(--color-gold); text-align: center; margin-bottom: 8px; }
+        
+        .palette-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-bottom: 10px; }
+        
+        .cell { 
+            border-radius: 8px; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; cursor: pointer; 
+            transition: all 0.2s; user-select: none; position: relative; 
+            overflow: hidden; background-color: #1a1a1a;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        .cell:active { transform: scale(0.92); }
+        
+        .palette-cell { height: clamp(32px, 9vw, 45px); font-size: clamp(0.9rem, 3.5vw, 1.2rem); }
+        .palette-cell.selected { border: 2px solid var(--color-gold) !important; transform: scale(1.1); box-shadow: 0 0 15px rgba(212, 175, 55, 0.6); }
+        
+        .grid-cell { height: clamp(45px, 15vw, 65px); font-size: clamp(1rem, 4vw, 1.5rem); }
+        
+        .lvl-badge { 
+            position: absolute; bottom: 1px; right: 2px; 
+            font-size: 7px; font-weight: bold; 
+            background: rgba(0,0,0,0.8); padding: 0 3px; border-radius: 3px; 
+            color: var(--color-gold); z-index: 5; 
+        }
+        
+        /* ألوان المستويات */
+        .lvl-0 { background-color: #1a1a1a; }
+        .lvl-1 { background: radial-gradient(circle, #4a7c59, #2d4a35); }
+        .lvl-2 { background: radial-gradient(circle, #4a7c9c, #2d4a5a); }
+        .lvl-3 { background: radial-gradient(circle, #5a6c9c, #3d4a6a); }
+        .lvl-4 { background: radial-gradient(circle, #7a5a9c, #5a3d6a); }
+        .lvl-5 { background: radial-gradient(circle, #9c5a8c, #6a3a5a); }
+        .lvl-6 { background: radial-gradient(circle, #9c5a5a, #6a3a3a); }
+        .lvl-7 { background: radial-gradient(circle, #9c7a4a, #6a5a2a); }
+        .lvl-8 { background: radial-gradient(circle, #9c5a2a, #6a3a1a); }
+        .lvl-9 { background: radial-gradient(circle, #8a3a3a, #5a2a2a); }
+        .lvl-10 { background: radial-gradient(circle, #7a2a2a, #4a1a1a); box-shadow: 0 0 10px rgba(196, 30, 58, 0.5); }
+        .lvl-11 { 
+            background: radial-gradient(circle, #D4AF37, #B8860B); 
+            border: 2px solid #FFD700 !important;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); 
+            animation: pulseGold 2s infinite; 
+        }
+        @keyframes pulseGold { 0% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.6); } 50% { box-shadow: 0 0 30px rgba(212, 175, 55, 1); } 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.6); } }
+        
+        .game-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        
+        /* ============================================ */
+        /* أزرار التحكم */
+        /* ============================================ */
+        .controls-row { display: flex; gap: 8px; margin-top: 10px; }
+        .control-btn { flex: 1; padding: 10px; border-radius: 10px; font-weight: bold; font-size: 11px; cursor: pointer; transition: all 0.2s; border: none; }
+        .control-btn:active { transform: scale(0.95); }
+        .control-btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .control-btn-danger { background: rgba(196, 30, 58, 0.3); color: var(--color-red); border: 1px solid rgba(196, 30, 58, 0.5); }
+        
+        .arrow-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+        .arrow-btn { 
+            padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3); color: white; font-size: 18px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .arrow-btn:active { transform: scale(0.92); background: var(--color-gold); color: #000; }
+        
+        /* ============================================ */
+        /* شريط التنقل السفلي */
+        /* ============================================ */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(10,10,10,1));
+            border-top: 2px solid rgba(212, 175, 55, 0.3);
+            padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom));
+            z-index: 100; display: flex; justify-content: space-around;
+        }
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; padding: 6px 16px; 
+            cursor: pointer; color: #666; transition: all 0.3s; border-radius: 12px;
+        }
+        .nav-item.active { color: var(--color-gold); }
+        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+        .nav-item span { font-size: 10px; font-weight: bold; }
+        
+        /* ============================================ */
+        /* إحصائيات */
+        /* ============================================ */
+        .stats-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .stat-box { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 10px; padding: 8px; text-align: center; }
+        .stat-label { font-size: 8px; color: var(--color-text-muted); }
+        .stat-value { font-size: 14px; font-weight: 900; color: var(--color-gold); }
+        
+        /* ============================================ */
+        /* شاشة الاحتفال */
+        /* ============================================ */
+        #celebrationOverlay { z-index: 300; display: none; }
+        #celebrationOverlay.show { display: flex; }
+        .celebration-icon { font-size: 60px; animation: celebrateIcon 1s ease infinite; }
+        @keyframes celebrateIcon { 0%, 100% { transform: scale(1) rotate(-5deg); } 50% { transform: scale(1.2) rotate(5deg); } }
+        .celebration-title { font-size: 20px; font-weight: 900; color: var(--color-gold); margin: 15px 0 10px; text-align: center; }
+        .celebration-message { font-size: 12px; color: var(--color-text-muted); text-align: center; margin-bottom: 15px; }
+        .celebration-stats { background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 12px; width: 100%; max-width: 280px; margin-bottom: 15px; }
+        .celebration-stat { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(212, 175, 55, 0.2); font-size: 11px; }
+        .celebration-stat:last-child { border-bottom: none; }
+        .celebration-textarea { width: 100%; max-width: 280px; background: rgba(0,0,0,0.4); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 10px; padding: 10px; color: white; font-size: 11px; margin-bottom: 15px; }
+        .star-rating i { font-size: 26px; cursor: pointer; color: #3f3f46; transition: all 0.2s; margin: 0 3px; }
+        .star-rating i.active { color: var(--color-gold); transform: scale(1.2); }
+        
+        /* ============================================ */
+        /* المتصدرين */
+        /* ============================================ */
+        .leaderboard-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; margin-bottom: 8px; }
+        .leaderboard-rank { font-size: 16px; font-weight: 900; min-width: 25px; text-align: center; }
+        .leaderboard-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; border: 2px solid var(--color-gold); display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; color: var(--color-gold); }
+        .leaderboard-info { flex: 1; }
+        .leaderboard-name { font-size: 12px; font-weight: bold; }
+        .leaderboard-badges { font-size: 9px; color: var(--color-gold); }
+        .leaderboard-score { font-size: 14px; font-weight: 900; color: var(--color-gold); }
+        
+        /* ============================================ */
+        /* لوحة الإدارة */
+        /* ============================================ */
+        #adminOverlay { z-index: 280; display: none; }
+        .admin-container { max-width: 400px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid rgba(196, 30, 58, 0.3); margin-bottom: 10px; }
+        .admin-title { font-size: 16px; font-weight: 900; color: var(--color-red); }
+        .admin-close { background: rgba(255,255,255,0.1); width: 28px; height: 28px; border-radius: 50%; border: none; color: white; font-size: 16px; cursor: pointer; }
+        .admin-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+        .admin-tab { flex: 1; padding: 8px 4px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center; transition: all 0.3s; }
+        .admin-tab.active { background: var(--color-red); border-color: var(--color-red); color: white; }
         .admin-section { display: none; }
-        .admin-section.active { display: block; animation: slideIn 0.3s ease-out; }
+        .admin-section.active { display: block; }
+        .admin-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 8px; color: white; font-size: 11px; margin-bottom: 8px; }
+        .admin-btn { background: linear-gradient(135deg, var(--color-red), #8B0000); color: white; border: none; padding: 10px; border-radius: 10px; font-weight: bold; font-size: 11px; cursor: pointer; width: 100%; }
         
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-primary); border-radius: 10px; }
-
-        .smart-tip-container { overflow: hidden; white-space: nowrap; border-left: 2px solid var(--color-primary); padding-left: 8px; }
-        .smart-tip-text { display: inline-block; animation: marquee 15s linear infinite; font-weight: bold; color: var(--color-primary); }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        
-        .avatar-circle { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primary); background: #27272a; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold;}
-        .swap-highlight { border: 3px dashed #3b82f6 !important; transform: scale(0.85); opacity: 0.8; box-shadow: 0 0 20px #3b82f6 inset; }
-
-        .star-rating i { color: #52525b; cursor: pointer; font-size: 1.5rem; transition: color 0.2s; }
-        .star-rating i.active { color: #f59e0b; }
-
-        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type="number"] { -moz-appearance: textfield; }
+        /* ============================================ */
+        /* زر الصوت */
+        /* ============================================ */
+        #soundToggleBtn { position: fixed; top: 10px; left: 10px; z-index: 150; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 50%; border: 1px solid rgba(212, 175, 55, 0.3); cursor: pointer; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-2 sm:p-4 pb-28 relative">
+<body>
+    <!-- ============================================ -->
+    <!-- 1. شاشة البداية (Splash Screen) -->
+    <!-- ============================================ -->
+    <div id="splashScreen">
+        <div class="splash-logo-container">
+            <img id="splashLogo" src="" class="splash-logo hidden">
+            <div id="splashDefaultIcon" class="splash-default-icon">🦂</div>
+        </div>
+        <div class="splash-title" id="splashTitle">مساعد عقروب V13</div>
+        <div class="splash-subtitle">🦂 عش الأساطير 🦂</div>
+        <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+    </div>
 
-    <!-- زر الصوت -->
-    <button id="soundToggleBtn" class="absolute top-4 left-4 z-40 bg-black/50 p-2 rounded-full border border-white/10 text-white/70 hover:text-white transition shadow-lg">
-        <i class="fas fa-volume-up"></i>
-    </button>
-
-    <!-- شاشة تسجيل الدخول -->
-    <div id="loginOverlay" class="overlay-screen">
-        <div class="theme-panel p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center dynamic-slide">
-            <img id="loginAppLogo" src="" class="h-24 mx-auto mb-4 object-contain hidden filter drop-shadow-lg">
-            <i id="loginDefaultIcon" class="fas fa-spider text-6xl theme-primary-text mb-4 drop-shadow-md"></i>
-            <h2 id="loginAppTitle" class="text-2xl font-black mb-2 text-white tracking-wide">مساعد بهجة الحيوانات</h2>
-            <p class="text-xs text-slate-400 mb-6 font-bold">أدخل بيانات حسابك للدخول</p>
-            <div class="space-y-4">
-                <input type="text" id="usernameInput" class="w-full bg-black/60 border border-white/10 rounded-2xl p-4 text-center outline-none focus:border-[var(--color-primary)] text-white font-bold" placeholder="اسم اللاعب">
-                <input type="password" id="passwordInput" class="w-full bg-black/60 border border-white/10 rounded-2xl p-4 text-center outline-none focus:border-[var(--color-primary)] text-white font-bold" placeholder="كلمة المرور">
-                <button id="enterAppBtn" class="w-full theme-primary-bg font-black py-4 rounded-2xl shadow-xl flex justify-center items-center gap-3 text-lg hover:brightness-110"><span>دخول السيرفر</span> <i class="fas fa-sign-in-alt"></i></button>
-            </div>
-            <p id="loginError" class="text-red-400 text-sm mt-4 hidden font-bold animate-pulse bg-red-900/20 p-2 rounded-xl border border-red-500/20"></p>
+    <!-- ============================================ -->
+    <!-- 2. شاشة تسجيل الدخول -->
+    <!-- ============================================ -->
+    <div id="loginOverlay" class="overlay-screen hidden">
+        <div class="theme-panel login-container p-5">
+            <div class="login-icon">🦂</div>
+            <div class="login-title" id="loginTitle">مساعد عقروب V13</div>
+            <div class="login-subtitle">أدخل بيانات حسابك للدخول</div>
+            <input type="text" id="usernameInput" class="login-input" placeholder="اسم المستخدم">
+            <input type="password" id="passwordInput" class="login-input" placeholder="كلمة المرور">
+            <button id="loginBtn" class="btn-gold">دخول السيرفر <i class="fas fa-sign-in-alt"></i></button>
+            <div id="loginError" class="login-error hidden"></div>
         </div>
     </div>
 
-    <!-- شاشة الشروط والأحكام -->
-    <div id="termsOverlay" class="overlay-screen hidden z-[60]">
-        <div class="theme-panel p-6 rounded-3xl shadow-2xl w-full max-w-sm border border-white/10 flex flex-col max-h-[85vh] dynamic-slide">
-            <h2 id="termsTitleDisplay" class="text-xl font-black mb-4 theme-primary-text flex items-center justify-center gap-2 border-b border-white/10 pb-3"></h2>
-            <div id="termsTextDisplay" class="text-xs text-white/90 text-right space-y-4 overflow-y-auto custom-scrollbar pr-2 mb-4 leading-relaxed font-medium"></div>
-            <div class="mt-auto pt-3 border-t border-white/10">
-                <label class="flex items-center gap-3 text-sm text-white cursor-pointer mb-4 bg-black/40 p-3 rounded-xl border border-white/5 hover:border-[var(--color-primary)] transition">
-                    <input type="checkbox" id="agreeTermsCheckbox" class="w-5 h-5 rounded cursor-pointer accent-[var(--color-primary)]">
-                    <span class="font-bold">أوافق على الشروط والأحكام</span>
-                </label>
-                <button id="acceptTermsBtn" class="w-full bg-slate-800 text-slate-400 font-bold py-4 rounded-xl transition-all cursor-not-allowed flex justify-center items-center gap-2 border border-white/5" disabled>دخول اللعبة <i class="fas fa-arrow-left"></i></button>
+    <!-- ============================================ -->
+    <!-- 3. شاشة الشروط والأحكام -->
+    <!-- ============================================ -->
+    <div id="termsOverlay" class="overlay-screen hidden">
+        <div class="theme-panel terms-container p-4">
+            <div class="terms-title" id="termsTitle">📜 ميثاق شرف مساعد عقروب</div>
+            <div class="terms-content custom-scrollbar" id="termsContent">
+                🦂 <b>مرحباً بك في مساعد عقروب!</b>
+                <br><br>
+                📌 <b>تعريف بالبرنامج:</b><br>
+                مساعد عقروب هو برنامج مساعد للعبة "بهجة الحيوانات" - لعبة دمج الحيوانات الاستراتيجية.
+                <br><br>
+                🎯 <b>الهدف:</b><br>
+                دمج الحيوانات المتشابهة للوصول للمستوى 11 (الملك) ودمجه 3 مرات.
+                <br><br>
+                ⚡ <b>نظام الطاقة:</b><br>
+                • الحد الأقصى: 200 وحدة<br>
+                • كل حركة: 1 وحدة<br>
+                • التجديد: 1 وحدة / 72 ثانية
+                <br><br>
+                🛠️ <b>الأدوات:</b><br>
+                💎 الجوهرة | ⬆️ ترقية | 🦅 مخلب | 🎡 عجلة
+                <br><br>
+                📜 <b>شروط الاستخدام:</b><br>
+                1️⃣ استخدام ترفيهي فقط<br>
+                2️⃣ عدم مشاركة بيانات الحساب<br>
+                3️⃣ احترام اللاعبين الآخرين
             </div>
+            <div class="terms-checkbox">
+                <input type="checkbox" id="agreeCheckbox">
+                <span>أوافق على الشروط والأحكام</span>
+            </div>
+            <button id="acceptTermsBtn" class="btn-gold" disabled style="opacity: 0.5; cursor: not-allowed;">دخول اللعبة <i class="fas fa-arrow-left"></i></button>
         </div>
     </div>
 
-    <!-- الملف الشخصي -->
-    <div id="profileOverlay" class="overlay-screen hidden z-[65]">
-        <div class="theme-panel p-6 rounded-3xl shadow-2xl w-full max-w-sm border border-white/10 flex flex-col dynamic-slide">
-            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
-                <h2 class="text-lg font-black theme-primary-text flex items-center gap-2"><i class="fas fa-id-badge"></i> بيانات اللاعب</h2>
-                <button onclick="document.getElementById('profileOverlay').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="space-y-4">
-                <div class="flex flex-col items-center gap-2">
-                    <img id="profileAvatarPreview" src="" class="w-20 h-20 rounded-full border-4 border-[var(--color-primary)] object-cover bg-black/50 hidden">
-                    <div id="profileAvatarFallback" class="w-20 h-20 rounded-full border-4 border-[var(--color-primary)] bg-black/50 flex justify-center items-center text-2xl font-bold">؟</div>
-                    <input type="file" id="profileAvatarInput" accept="image/*" class="text-[10px] file:bg-[var(--color-primary)] file:text-white file:border-none file:rounded file:px-2 file:py-1 cursor-pointer">
+    <!-- ============================================ -->
+    <!-- 4. الجولة التعريفية (Onboarding) -->
+    <!-- ============================================ -->
+    <div id="onboardingOverlay" class="overlay-screen">
+        <div class="onboarding-slide" id="onboardingSlide"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 5. التطبيق الرئيسي -->
+    <!-- ============================================ -->
+    <div id="appContainer" class="app-container hidden">
+        <!-- زر الصوت -->
+        <button id="soundToggleBtn"><i class="fas fa-volume-up text-sm text-white/70"></i></button>
+
+        <!-- TAB 1: اللعب -->
+        <div class="tab-content">
+            <div id="tabGame" class="tab-page active">
+                <!-- عداد الوقت -->
+                <div class="event-timer">
+                    <span style="font-size: 12px;">⏰</span>
+                    <div class="timer-unit"><div class="timer-value" id="timerDays">0</div><div class="timer-label">يوم</div></div>
+                    <div class="timer-separator">:</div>
+                    <div class="timer-unit"><div class="timer-value" id="timerHours">00</div><div class="timer-label">ساعة</div></div>
+                    <div class="timer-separator">:</div>
+                    <div class="timer-unit"><div class="timer-value" id="timerMinutes">00</div><div class="timer-label">دقيقة</div></div>
+                    <div class="timer-separator">:</div>
+                    <div class="timer-unit"><div class="timer-value" id="timerSeconds">00</div><div class="timer-label">ثانية</div></div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] opacity-60 mb-1 block">رقم المملكة</label>
-                        <input type="text" id="profileKingdomInput" placeholder="مثال: 123" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-center text-white outline-none focus:border-[var(--color-primary)] text-sm font-bold">
+
+                <!-- عنوان -->
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <h1 style="font-size: 16px; font-weight: 900; color: var(--color-gold);" id="appTitle">مساعد عقروب V13</h1>
+                </div>
+
+                <!-- إحصائيات اللاعب -->
+                <div class="stats-row">
+                    <div class="stat-box" style="cursor: pointer;" onclick="showProfile()">
+                        <div class="stat-label">اللاعب</div>
+                        <div class="stat-value" id="playerName" style="font-size: 12px;">---</div>
                     </div>
-                    <div>
-                        <label class="text-[10px] opacity-60 mb-1 block">اسم التحالف</label>
-                        <input type="text" id="profileAllianceInput" placeholder="مثال: الأبطال" class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-center text-white outline-none focus:border-[var(--color-primary)] text-sm font-bold">
+                    <div class="stat-box">
+                        <div class="stat-label">أعلى نقاط</div>
+                        <div class="stat-value" id="highScore">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">الطاقة ⚡</div>
+                        <div class="stat-value"><input type="number" id="energyInput" value="200" max="200" min="0" style="width: 40px; background: transparent; border: none; color: var(--color-gold); font-weight: 900; text-align: center; font-size: 14px;"></div>
                     </div>
                 </div>
-                <button id="saveProfileBtn" class="w-full theme-primary-bg py-3 rounded-xl font-bold shadow-lg mt-2 flex justify-center items-center gap-2">حفظ التغييرات <i class="fas fa-save"></i></button>
-            </div>
-        </div>
-    </div>
 
-    <!-- شاشة التقييمات -->
-    <div id="reviewOverlay" class="overlay-screen hidden z-[65]">
-        <div class="theme-panel p-6 rounded-3xl shadow-2xl w-full max-w-sm border border-white/10 flex flex-col dynamic-slide">
-            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
-                <h2 class="text-lg font-black text-yellow-400 flex items-center gap-2"><i class="fas fa-star"></i> تقييم واقتراحات</h2>
-                <button onclick="document.getElementById('reviewOverlay').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="space-y-4 flex flex-col items-center">
-                <p class="text-xs text-center opacity-80">رأيك يهمنا جداً في تطوير البرنامج!</p>
-                <div class="star-rating flex gap-2" id="starRatingContainer">
-                    <i class="fas fa-star" data-rating="1"></i>
-                    <i class="fas fa-star" data-rating="2"></i>
-                    <i class="fas fa-star" data-rating="3"></i>
-                    <i class="fas fa-star" data-rating="4"></i>
-                    <i class="fas fa-star" data-rating="5"></i>
+                <!-- إحصائيات سريعة -->
+                <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 8px; margin-bottom: 10px; display: flex; justify-content: space-around; font-size: 10px; font-weight: bold;">
+                    <span>تحركات: <b style="color: var(--color-gold);" id="movesCount">0</b></span>
+                    <span>أعلى مستوى: <b style="color: var(--color-red);" id="maxLevel">0</b></span>
+                    <span>دمجات 11: <b style="color: var(--color-gold);" id="l11Merges">0</b></span>
                 </div>
-                <textarea id="reviewTextInput" rows="4" placeholder="لديك اقتراح؟ اكتبه هنا..." class="w-full bg-black/40 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[var(--color-primary)] text-xs custom-scrollbar"></textarea>
-                <button id="submitReviewBtn" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 text-white transition">إرسال التقييم <i class="fas fa-paper-plane"></i></button>
-                <div id="reviewMsg" class="text-[10px] hidden font-bold p-1 rounded"></div>
+
+                <!-- منطقة اللعب -->
+                <div class="game-area">
+                    <div class="game-area-title"><i class="fas fa-palette"></i> اختر مستوى للإضافة:</div>
+                    <div class="palette-grid" id="paletteGrid"></div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="control-btn control-btn-secondary" onclick="undoMove()"><i class="fas fa-undo"></i> تراجع</button>
+                        <button class="control-btn control-btn-danger" onclick="resetGrid()"><i class="fas fa-sync"></i> تصفير</button>
+                        <select id="depthSelect" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 8px; color: var(--color-gold); font-weight: bold; font-size: 10px;">
+                            <option value="1">سريع</option>
+                            <option value="2">متوسط</option>
+                            <option value="3" selected>تكتيكي</option>
+                            <option value="4">عميق</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- شبكة اللعب -->
+                <div style="background: #0a0a0a; border: 2px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 8px; margin-bottom: 10px;">
+                    <div class="game-grid" id="gameGrid"></div>
+                </div>
+
+                <!-- أزرار التحكم -->
+                <div class="arrow-controls">
+                    <button class="arrow-btn" onclick="makeMove('UP')"><i class="fas fa-arrow-up"></i></button>
+                    <button class="arrow-btn" onclick="makeMove('DOWN')"><i class="fas fa-arrow-down"></i></button>
+                    <button class="arrow-btn" onclick="makeMove('LEFT')"><i class="fas fa-arrow-left"></i></button>
+                    <button class="arrow-btn" onclick="makeMove('RIGHT')"><i class="fas fa-arrow-right"></i></button>
+                </div>
+
+                <!-- زر الدمج الذكي -->
+                <button id="smartMergeBtn" class="btn-gold" style="margin-top: 10px; font-size: 14px;">
+                    <i class="fas fa-magic"></i> دمج ذكي
+                </button>
+
+                <!-- نتيجة الحركة -->
+                <div id="resultBox" class="hidden" style="margin-top: 10px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--color-gold); border-radius: 12px; padding: 15px; text-align: center;">
+                    <div id="resultText" style="font-size: 20px; font-weight: 900; color: var(--color-gold);"></div>
+                </div>
+            </div>
+
+            <!-- TAB 2: المتصدرين -->
+            <div id="tabLeaderboard" class="tab-page">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h1 style="font-size: 18px; font-weight: 900; color: var(--color-gold);"><i class="fas fa-trophy"></i> أبطال اللعبة</h1>
+                    <p style="font-size: 11px; color: var(--color-text-muted);">أفضل 10 لاعبين</p>
+                </div>
+                <div id="leaderboardList"></div>
+            </div>
+
+            <!-- TAB 3: المزيد -->
+            <div id="tabMore" class="tab-page">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h1 style="font-size: 18px; font-weight: 900; color: var(--color-gold);"><i class="fas fa-th-large"></i> المزيد</h1>
+                </div>
+                
+                <!-- إحصائياتي -->
+                <div class="theme-panel p-3" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 12px; font-weight: bold; color: white; border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding-bottom: 8px; margin-bottom: 10px;"><i class="fas fa-chart-bar" style="color: #60a5fa;"></i> إحصائياتي</h3>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
+                        <div><div style="font-size: 16px; font-weight: 900; color: var(--color-gold);" id="myScore">0</div><div style="font-size: 9px; color: var(--color-text-muted);">النقاط</div></div>
+                        <div><div style="font-size: 16px; font-weight: 900; color: var(--color-red);" id="myMaxLvl">0</div><div style="font-size: 9px; color: var(--color-text-muted);">أعلى مستوى</div></div>
+                        <div><div style="font-size: 16px; font-weight: 900; color: #4ade80;" id="myMoves">0</div><div style="font-size: 9px; color: var(--color-text-muted);">التحركات</div></div>
+                        <div><div style="font-size: 16px; font-weight: 900; color: var(--color-gold);" id="myL11">0</div><div style="font-size: 9px; color: var(--color-text-muted);">دمجات 11</div></div>
+                    </div>
+                </div>
+
+                <!-- أزرار الإجراءات -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <button onclick="showProfile()" class="theme-panel p-3" style="text-align: center; cursor: pointer;">
+                        <i class="fas fa-user-edit" style="font-size: 20px; color: #60a5fa; display: block; margin-bottom: 5px;"></i>
+                        <span style="font-size: 10px; font-weight: bold;">بياناتي</span>
+                    </button>
+                    <button onclick="showTools()" class="theme-panel p-3" style="text-align: center; cursor: pointer;">
+                        <i class="fas fa-toolbox" style="font-size: 20px; color: #a855f7; display: block; margin-bottom: 5px;"></i>
+                        <span style="font-size: 10px; font-weight: bold;">الأدوات</span>
+                    </button>
+                    <button onclick="showReview()" class="theme-panel p-3" style="text-align: center; cursor: pointer;">
+                        <i class="fas fa-star" style="font-size: 20px; color: var(--color-gold); display: block; margin-bottom: 5px;"></i>
+                        <span style="font-size: 10px; font-weight: bold;">تقييم</span>
+                    </button>
+                    <button onclick="shareScore()" class="theme-panel p-3" style="text-align: center; cursor: pointer;">
+                        <i class="fas fa-share-alt" style="font-size: 20px; color: #4ade80; display: block; margin-bottom: 5px;"></i>
+                        <span style="font-size: 10px; font-weight: bold;">مشاركة</span>
+                    </button>
+                </div>
+
+                <!-- زر الإدارة -->
+                <button id="adminBtn" class="hidden" onclick="showAdmin()" style="margin-top: 10px; background: rgba(196, 30, 58, 0.2); border: 1px solid rgba(196, 30, 58, 0.3); border-radius: 12px; padding: 12px; width: 100%; text-align: center; cursor: pointer;">
+                    <i class="fas fa-cog" style="font-size: 20px; color: var(--color-red); display: block; margin-bottom: 5px;"></i>
+                    <span style="font-size: 12px; font-weight: bold;">لوحة الإدارة</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- شريط التنقل -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('Game')"><i class="fas fa-gamepad"></i><span>اللعب</span></div>
+            <div class="nav-item" onclick="switchTab('Leaderboard')"><i class="fas fa-trophy"></i><span>المتصدرين</span></div>
+            <div class="nav-item" onclick="switchTab('More')"><i class="fas fa-th-large"></i><span>المزيد</span></div>
+        </nav>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- شاشة الاحتفال -->
+    <!-- ============================================ -->
+    <div id="celebrationOverlay" class="overlay-screen">
+        <div class="celebration-icon">👑</div>
+        <div class="celebration-title">🏆 تهانينا! وصلت للمستوى 11! 🏆</div>
+        <div class="celebration-message">لقد حققت إنجازاً رائعاً!</div>
+        <div class="celebration-stats">
+            <div class="celebration-stat"><span>النقاط المكتسبة</span><span id="celebScore" style="color: var(--color-gold);">0</span></div>
+            <div class="celebration-stat"><span>عدد التحركات</span><span id="celebMoves">0</span></div>
+            <div class="celebration-stat"><span>دمجات المستوى 11</span><span id="celebL11" style="color: var(--color-gold);">0</span></div>
+        </div>
+        <p style="font-size: 11px; margin-bottom: 8px;">قيّم تجربتك:</p>
+        <div class="star-rating" id="celebRating"><i class="fas fa-star" data-rating="1"></i><i class="fas fa-star" data-rating="2"></i><i class="fas fa-star" data-rating="3"></i><i class="fas fa-star" data-rating="4"></i><i class="fas fa-star" data-rating="5"></i></div>
+        <textarea id="celebComment" class="celebration-textarea" rows="2" placeholder="لديك اقتراح؟ اكتبه هنا..."></textarea>
+        <button id="celebSubmit" class="btn-gold" style="max-width: 200px;">حفظ ومتابعة <i class="fas fa-check"></i></button>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- شاشة الملف الشخصي -->
+    <!-- ============================================ -->
+    <div id="profileOverlay" class="overlay-screen hidden">
+        <div class="theme-panel p-4" style="max-width: 340px; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding-bottom: 10px; margin-bottom: 10px;">
+                <h2 style="font-size: 14px; font-weight: 900; color: var(--color-gold);"><i class="fas fa-user"></i> بياناتي</h2>
+                <button onclick="hideProfile()" style="background: none; border: none; color: #71717a; font-size: 20px; cursor: pointer;">×</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 10px;">
+                <div id="profileAvatar" style="width: 50px; height: 50px; border-radius: 50%; background: #1a1a1a; border: 2px solid var(--color-gold); margin: 0 auto 8px; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; color: var(--color-gold);">؟</div>
+                <div id="profileName" style="font-weight: bold; color: var(--color-gold);">---</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; text-align: center;"><div style="font-size: 14px; font-weight: 900; color: var(--color-gold);" id="profileScore">0</div><div style="font-size: 8px; color: var(--color-text-muted);">النقاط</div></div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; text-align: center;"><div style="font-size: 14px; font-weight: 900; color: var(--color-red);" id="profileMaxLvl">0</div><div style="font-size: 8px; color: var(--color-text-muted);">أعلى مستوى</div></div>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; text-align: center;"><div style="font-size: 14px; font-weight: 900; color: #60a5fa;" id="profileMoves">0</div><div style="font-size: 8px; color: var(--color-text-muted);">التحركات</div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 9px; color: var(--color-text-muted);">رقم المملكة</label>
+                    <input type="text" id="kingdomInput" class="admin-input" placeholder="123">
+                </div>
+                <div>
+                    <label style="font-size: 9px; color: var(--color-text-muted);">اسم التحالف</label>
+                    <input type="text" id="allianceInput" class="admin-input" placeholder="الأبطال">
+                </div>
+            </div>
+            <button id="saveProfileBtn" class="btn-gold">حفظ التغييرات <i class="fas fa-save"></i></button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- شاشة الأدوات -->
+    <!-- ============================================ -->
+    <div id="toolsOverlay" class="overlay-screen hidden">
+        <div class="theme-panel p-4" style="max-width: 340px; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding-bottom: 10px; margin-bottom: 10px;">
+                <h2 style="font-size: 14px; font-weight: 900; color: var(--color-gold);"><i class="fas fa-toolbox"></i> الأدوات</h2>
+                <button onclick="hideTools()" style="background: none; border: none; color: #71717a; font-size: 20px; cursor: pointer;">×</button>
+            </div>
+            <p style="font-size: 11px; color: var(--color-text-muted); text-align: center; margin-bottom: 10px;">استخدم هذه الأدوات لتعديل الشبكة:</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button id="hammerBtn" class="theme-panel p-3" style="text-align: center; cursor: pointer;">
+                    <div style="font-size: 24px;">🔨</div>
+                    <div style="font-size: 10px; font-weight: bold; color: var(--color-gold);">المطرقة</div>
+                    <div style="font-size: 9px; color: var(--color-red);">حذف عنصر</div>
+                </button>
+                <button id="swapBtn" class="theme-panel p-3" style="text-align: center; cursor: pointer;">
+                    <div style="font-size: 24px;">🔄</div>
+                    <div style="font-size: 10px; font-weight: bold; color: var(--color-gold);">التبديل</div>
+                    <div style="font-size: 9px; color: #60a5fa;">تبديل عنصرين</div>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- حقيبة الأدوات -->
-    <div id="toolsOverlay" class="overlay-screen hidden z-[60]">
-        <div class="theme-panel p-6 rounded-3xl shadow-2xl w-full max-w-sm border border-white/10 flex flex-col">
-            <h2 class="text-xl font-black mb-4 text-purple-400 flex items-center justify-center gap-2 border-b border-white/10 pb-3"><i class="fas fa-toolbox"></i> حقيبة الأدوات</h2>
-            <div class="text-xs text-slate-300 text-center mb-4">استخدم هذه الأدوات لتعديل الشبكة:</div>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <button id="useHammerBtn" class="flex flex-col items-center justify-center bg-black/30 hover:bg-black/50 border border-red-500/20 p-4 rounded-2xl transition-all group">
-                    <i class="fas fa-gavel text-4xl text-red-400 mb-2 group-hover:scale-110 transition-transform"></i>
-                    <span class="text-white font-bold text-sm">المطرقة</span>
-                    <span class="text-[9px] text-slate-400 mt-1 text-center">حذف أي عنصر</span>
-                </button>
-                <button id="useSwapBtn" class="flex flex-col items-center justify-center bg-black/30 hover:bg-black/50 border border-blue-500/20 p-4 rounded-2xl transition-all group">
-                    <i class="fas fa-exchange-alt text-4xl text-blue-400 mb-2 group-hover:scale-110 transition-transform"></i>
-                    <span class="text-white font-bold text-sm">التبديل</span>
-                    <span class="text-[9px] text-slate-400 mt-1 text-center">تبديل عنصرين</span>
-                </button>
+    <!-- ============================================ -->
+    <!-- شاشة التقييم -->
+    <!-- ============================================ -->
+    <div id="reviewOverlay" class="overlay-screen hidden">
+        <div class="theme-panel p-4" style="max-width: 340px; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding-bottom: 10px; margin-bottom: 10px;">
+                <h2 style="font-size: 14px; font-weight: 900; color: var(--color-gold);"><i class="fas fa-star"></i> تقييم البرنامج</h2>
+                <button onclick="hideReview()" style="background: none; border: none; color: #71717a; font-size: 20px; cursor: pointer;">×</button>
             </div>
-            <button onclick="document.getElementById('toolsOverlay').classList.add('hidden')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-all mt-2">إغلاق <i class="fas fa-times ml-1"></i></button>
+            <p style="font-size: 11px; color: var(--color-text-muted); text-align: center; margin-bottom: 10px;">رأيك يهمنا!</p>
+            <div class="star-rating" id="reviewRating" style="margin-bottom: 10px;"><i class="fas fa-star" data-rating="1"></i><i class="fas fa-star" data-rating="2"></i><i class="fas fa-star" data-rating="3"></i><i class="fas fa-star" data-rating="4"></i><i class="fas fa-star" data-rating="5"></i></div>
+            <textarea id="reviewText" class="celebration-textarea" rows="3" placeholder="لديك اقتراح؟ اكتبه هنا..."></textarea>
+            <button id="submitReviewBtn" class="btn-gold">إرسال التقييم <i class="fas fa-paper-plane"></i></button>
+            <div id="reviewMsg" class="hidden" style="font-size: 10px; text-align: center; margin-top: 10px; padding: 5px; border-radius: 8px;"></div>
         </div>
     </div>
 
+    <!-- ============================================ -->
     <!-- لوحة الإدارة -->
-    <div id="adminPanelOverlay" class="overlay-screen hidden z-[70]">
-        <div class="theme-panel p-6 rounded-3xl shadow-2xl w-full max-w-lg flex flex-col max-h-[95vh] dynamic-slide">
-            <div class="flex justify-between items-center mb-5 border-b border-white/10 pb-3">
-                <h2 class="text-xl font-black text-[var(--color-secondary)] flex items-center gap-2"><i class="fas fa-crown"></i> لوحة الإدارة</h2>
-                <button id="closeAdminBtn" class="bg-white/10 w-8 h-8 rounded-full text-white hover:bg-red-500 transition" onclick="document.getElementById('adminPanelOverlay').classList.add('hidden')">×</button>
+    <!-- ============================================ -->
+    <div id="adminOverlay" class="overlay-screen">
+        <div class="theme-panel admin-container p-4">
+            <div class="admin-header">
+                <div class="admin-title"><i class="fas fa-crown"></i> لوحة الإدارة</div>
+                <button class="admin-close" onclick="hideAdmin()">×</button>
             </div>
-            <div class="grid grid-cols-4 gap-1 mb-4 bg-black/30 p-1 rounded-xl">
-                <button onclick="switchAdminTab('users')" id="tabUsers" class="py-2 bg-[var(--color-secondary)] rounded-lg text-[10px] font-bold text-white">اللاعبين</button>
-                <button onclick="switchAdminTab('settings')" id="tabSettings" class="py-2 rounded-lg text-[10px] font-bold opacity-60 hover:opacity-100 text-white">الإعدادات</button>
-                <button onclick="switchAdminTab('reviews')" id="tabReviews" class="py-2 rounded-lg text-[10px] font-bold opacity-60 hover:opacity-100 text-white">التقييمات</button>
-                <button onclick="switchAdminTab('online')" id="tabOnline" class="py-2 rounded-lg text-[10px] font-bold opacity-60 hover:opacity-100 text-white">اللايف (<span id="adminOnlineCount">0</span>)</button>
+            <div class="admin-tabs">
+                <div class="admin-tab active" onclick="switchAdminTab('users')">اللاعبين</div>
+                <div class="admin-tab" onclick="switchAdminTab('settings')">الإعدادات</div>
+                <div class="admin-tab" onclick="switchAdminTab('archive')">الأرشيف</div>
+                <div class="admin-tab" onclick="switchAdminTab('reviews')">التقييمات</div>
             </div>
-            <div class="overflow-y-auto flex-1 custom-scrollbar pr-2">
-                <div id="sectionUsers" class="admin-section active space-y-4">
-                    <div class="bg-black/30 p-4 rounded-2xl space-y-3 border border-white/5">
-                        <input type="text" id="newUsername" placeholder="اسم اللاعب الجديد" class="w-full bg-black/40 p-3 rounded-xl text-sm outline-none text-white">
-                        <input type="text" id="newPassword" placeholder="كلمة السر" class="w-full bg-black/40 p-3 rounded-xl text-sm outline-none text-white">
-                        <label class="flex items-center gap-3 text-sm opacity-80 text-white"><input type="checkbox" id="newIsAdmin" class="w-5 h-5 accent-[var(--color-secondary)]"> صلاحيات مدير</label>
-                        <button id="addUserBtn" class="w-full bg-[var(--color-secondary)] py-3 rounded-xl font-bold text-white shadow-lg transition hover:brightness-110">إضافة لاعب جديد</button>
-                        <div id="addUserMsg" class="text-xs text-center mt-2 hidden font-bold"></div>
-                    </div>
-                    <div class="bg-black/30 p-4 rounded-2xl border border-white/5">
-                        <h3 class="text-xs font-bold text-blue-400 border-b border-white/10 pb-1 mb-2 flex justify-between items-center">سجل اللاعبين <button id="refreshUsersList" class="hover:text-white"><i class="fas fa-sync-alt"></i></button></h3>
-                        <div id="adminUsersDatabaseList" class="space-y-2 mt-2 max-h-40 overflow-y-auto custom-scrollbar"></div>
-                    </div>
+            <div style="flex: 1; overflow-y: auto;">
+                <!-- قسم اللاعبين -->
+                <div id="adminUsers" class="admin-section active">
+                    <input type="text" id="newUser" class="admin-input" placeholder="اسم اللاعب الجديد">
+                    <input type="text" id="newPass" class="admin-input" placeholder="كلمة السر">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 8px;">
+                        <input type="checkbox" id="newAdmin"> صلاحيات مدير
+                    </label>
+                    <button id="addUserBtn" class="admin-btn">إضافة لاعب جديد</button>
+                    <div id="addUserMsg" class="hidden" style="font-size: 10px; text-align: center; margin-top: 8px;"></div>
+                    <hr style="border-color: rgba(212, 175, 55, 0.2); margin: 15px 0;">
+                    <h3 style="font-size: 11px; font-weight: bold; color: var(--color-gold); margin-bottom: 10px;">سجل اللاعبين <button onclick="loadUsers()" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer;"><i class="fas fa-sync-alt"></i></button></h3>
+                    <div id="usersList" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
-
-                <div id="sectionSettings" class="admin-section space-y-5">
-                    <div class="space-y-3 text-white bg-black/20 p-4 rounded-2xl border border-white/5">
-                        <input type="text" id="settingAppName" class="w-full bg-black/30 p-3 rounded-xl text-sm border border-white/10 text-white" placeholder="اسم المنصة">
-                        <input type="text" id="settingGeminiKey" class="w-full bg-black/30 p-2 rounded-xl text-xs border border-white/10 text-white" placeholder="Gemini API Key (للشات الذكي)">
-                        <input type="text" id="settingTermsTitle" class="w-full bg-black/30 p-2 rounded-xl text-xs border border-white/10 text-white" placeholder="عنوان الشروط">
-                        <textarea id="settingTermsText" rows="3" class="w-full bg-black/30 p-2 rounded-xl text-xs border border-white/10 text-white custom-scrollbar" placeholder="نص الشروط..."></textarea>
-                    </div>
-                    <div class="space-y-3 text-white bg-black/20 p-4 rounded-2xl border border-white/5">
-                        <h3 class="text-xs font-bold text-[var(--color-secondary)] border-b border-white/10 pb-1 mb-2">مستويات الحيوانات (11)</h3>
-                        <div id="animalsSettingsList" class="space-y-3"></div>
-                    </div>
-                    <button id="saveSettingsBtn" class="w-full theme-primary-bg py-4 rounded-2xl font-black shadow-xl transition hover:brightness-110">نشر التحديثات 📡</button>
-                    <div id="saveSettingsMsg" class="text-xs text-center mt-2 hidden font-bold"></div>
+                <!-- قسم الإعدادات -->
+                <div id="adminSettings" class="admin-section">
+                    <input type="text" id="settingName" class="admin-input" placeholder="اسم المنصة">
+                    <input type="text" id="settingGemini" class="admin-input" placeholder="Gemini API Key">
+                    <button id="saveSettingsBtn" class="btn-gold">نشر التحديثات 📡</button>
+                    <div id="saveSettingsMsg" class="hidden" style="font-size: 10px; text-align: center; margin-top: 8px;"></div>
                 </div>
-
-                <div id="sectionReviews" class="admin-section">
-                    <div class="bg-black/30 p-4 rounded-2xl border border-white/5">
-                        <h3 class="text-xs font-bold text-yellow-400 border-b border-white/10 pb-1 mb-2 flex justify-between items-center">صندوق الاقتراحات <button onclick="loadAdminReviewsList()" class="hover:text-white"><i class="fas fa-sync-alt"></i></button></h3>
-                        <div id="adminReviewsList" class="space-y-3 mt-2 max-h-80 overflow-y-auto custom-scrollbar"></div>
-                    </div>
+                <!-- قسم الأرشيف -->
+                <div id="adminArchive" class="admin-section">
+                    <h3 style="font-size: 11px; font-weight: bold; color: var(--color-gold); margin-bottom: 10px;">🏆 أرشيف دمج المستوى 11</h3>
+                    <div id="archiveList" style="max-height: 250px; overflow-y: auto;"></div>
                 </div>
-
-                <div id="sectionOnline" class="admin-section">
-                    <ul id="adminUsersUl" class="space-y-2 text-white bg-black/30 p-4 rounded-2xl border border-white/5"></ul>
+                <!-- قسم التقييمات -->
+                <div id="adminReviews" class="admin-section">
+                    <h3 style="font-size: 11px; font-weight: bold; color: var(--color-gold); margin-bottom: 10px;">صندوق الاقتراحات</h3>
+                    <div id="reviewsList" style="max-height: 250px; overflow-y: auto;"></div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- الواجهة الأساسية -->
-    <header class="text-center mb-2 w-full max-w-md flex flex-col items-center mt-2">
-        <img id="mainHeaderLogo" src="" class="h-14 mb-1 object-contain hidden filter drop-shadow-lg">
-        <h1 id="mainHeaderTitle" class="text-xl font-black theme-primary-text tracking-widest uppercase text-shadow">...</h1>
-    </header>
-
-    <div class="w-full max-w-sm bg-black/40 border border-[var(--color-primary)]/30 rounded-lg p-1 mb-3 shadow-inner flex items-center gap-2">
-        <i class="fas fa-lightbulb theme-primary-text text-sm animate-pulse ml-1"></i>
-        <div class="smart-tip-container flex-1"><span id="smartTipText" class="smart-tip-text text-[10px]">استعد للعب! استخدم الذكاء العميق لأفضل النتائج.</span></div>
-    </div>
-
-    <!-- إحصائيات اللاعب -->
-    <div class="w-full max-w-sm flex flex-col gap-2 mb-3 animate-fade-in">
-        <div class="flex gap-2">
-            <div class="theme-panel p-2 rounded-2xl border flex-1 flex flex-col justify-center items-center shadow-lg relative cursor-pointer hover:bg-white/5 transition" onclick="openProfile()">
-                <div class="flex items-center gap-2 w-full">
-                    <img id="playerAvatar" src="" class="avatar-circle hidden">
-                    <div id="playerAvatarFallback" class="avatar-circle">؟</div>
-                    <div class="flex flex-col text-right flex-1 overflow-hidden">
-                        <div class="text-[8px] opacity-60 uppercase font-bold flex items-center gap-1">اللاعب <span id="playerKingdomBadge" class="text-[var(--color-primary)] border border-[var(--color-primary)]/50 px-1 rounded text-[7px] hidden"></span></div>
-                        <div id="playerNameDisplay" class="font-black text-xs text-white truncate">---</div>
-                    </div>
-                </div>
-                <button id="openAdminBtn" onclick="event.stopPropagation(); document.getElementById('adminPanelOverlay').classList.remove('hidden');" class="hidden mt-2 w-full text-[9px] font-bold bg-[var(--color-secondary)] hover:bg-red-500 text-white px-2 py-1 rounded-lg shadow-md transition-all"><i class="fas fa-cog"></i> لوحة الإدارة</button>
-            </div>
-            <div class="theme-panel p-2 rounded-2xl border flex-1 text-center shadow-lg flex flex-col justify-center items-center">
-                <div class="text-[9px] opacity-60 uppercase font-bold mb-1">أعلى سكور</div>
-                <div id="highScoreDisplay" class="font-black text-sm text-[var(--color-primary)] tracking-wider">0</div>
-            </div>
-            <div class="theme-panel p-2 rounded-2xl border border-[var(--color-primary)]/30 flex-1 text-center shadow-lg bg-[var(--color-primary)]/10 flex flex-col justify-center items-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-full h-1 bg-black/50"><div id="energyProgressBar" class="h-full bg-[var(--color-primary)] w-full transition-all duration-1000"></div></div>
-                <div class="flex items-center justify-center gap-1 text-[var(--color-primary)] font-black text-lg mt-1" title="اضغط لتعديل الطاقة">
-                    <i class="fas fa-bolt text-xs"></i>
-                    <input type="number" id="liveEnergy" class="w-12 bg-transparent text-center font-black outline-none border-b border-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition" value="200" max="200" min="0">
-                </div>
-                <div id="energyTimer" class="text-[9px] text-white/70 font-mono hidden"><span>01:00</span></div>
-            </div>
-        </div>
-        <div class="theme-panel p-2 rounded-xl border text-[9px] font-bold flex justify-around opacity-90 shadow-md">
-            <span>التحركات: <b id="statMoves" class="theme-primary-text text-[11px]">0</b></span>
-            <span>أعلى مستوى: <b id="statMaxLvl" class="text-[var(--color-secondary)] text-[11px]">0</b></span>
-            <span class="text-emerald-400 flex items-center gap-1"><i class="fas fa-circle text-[6px] animate-pulse"></i> نشط</span>
-        </div>
-    </div>
-
-    <!-- أزرار الإضافات -->
-    <div class="w-full max-w-sm grid grid-cols-3 gap-2 mb-3">
-        <button id="toolsBtn" class="py-2 bg-purple-900/30 text-purple-300 hover:bg-purple-900/50 rounded-xl text-[10px] font-bold border border-purple-500/20 transition-all shadow-inner"><i class="fas fa-toolbox text-xs block mb-1"></i> الأدوات</button>
-        <button id="shareWaBtn" class="py-2 bg-green-900/30 text-green-300 hover:bg-green-900/50 rounded-xl text-[10px] font-bold border border-green-500/20 transition-all shadow-inner"><i class="fas fa-camera text-xs block mb-1"></i> شارك المجد</button>
-        <button id="rateBtn" class="py-2 bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 rounded-xl text-[10px] font-bold border border-yellow-500/20 transition-all shadow-inner"><i class="fas fa-star text-xs block mb-1"></i> تقييمك</button>
-    </div>
-
-    <!-- حاوية اللعب -->
-    <div id="captureArea" class="w-full max-w-sm flex flex-col gap-3 bg-transparent rounded-xl p-1 relative">
-        <div class="theme-panel p-3 rounded-2xl border shadow-xl">
-            <div class="grid grid-cols-6 gap-2 mb-3" id="palette"></div>
-            <div class="flex items-end gap-2 mt-3">
-                <div class="flex flex-col gap-2 w-1/2">
-                    <button id="undoBtn" class="w-full py-2 bg-black/60 hover:bg-black/80 rounded-xl text-[10px] font-bold disabled:opacity-30 border border-white/10 text-white transition-all"><i class="fas fa-undo"></i> تراجع</button>
-                    <button id="clearBtn" class="w-full py-2 bg-[var(--color-secondary)]/20 hover:bg-[var(--color-secondary)]/40 text-[var(--color-secondary)] rounded-xl text-[10px] font-bold border border-[var(--color-secondary)]/30 transition-all"><i class="fas fa-sync"></i> تصفير</button>
-                </div>
-                <div class="w-1/2 flex flex-col justify-end">
-                    <label class="text-[9px] font-bold text-slate-400 mb-1 flex items-center justify-between"><i class="fas fa-microchip"></i> <span>مستوى التفكير:</span></label>
-                    <select id="aiDepth" class="w-full bg-black/60 rounded-xl text-[10px] py-2 font-bold outline-none px-1 text-[var(--color-primary)] border border-white/10">
-                        <option value="1">1- سريع</option>
-                        <option value="2">2- متوسط</option>
-                        <option value="3" selected>3- تكتيكي (موصى به)</option>
-                        <option value="4">4- عميق (بطيء)</option>
-                        <option value="5">5- مستحيل (بطيء جداً)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        
-        <div id="statusMsg" class="text-center text-xs font-black theme-primary-text h-4 opacity-80">...</div>
-        
-        <div class="relative w-full">
-            <div class="grid-container grid grid-cols-4 gap-2 relative" id="gameGrid" dir="ltr"></div>
-            <div id="gridOverlayAnim" class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 z-10"></div>
-        </div>
-
-        <!-- أزرار الدمج اليدوي -->
-        <div class="theme-panel p-2 rounded-xl border mt-1 shadow-inner bg-black/30">
-            <div class="text-[9px] text-slate-400 text-center mb-2 font-bold">أزرار الدمج اليدوي</div>
-            <div class="grid grid-cols-4 gap-2">
-                <button onclick="manualMove('UP')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg shadow transition active:scale-95 border border-white/10"><i class="fas fa-arrow-up"></i></button>
-                <button onclick="manualMove('DOWN')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg shadow transition active:scale-95 border border-white/10"><i class="fas fa-arrow-down"></i></button>
-                <button onclick="manualMove('LEFT')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg shadow transition active:scale-95 border border-white/10"><i class="fas fa-arrow-left"></i></button>
-                <button onclick="manualMove('RIGHT')" class="py-2 bg-slate-700 hover:bg-[var(--color-primary)] text-white rounded-lg shadow transition active:scale-95 border border-white/10"><i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-
-        <button id="calcMoveBtn" class="w-full py-4 mt-2 theme-primary-bg font-black rounded-2xl shadow-2xl flex justify-center items-center gap-3 text-xl hover:brightness-110 active:scale-95 transition-all text-white relative overflow-hidden group">
-            <span class="relative z-10">دمـــج</span> <i class="fas fa-magic relative z-10 group-hover:rotate-180 transition-transform"></i>
-            <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-        </button>
-        
-        <div id="resultArea" class="hidden theme-panel p-4 rounded-2xl text-center border-t-4 border-[var(--color-primary)] shadow-2xl dynamic-slide mt-2">
-            <div id="moveResult" class="text-3xl font-black text-white tracking-widest flex items-center justify-center gap-4 drop-shadow-md"></div>
-            <div id="statsBox" class="mt-3 text-[10px] text-slate-300 bg-black/40 p-2 rounded-lg border border-white/5 font-mono"></div>
-        </div>
-    </div>
-
-    <div class="w-full max-w-sm theme-panel p-4 rounded-2xl border shadow-lg mt-3 mb-16">
-        <h3 class="text-xs font-black text-[var(--color-primary)] mb-3 border-b border-white/10 pb-2 flex items-center gap-2"><i class="fas fa-trophy text-sm"></i> أبطال اللعبة (Top 10)</h3>
-        <div id="leaderboardList" class="space-y-2 text-[10px] font-bold"></div>
-    </div>
-
-    <!-- الشات -->
-    <div id="chatWidget">
-        <div id="chatBox" class="theme-panel">
-            <div class="bg-black/40 p-2 flex justify-between items-center text-xs shadow-md text-white border-b border-white/10">
-                <div class="flex gap-1 bg-black/50 p-1 rounded-lg border border-white/5">
-                    <button id="tabAiChat" class="bg-[var(--color-primary)] text-white px-3 py-1.5 rounded-md font-bold transition-colors shadow-sm">المستشار</button>
-                    <button id="tabGlobalChat" class="text-slate-400 hover:text-white px-3 py-1.5 rounded-md font-bold transition-colors">مجلس التحالفات</button>
-                </div>
-                <button id="closeChatBtn" class="text-xl font-bold opacity-60 hover:text-red-400 px-2 transition-colors">×</button>
-            </div>
-            <div id="aiChatMessages" class="chat-area custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-            <div id="globalChatMessages" class="chat-area custom-scrollbar hidden bg-black/20">
-                <div class="text-[9px] text-center text-[var(--color-primary)] mb-2 font-bold bg-[var(--color-primary)]/10 p-1 rounded border border-[var(--color-primary)]/20">--- غرفة تواصل جميع اللاعبين ---</div>
-            </div>
-            <div id="chatInputArea" class="p-3 bg-black/40 flex gap-2 border-t border-white/5">
-                <input type="text" id="chatInput" placeholder="تحدث..." class="flex-1 bg-black/60 border border-white/10 p-2 rounded-xl text-white outline-none text-xs focus:border-[var(--color-primary)] transition-colors shadow-inner">
-                <button id="sendChatBtn" class="bg-[var(--color-primary)] text-white text-sm w-10 h-10 rounded-xl hover:brightness-110 flex justify-center items-center transition-all shadow-md"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
-        <div id="chatBtn" class="theme-primary-bg w-14 h-14 rounded-full flex justify-center items-center shadow-[0_0_20px_rgba(234,88,12,0.5)] cursor-pointer border-2 border-white/20 relative z-50 transition-transform hover:scale-110">
-            <i class="fas fa-comment-alt text-white text-xl drop-shadow-md"></i>
-            <span id="chatNotification" class="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-slate-900 hidden animate-bounce"></span>
         </div>
     </div>
 
     <script>
         // ============================================
-        // الإعدادات الأساسية
+        // المتغيرات العامة
         // ============================================
-        let API_BASE = '';
-        if (window.location.protocol === 'file:' || window.location.protocol === 'blob:') {
-            API_BASE = 'http://localhost:3000';
-        }
-
-        // بيانات المستخدم
-        let uData = { 
-            username: "", 
-            password: "", 
-            energy: 200, 
-            highScore: 0, 
-            stats: { moves: 0, maxLvl: 0 }, 
-            grid: null, 
-            avatarUrl: "", 
-            kingdom: "", 
-            alliance: "" 
-        };
+        const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
         
+        let uData = { username: '', password: '', energy: 200, highScore: 0, stats: { moves: 0, maxLvl: 0, level11Merges: 0 }, grid: null, kingdom: '', alliance: '', tools: {} };
         let isAdmin = false;
-        let energySecondsLeft = 60;
         let socket = null;
         let grid = Array(4).fill().map(() => Array(4).fill(0));
         let history = [];
         let selectedLvl = 1;
-        let waitingInput = false;
-        let memo = new Map();
-        let currentChatTab = 'ai';
         let activeTool = null;
         let swapCell = null;
         let isMuted = false;
-        let nodesChecked = 0;
-        let cacheHits = 0;
-
-        // الإعدادات الافتراضية
-        const defaultAnimals = { 0: { icon: '', name: 'فارغ' } };
-        for (let i = 1; i <= 11; i++) {
-            defaultAnimals[i] = { icon: '🐾', name: `مستوى ${i}` };
-        }
-        let appSettings = { 
-            appName: "مساعد عقروب", 
-            animals: defaultAnimals, 
-            colors: {}, 
-            termsTitle: "الشروط والأحكام", 
-            termsText: "أهلاً بك...", 
-            geminiApiKey: "" 
-        };
-
-        // ============================================
-        // المحرك الصوتي
-        // ============================================
-        let audioCtx;
+        let timerInterval = null;
+        let celebRating = 0;
+        let reviewRating = 0;
         
-        function initAudio() { 
-            if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-            }
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
+        const animals = {
+            0: { icon: '', name: 'فارغ' },
+            1: { icon: '🐭', name: 'فأر' },
+            2: { icon: '🐰', name: 'أرنب' },
+            3: { icon: '🦊', name: 'ثعلب' },
+            4: { icon: '🐺', name: 'ذئب' },
+            5: { icon: '🦁', name: 'أسد' },
+            6: { icon: '🐯', name: 'نمر' },
+            7: { icon: '🦅', name: 'نسر' },
+            8: { icon: '🐉', name: 'تنين' },
+            9: { icon: '🔥', name: 'عنقاء' },
+            10: { icon: '⚡', name: 'برق' },
+            11: { icon: '👑', name: 'الملك' }
+        };
+        
+        // ============================================
+        // الجولة التعريفية
+        // ============================================
+        const onboardingSteps = [
+            { icon: '🦂', title: 'مرحباً بك!', text: 'هذا البرنامج مصمم لمساعدتك في لعبة "بهجة الحيوانات".<br><br>سنتعرف معاً على كيفية الاستفادة القصوى منه.' },
+            { icon: '🎯', title: 'الهدف من اللعبة', text: 'الهدف الرئيسي هو دمج الحيوانات المتشابهة للحصول على حيوانات أعلى مستوى.<br><br>الهدف النهائي: الوصول للمستوى 11 ودمجه 3 مرات!' },
+            { icon: '🎮', title: 'كيفية اللعب', text: '• اختر مستوى من اللوحة العلوية<br>• اضغط على خانة فارغة لإضافة الحيوان<br>• استخدم أزرار الأسهم للدمج<br>• أو اضغط "دمج ذكي" للحصول على أفضل حركة' },
+            { icon: '⚡', title: 'نظام الطاقة', text: 'لديك 200 وحدة طاقة.<br>كل حركة تستهلك 1 وحدة.<br>التجديد: 1 وحدة كل 72 ثانية.' },
+            { icon: '🛠️', title: 'الأدوات المساعدة', text: '💎 الجوهرة: إضافة أي حيوان<br>⬆️ ترقية: رفع مستوى حيوان<br>🦅 مخلب: حذف حيوان<br>🎡 عجلة: تبديل موقع' },
+            { icon: '🏆', title: 'استعد للتحدي!', text: 'أنت الآن جاهز للبدء!<br><br>تذكر: خطط قبل كل حركة، راقب طاقتك، واستخدم الأدوات بحكمة.<br><br>بالتوفيق يا بطل! 🏆' }
+        ];
+        
+        let currentStep = 0;
+        
+        function showStep(step) {
+            const data = onboardingSteps[step];
+            document.getElementById('onboardingSlide').innerHTML = `
+                <div class="onboarding-icon">${data.icon}</div>
+                <div class="onboarding-title">${data.title}</div>
+                <div class="onboarding-text">${data.text}</div>
+                <div class="onboarding-dots">${onboardingSteps.map((_, i) => `<div class="onboarding-dot ${i === step ? 'active' : ''}"></div>`).join('')}</div>
+                <div class="onboarding-buttons">
+                    <button class="onboarding-btn onboarding-btn-skip" onclick="skipOnboarding()">تخطي</button>
+                    <button class="onboarding-btn onboarding-btn-next" onclick="nextStep()">${step === onboardingSteps.length - 1 ? 'ابدأ اللعب' : 'التالي'} <i class="fas fa-arrow-left"></i></button>
+                </div>
+            `;
         }
         
-        function playSFX(type) {
-            if (isMuted) return;
-            initAudio();
-            if (!audioCtx) return; 
-            
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); 
-            gain.connect(audioCtx.destination);
-            
-            const now = audioCtx.currentTime;
-            
-            if (type === 'merge') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            } else if (type === 'tool') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(200, now);
-                osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
-                gain.gain.setValueAtTime(0.05, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
-            } else if (type === 'error') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(100, now);
-                osc.frequency.setValueAtTime(90, now + 0.2);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
-            } else if (type === 'success') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.setValueAtTime(600, now + 0.1);
-                osc.frequency.setValueAtTime(800, now + 0.2);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
-            }
-        }
-
-        document.getElementById('soundToggleBtn').onclick = (e) => {
-            isMuted = !isMuted;
-            e.currentTarget.innerHTML = isMuted ? 
-                '<i class="fas fa-volume-mute text-red-400"></i>' : 
-                '<i class="fas fa-volume-up"></i>';
-        };
-
-        // ============================================
-        // دوال مساعدة
-        // ============================================
-        function getDeviceID() {
-            let did = localStorage.getItem('devId');
-            if (!did) {
-                did = 'dev_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-                localStorage.setItem('devId', did);
-            }
-            return did;
-        }
-
-        async function fetchSettings() {
-            try {
-                const res = await fetch(`${API_BASE}/api/settings`);
-                if (res.ok) applySettings(await res.json());
-                else applySettings(appSettings);
-            } catch (e) {
-                applySettings(appSettings);
-            }
-        }
-
-        function applySettings(s) {
-            appSettings = s;
-            document.getElementById('pageTitle').innerText = s.appName;
-            document.getElementById('mainHeaderTitle').innerText = s.appName;
-            document.getElementById('loginAppTitle').innerText = s.appName;
-            document.getElementById('termsTitleDisplay').innerHTML = `<i class="fas fa-shield-alt text-xl"></i> ${s.termsTitle}`;
-            document.getElementById('termsTextDisplay').innerHTML = s.termsText.replace(/\n/g, '<br>');
-            
-            const r = document.documentElement.style;
-            if (s.colors) {
-                r.setProperty('--bg-body', s.colors.bodyBg);
-                r.setProperty('--bg-panel', s.colors.panelBg);
-                r.setProperty('--color-primary', s.colors.primary);
-            }
-            
-            if (s.logoUrl) {
-                const url = s.logoUrl.startsWith('/') ? API_BASE + s.logoUrl : s.logoUrl;
-                document.getElementById('mainHeaderLogo').src = url;
-                document.getElementById('mainHeaderLogo').classList.remove('hidden');
-                document.getElementById('loginAppLogo').src = url;
-                document.getElementById('loginAppLogo').classList.remove('hidden');
-                document.getElementById('loginDefaultIcon').classList.add('hidden');
-            }
-            
-            initPalette();
-            updateGridUI();
-        }
-
-        // ============================================
-        // إدارة الملف الشخصي
-        // ============================================
-        function openProfile() {
-            document.getElementById('profileOverlay').classList.remove('hidden');
-            document.getElementById('profileKingdomInput').value = uData.kingdom || '';
-            document.getElementById('profileAllianceInput').value = uData.alliance || '';
-            
-            if (uData.avatarUrl) {
-                document.getElementById('profileAvatarPreview').src = uData.avatarUrl.startsWith('/') ? API_BASE + uData.avatarUrl : uData.avatarUrl;
-                document.getElementById('profileAvatarPreview').classList.remove('hidden');
-                document.getElementById('profileAvatarFallback').classList.add('hidden');
+        function nextStep() {
+            currentStep++;
+            if (currentStep >= onboardingSteps.length) {
+                completeOnboarding();
             } else {
-                document.getElementById('profileAvatarFallback').innerText = uData.username.charAt(0).toUpperCase();
-                document.getElementById('profileAvatarPreview').classList.add('hidden');
-                document.getElementById('profileAvatarFallback').classList.remove('hidden');
+                showStep(currentStep);
             }
         }
-
-        document.getElementById('profileAvatarInput').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const fd = new FormData();
-            fd.append('image', file);
-            
-            try {
-                const r = await fetch(API_BASE + '/api/upload', { method: 'POST', body: fd });
-                const d = await r.json();
-                if (d.success) {
-                    uData.avatarUrl = d.url;
-                    document.getElementById('profileAvatarPreview').src = API_BASE + d.url;
-                    document.getElementById('profileAvatarPreview').classList.remove('hidden');
-                    document.getElementById('profileAvatarFallback').classList.add('hidden');
-                }
-            } catch (e) {}
-        };
-
-        document.getElementById('saveProfileBtn').onclick = async () => {
-            const btn = document.getElementById('saveProfileBtn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            uData.kingdom = document.getElementById('profileKingdomInput').value.trim();
-            uData.alliance = document.getElementById('profileAllianceInput').value.trim();
-            
-            try {
-                await fetch(`${API_BASE}/api/profile/update`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: uData.username,
-                        password: uData.password,
-                        avatarUrl: uData.avatarUrl,
-                        kingdom: uData.kingdom,
-                        alliance: uData.alliance
-                    })
-                });
-                updatePlayerUI();
-                document.getElementById('profileOverlay').classList.add('hidden');
-                playSFX('success');
-            } catch (e) {
-                playSFX('error');
-            }
-            btn.innerHTML = 'حفظ التغييرات <i class="fas fa-save"></i>';
-        };
-
-        function updatePlayerUI() {
-            document.getElementById('playerNameDisplay').innerText = uData.username;
-            
-            if (uData.avatarUrl) {
-                document.getElementById('playerAvatar').src = uData.avatarUrl.startsWith('/') ? API_BASE + uData.avatarUrl : uData.avatarUrl;
-                document.getElementById('playerAvatar').classList.remove('hidden');
-                document.getElementById('playerAvatarFallback').classList.add('hidden');
-            } else {
-                document.getElementById('playerAvatarFallback').innerText = uData.username.charAt(0).toUpperCase();
-                document.getElementById('playerAvatar').classList.add('hidden');
-                document.getElementById('playerAvatarFallback').classList.remove('hidden');
-            }
-            
-            let badges = [];
-            if (uData.kingdom) badges.push(`K:${uData.kingdom}`);
-            if (uData.alliance) badges.push(`A:${uData.alliance}`);
-            
-            if (badges.length > 0) {
-                document.getElementById('playerKingdomBadge').innerText = `[${badges.join(' | ')}]`;
-                document.getElementById('playerKingdomBadge').classList.remove('hidden');
-            } else {
-                document.getElementById('playerKingdomBadge').classList.add('hidden');
-            }
+        
+        function skipOnboarding() {
+            completeOnboarding();
         }
-
+        
+        function completeOnboarding() {
+            localStorage.setItem('onboarding_done', 'true');
+            document.getElementById('onboardingOverlay').classList.remove('show');
+            startApp();
+        }
+        
         // ============================================
-        // النصائح الذكية
+        // شاشة البداية
         // ============================================
-        function analyzeGridAndGiveTip() {
-            let emptyCount = 0;
-            let maxVal = 0;
-            let maxPos = [];
-            let maxCount = 0;
-            
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    if (grid[r][c] === 0) emptyCount++;
-                    else if (grid[r][c] > maxVal) {
-                        maxVal = grid[r][c];
-                        maxPos = [{ r, c }];
-                        maxCount = 1;
-                    } else if (grid[r][c] === maxVal) {
-                        maxPos.push({ r, c });
-                        maxCount++;
-                    }
-                }
-            }
-            
-            const tipEl = document.getElementById('smartTipText');
-            if (!tipEl) return;
-            
-            if (emptyCount <= 2 && maxVal > 0) {
-                tipEl.innerText = "🚨 خطر: الشبكة تزدحم! ركز على الدمج.";
-                tipEl.className = "smart-tip-text text-[10px] text-red-400 font-bold";
-            } else if (maxCount >= 2 && maxVal >= 4) {
-                tipEl.innerText = `🔥 فرصة: لديك ${maxCount} من ${appSettings.animals[maxVal].name}!`;
-                tipEl.className = "smart-tip-text text-[10px] text-yellow-400 font-bold";
-            } else if (maxVal >= 5 && maxPos.length === 1) {
-                let p = maxPos[0];
-                if (!((p.r === 0 && p.c === 0) || (p.r === 0 && p.c === 3) || (p.r === 3 && p.c === 0) || (p.r === 3 && p.c === 3))) {
-                    tipEl.innerText = `💡 نصيحة: أعلى عنصر ليس في الزاوية!`;
-                    tipEl.className = "smart-tip-text text-[10px] text-blue-400 font-bold";
-                } else {
-                    tipEl.innerText = "🛡️ ممتاز: أعلى حيواناتك مؤمن في الزاوية.";
-                    tipEl.className = "smart-tip-text text-[10px] text-emerald-400 font-bold";
-                }
-            } else {
-                const gTips = ["اسحب دائماً لاتجاه واحد.", "اجعل حيواناتك العالية متلاصقة!"];
-                tipEl.innerText = gTips[Math.floor(Math.random() * gTips.length)];
-                tipEl.className = "smart-tip-text text-[10px] text-[var(--color-primary)] font-bold";
-            }
+        function initSplash() {
+            setTimeout(() => {
+                document.getElementById('splashScreen').classList.add('fade-out');
+                setTimeout(() => {
+                    document.getElementById('splashScreen').style.display = 'none';
+                    showLogin();
+                }, 800);
+            }, 2000);
         }
-
+        
         // ============================================
         // تسجيل الدخول
         // ============================================
-        const enterBtn = document.getElementById('enterAppBtn');
+        function showLogin() {
+            document.getElementById('loginOverlay').classList.remove('hidden');
+        }
         
-        enterBtn.onclick = async () => {
-            initAudio();
+        document.getElementById('loginBtn').onclick = async () => {
             const u = document.getElementById('usernameInput').value.trim().toLowerCase();
             const p = document.getElementById('passwordInput').value.trim();
-            const errEl = document.getElementById('loginError');
+            const err = document.getElementById('loginError');
             
             if (!u || !p) {
-                errEl.innerText = "أدخل بياناتك أولاً!";
-                errEl.classList.remove('hidden');
-                playSFX('error');
+                err.textContent = 'أدخل بياناتك أولاً!';
+                err.classList.remove('hidden');
                 return;
             }
             
-            enterBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            document.getElementById('loginBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الدخول...';
             
             try {
                 const res = await fetch(`${API_BASE}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: u, password: p, deviceId: getDeviceID() })
+                    body: JSON.stringify({ username: u, password: p })
                 });
                 const d = await res.json();
                 
@@ -705,167 +797,330 @@
                     uData.username = u;
                     uData.password = p;
                     isAdmin = d.isAdmin;
-                    
                     if (d.userData) {
                         uData.highScore = d.userData.highScore || 0;
-                        uData.energy = d.userData.energy !== undefined ? d.userData.energy : 200;
-                        uData.stats = d.userData.stats || { moves: 0, maxLvl: 0 };
-                        uData.avatarUrl = d.userData.avatarUrl || "";
-                        uData.kingdom = d.userData.kingdom || "";
-                        uData.alliance = d.userData.alliance || "";
+                        uData.energy = d.userData.energy ?? 200;
+                        uData.stats = d.userData.stats || { moves: 0, maxLvl: 0, level11Merges: 0 };
+                        uData.kingdom = d.userData.kingdom || '';
+                        uData.alliance = d.userData.alliance || '';
+                        uData.tools = d.userData.tools || {};
                         if (d.userData.grid) grid = d.userData.grid;
                     }
-                    
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('termsOverlay').classList.remove('hidden');
-                    document.getElementById('termsOverlay').style.display = 'flex';
-                    playSFX('success');
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    showTerms();
                 } else {
-                    errEl.innerText = d.message;
-                    errEl.classList.remove('hidden');
-                    enterBtn.innerHTML = '<span>دخول السيرفر</span> <i class="fas fa-sign-in-alt"></i>';
-                    playSFX('error');
+                    err.textContent = d.message;
+                    err.classList.remove('hidden');
+                    document.getElementById('loginBtn').innerHTML = 'دخول السيرفر <i class="fas fa-sign-in-alt"></i>';
                 }
             } catch (e) {
-                errEl.innerText = "السيرفر لا يستجيب!";
-                errEl.classList.remove('hidden');
-                enterBtn.innerHTML = '<span>دخول السيرفر</span> <i class="fas fa-sign-in-alt"></i>';
-                playSFX('error');
+                err.textContent = 'السيرفر لا يستجيب!';
+                err.classList.remove('hidden');
+                document.getElementById('loginBtn').innerHTML = 'دخول السيرفر <i class="fas fa-sign-in-alt"></i>';
             }
         };
-
-        // ============================================
-        // الموافقة على الشروط
-        // ============================================
-        const agreeTermsCheckbox = document.getElementById('agreeTermsCheckbox');
-        const acceptTermsBtn = document.getElementById('acceptTermsBtn');
-        const termsOverlay = document.getElementById('termsOverlay');
         
-        agreeTermsCheckbox.onchange = (e) => {
+        // ============================================
+        // الشروط
+        // ============================================
+        function showTerms() {
+            document.getElementById('termsOverlay').classList.remove('hidden');
+        }
+        
+        document.getElementById('agreeCheckbox').onchange = (e) => {
+            const btn = document.getElementById('acceptTermsBtn');
             if (e.target.checked) {
-                acceptTermsBtn.disabled = false;
-                acceptTermsBtn.classList.remove('bg-slate-800', 'text-slate-400', 'cursor-not-allowed');
-                acceptTermsBtn.classList.add('theme-primary-bg', 'hover:brightness-110');
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
             } else {
-                acceptTermsBtn.disabled = true;
-                acceptTermsBtn.classList.add('bg-slate-800', 'text-slate-400', 'cursor-not-allowed');
-                acceptTermsBtn.classList.remove('theme-primary-bg', 'hover:brightness-110');
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
             }
         };
         
-        acceptTermsBtn.onclick = () => {
-            termsOverlay.style.display = 'none';
-            initializeAppAfterTerms();
+        document.getElementById('acceptTermsBtn').onclick = () => {
+            document.getElementById('termsOverlay').classList.add('hidden');
+            
+            // التحقق من الجولة التعريفية
+            if (localStorage.getItem('onboarding_done')) {
+                startApp();
+            } else {
+                document.getElementById('onboardingOverlay').classList.add('show');
+                showStep(0);
+            }
         };
-
+        
         // ============================================
-        // تهيئة التطبيق بعد الشروط
+        // بدء التطبيق
         // ============================================
-        function initializeAppAfterTerms() {
-            updatePlayerUI();
-            document.getElementById('highScoreDisplay').innerText = uData.highScore.toLocaleString();
-            document.getElementById('statMoves').innerText = uData.stats.moves;
-            document.getElementById('statMaxLvl').innerText = uData.stats.maxLvl;
-            document.getElementById('liveEnergy').value = uData.energy;
+        function startApp() {
+            document.getElementById('appContainer').classList.remove('hidden');
+            updateUI();
+            initPalette();
+            initGrid();
+            startTimer();
             
             if (isAdmin) {
-                document.getElementById('openAdminBtn').classList.remove('hidden');
-                document.getElementById('openAdminBtn').style.display = 'block';
+                document.getElementById('adminBtn').classList.remove('hidden');
             }
-            
-            updateGridUI();
-            startEnergyTimer();
-            fetchLeaderboard();
             
             // Socket.io
             try {
                 socket = io(API_BASE || window.location.origin);
-                socket.emit('user_joined', {
-                    username: uData.username,
-                    kingdom: uData.kingdom,
-                    alliance: uData.alliance,
-                    avatarUrl: uData.avatarUrl
-                });
-                
-                socket.on('settings_updated', (s) => applySettings(s));
-                socket.on('profile_updated', () => fetchLeaderboard());
-                
-                socket.on('global_msg', (data) => {
-                    const isMe = data.sender === uData.username;
-                    const d = document.createElement('div');
-                    d.className = `msg ${isMe ? 'user' : 'other'} shadow-lg border border-white/5 flex gap-2 items-start`;
-                    
-                    let av = data.avatarUrl ?
-                        `<img src="${data.avatarUrl.startsWith('/') ? API_BASE + data.avatarUrl : data.avatarUrl}" class="w-6 h-6 rounded-full object-cover border border-[var(--color-primary)]">` :
-                        `<div class="w-6 h-6 rounded-full bg-black/50 border border-[var(--color-primary)] flex justify-center items-center text-[8px] font-bold">${data.sender.charAt(0)}</div>`;
-                    
-                    let bdgs = [];
-                    if (data.kingdom) bdgs.push(`K:${data.kingdom}`);
-                    if (data.alliance) bdgs.push(`A:${data.alliance}`);
-                    let kb = bdgs.length > 0 ? `<span class="text-[var(--color-primary)]">[${bdgs.join('|')}]</span>` : '';
-                    
-                    d.innerHTML = `${!isMe ? av : ''}<div class="flex-1"><strong class="text-[8px] opacity-70 block mb-1">${kb} ${data.sender}</strong><span class="text-sm">${data.text}</span></div>${isMe ? av : ''}`;
-                    document.getElementById('globalChatMessages').appendChild(d);
-                    document.getElementById('globalChatMessages').scrollTop = document.getElementById('globalChatMessages').scrollHeight;
-                    
-                    if (document.getElementById('chatBox').style.display !== 'flex' || currentChatTab !== 'global') {
-                        document.getElementById('chatNotification').classList.remove('hidden');
+                socket.emit('user_joined', { username: uData.username, kingdom: uData.kingdom, alliance: uData.alliance });
+            } catch (e) {}
+        }
+        
+        function updateUI() {
+            document.getElementById('playerName').textContent = uData.username;
+            document.getElementById('highScore').textContent = uData.highScore.toLocaleString();
+            document.getElementById('energyInput').value = uData.energy;
+            document.getElementById('movesCount').textContent = uData.stats.moves || 0;
+            document.getElementById('maxLevel').textContent = uData.stats.maxLvl || 0;
+            document.getElementById('l11Merges').textContent = uData.stats.level11Merges || 0;
+            document.getElementById('myScore').textContent = uData.highScore.toLocaleString();
+            document.getElementById('myMaxLvl').textContent = uData.stats.maxLvl || 0;
+            document.getElementById('myMoves').textContent = uData.stats.moves || 0;
+            document.getElementById('myL11').textContent = uData.stats.level11Merges || 0;
+        }
+        
+        // ============================================
+        // اللوحة (Palette)
+        // ============================================
+        function initPalette() {
+            const pal = document.getElementById('paletteGrid');
+            pal.innerHTML = '';
+            for (let i = 1; i <= 11; i++) {
+                const cell = document.createElement('div');
+                cell.className = `cell palette-cell lvl-${i}`;
+                cell.innerHTML = `<span>${animals[i].icon}</span><span class="lvl-badge">${i}</span>`;
+                cell.onclick = () => selectLevel(i);
+                pal.appendChild(cell);
+            }
+        }
+        
+        function selectLevel(lvl) {
+            selectedLvl = lvl;
+            document.querySelectorAll('.palette-cell').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.palette-cell')[lvl - 1].classList.add('selected');
+        }
+        
+        // ============================================
+        // شبكة اللعب
+        // ============================================
+        function initGrid() {
+            const gd = document.getElementById('gameGrid');
+            gd.innerHTML = '';
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell grid-cell lvl-${grid[r][c]}`;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    updateCell(cell, r, c);
+                    cell.onclick = () => handleCellClick(r, c);
+                    gd.appendChild(cell);
+                }
+            }
+        }
+        
+        function updateCell(cell, r, c) {
+            const lvl = grid[r][c];
+            cell.className = `cell grid-cell lvl-${lvl}`;
+            if (lvl > 0) {
+                cell.innerHTML = `<span>${animals[lvl].icon}</span><span class="lvl-badge">${lvl}</span>`;
+            } else {
+                cell.innerHTML = '';
+            }
+        }
+        
+        function handleCellClick(r, c) {
+            if (activeTool === 'hammer') {
+                grid[r][c] = 0;
+                activeTool = null;
+                document.querySelectorAll('.grid-cell').forEach(c => c.style.border = '');
+                updateGrid();
+            } else if (activeTool === 'swap') {
+                if (!swapCell) {
+                    swapCell = { r, c };
+                    document.querySelector(`[data-row="${r}"][data-col="${c}"]`).style.border = '3px dashed var(--color-gold)';
+                } else {
+                    const temp = grid[r][c];
+                    grid[r][c] = grid[swapCell.r][swapCell.c];
+                    grid[swapCell.r][swapCell.c] = temp;
+                    swapCell = null;
+                    activeTool = null;
+                    document.querySelectorAll('.grid-cell').forEach(c => c.style.border = '');
+                    updateGrid();
+                }
+            } else if (grid[r][c] === 0) {
+                grid[r][c] = selectedLvl;
+                updateGrid();
+            }
+        }
+        
+        function updateGrid() {
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                    updateCell(cell, r, c);
+                }
+            }
+            saveGame();
+        }
+        
+        // ============================================
+        // التحركات
+        // ============================================
+        function makeMove(dir) {
+            history.push(JSON.parse(JSON.stringify(grid)));
+            const res = move(dir);
+            if (res.moved) {
+                grid = res.grid;
+                updateGrid();
+                checkMaxLevel();
+            }
+        }
+        
+        function move(dir) {
+            let moved = false;
+            let newG = JSON.parse(JSON.stringify(grid));
+            
+            const merge = (row) => {
+                let newRow = row.filter(v => v !== 0);
+                for (let i = 0; i < newRow.length - 1; i++) {
+                    if (newRow[i] === newRow[i + 1]) {
+                        newRow[i]++;
+                        newRow.splice(i + 1, 1);
                     }
-                });
-            } catch (e) {}
+                }
+                while (newRow.length < 4) newRow.push(0);
+                return newRow;
+            };
             
-            // رسالة ترحيب
-            const aiMsg = document.createElement('div');
-            aiMsg.className = 'msg bot shadow-md';
-            aiMsg.innerText = `الشبكة جاهزة يا بطل! أنا المستشار الذكي، تحت أمرك.`;
-            document.getElementById('aiChatMessages').appendChild(aiMsg);
+            if (dir === 'RIGHT') for (let r = 0; r < 4; r++) { let rev = [...newG[r]].reverse(); let merged = merge(rev).reverse(); if (JSON.stringify(newG[r]) !== JSON.stringify(merged)) moved = true; newG[r] = merged; }
+            else if (dir === 'LEFT') for (let r = 0; r < 4; r++) { let merged = merge(newG[r]); if (JSON.stringify(newG[r]) !== JSON.stringify(merged)) moved = true; newG[r] = merged; }
+            else if (dir === 'UP') for (let c = 0; c < 4; c++) { let col = [newG[0][c], newG[1][c], newG[2][c], newG[3][c]]; let merged = merge(col); if (JSON.stringify(col) !== JSON.stringify(merged)) moved = true; for (let r = 0; r < 4; r++) newG[r][c] = merged[r]; }
+            else if (dir === 'DOWN') for (let c = 0; c < 4; c++) { let col = [newG[3][c], newG[2][c], newG[1][c], newG[0][c]]; let merged = merge(col); if (JSON.stringify([newG[0][c], newG[1][c], newG[2][c], newG[3][c]]) !== JSON.stringify(merged.reverse())) moved = true; for (let r = 0; r < 4; r++) newG[r][c] = merged[r]; }
             
-            analyzeGridAndGiveTip();
+            return { moved, grid: newG };
         }
-
+        
+        function undoMove() {
+            if (history.length > 0) {
+                grid = history.pop();
+                updateGrid();
+            }
+        }
+        
+        function resetGrid() {
+            history.push(JSON.parse(JSON.stringify(grid)));
+            grid = Array(4).fill().map(() => Array(4).fill(0));
+            updateGrid();
+        }
+        
+        function checkMaxLevel() {
+            let maxLvl = 0;
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    if (grid[r][c] > maxLvl) maxLvl = grid[r][c];
+                }
+            }
+            uData.stats.maxLvl = Math.max(uData.stats.maxLvl || 0, maxLvl);
+            uData.stats.moves = (uData.stats.moves || 0) + 1;
+            updateUI();
+            
+            if (maxLvl === 11) {
+                showCelebration();
+            }
+        }
+        
         // ============================================
-        // لوحة المتصدرين
+        // الدمج الذكي
         // ============================================
-        async function fetchLeaderboard() {
-            try {
-                const res = await fetch(`${API_BASE}/api/leaderboard`);
-                const data = await res.json();
-                const medals = [
-                    '<i class="fas fa-crown text-yellow-400 text-lg drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]"></i>',
-                    '<i class="fas fa-medal text-slate-300 text-base"></i>',
-                    '<i class="fas fa-award text-orange-400 text-sm"></i>'
-                ];
+        document.getElementById('smartMergeBtn').onclick = () => {
+            const depth = parseInt(document.getElementById('depthSelect').value);
+            document.getElementById('smartMergeBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> يحسب...';
+            
+            setTimeout(() => {
+                const res = expectimax(grid, depth, true);
+                const dirs = { UP: '⬆️ للأعلى', DOWN: '⬇️ للأسفل', LEFT: '⬅️ لليسار', RIGHT: '➡️ لليمين' };
                 
-                document.getElementById('leaderboardList').innerHTML = data.map((p, i) => {
-                    let av = p.avatarUrl ?
-                        `<img src="${p.avatarUrl.startsWith('/') ? API_BASE + p.avatarUrl : p.avatarUrl}" class="w-6 h-6 rounded-full object-cover border border-white/20">` :
-                        `<div class="w-6 h-6 rounded-full bg-black/50 border border-white/20 flex justify-center items-center text-[8px]">${p.username.charAt(0)}</div>`;
-                    
-                    let bdgs = [];
-                    if (p.kingdom) bdgs.push(`K:${p.kingdom}`);
-                    if (p.alliance) bdgs.push(`A:${p.alliance}`);
-                    let kd = bdgs.length > 0 ?
-                        `<span class="text-[7px] border border-[var(--color-primary)]/30 text-[var(--color-primary)] px-1 rounded bg-black/40">[${bdgs.join('|')}]</span>` :
-                        '';
-                    
-                    return `<div class="flex justify-between items-center p-2 bg-black/30 rounded-xl border ${p.username === uData.username ? 'border-[var(--color-primary)] shadow-[0_0_10px_rgba(234,88,12,0.2)]' : 'border-white/5'} transition hover:bg-black/50">
-                        <div class="flex items-center gap-2 text-white">
-                            <span class="w-5 text-center">${i < 3 ? medals[i] : `<span class="opacity-50 text-[10px]">${i + 1}</span>`}</span>
-                            ${av}
-                            <div class="flex flex-col">
-                                <span class="opacity-90 font-bold text-[10px] flex items-center gap-1">${p.username} ${kd}</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[var(--color-primary)] font-black text-xs">${p.score.toLocaleString()}</span>
-                            <span class="opacity-80 text-sm drop-shadow-md bg-black/50 w-6 h-6 flex justify-center items-center rounded-lg border border-white/10" title="أعلى حيوان">${appSettings.animals[p.maxLvl]?.icon || ''}</span>
-                        </div>
-                    </div>`;
-                }).join('');
-            } catch (e) {}
+                document.getElementById('resultText').textContent = dirs[res.move] || res.move;
+                document.getElementById('resultBox').classList.remove('hidden');
+                document.getElementById('smartMergeBtn').innerHTML = '<i class="fas fa-magic"></i> دمج ذكي';
+                
+                history.push(JSON.parse(JSON.stringify(grid)));
+                const moveRes = move(res.move);
+                if (moveRes.moved) {
+                    grid = moveRes.grid;
+                    updateGrid();
+                    checkMaxLevel();
+                }
+            }, 100);
+        };
+        
+        function expectimax(g, depth, isMax) {
+            if (depth === 0) return { score: evaluate(g), move: null };
+            
+            if (isMax) {
+                let best = { score: -Infinity, move: null };
+                for (let dir of ['UP', 'DOWN', 'LEFT', 'RIGHT']) {
+                    const res = move(dir);
+                    if (res.moved) {
+                        const child = expectimax(res.grid, depth - 1, false);
+                        if (child.score > best.score) best = { score: child.score, move: dir };
+                    }
+                }
+                return best.score === -Infinity ? { score: evaluate(g), move: 'UP' } : best;
+            } else {
+                let empty = [];
+                for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 0) empty.push({ r, c });
+                if (empty.length === 0) return { score: evaluate(g), move: null };
+                
+                let total = 0;
+                const values = [1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7];
+                for (let pos of empty.slice(0, 6)) {
+                    for (let v of values.slice(0, 4)) {
+                        let ng = JSON.parse(JSON.stringify(g));
+                        ng[pos.r][pos.c] = v;
+                        total += expectimax(ng, depth - 1, true).score;
+                    }
+                }
+                return { score: total / (Math.min(empty.length, 6) * 4), move: null };
+            }
         }
-
-        async function saveState() {
+        
+        function evaluate(g) {
+            let score = 0, empty = 0, maxV = 0;
+            const weights = [[16, 8, 4, 2], [8, 4, 2, 1], [4, 2, 1, 0.5], [2, 1, 0.5, 0.25]];
+            
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    if (g[r][c] === 0) empty++;
+                    else {
+                        score += Math.pow(2, g[r][c]) * weights[r][c];
+                        if (g[r][c] > maxV) maxV = g[r][c];
+                    }
+                }
+            }
+            
+            score += empty * 100;
+            score += Math.pow(2, maxV) * 2;
+            
+            for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) if (g[r][c] === g[r][c + 1] && g[r][c] !== 0) score += Math.pow(2, g[r][c]) * 10;
+            for (let c = 0; c < 4; c++) for (let r = 0; r < 3; r++) if (g[r][c] === g[r + 1][c] && g[r][c] !== 0) score += Math.pow(2, g[r][c]) * 10;
+            for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 11) score += 100000;
+            
+            return score;
+        }
+        
+        // ============================================
+        // حفظ اللعبة
+        // ============================================
+        async function saveGame() {
             if (!uData.username) return;
             try {
                 await fetch(`${API_BASE}/api/user/save`, {
@@ -873,944 +1128,302 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ...uData, grid })
                 });
-                fetchLeaderboard();
             } catch (e) {}
         }
-
+        
         // ============================================
-        // التراجع والأدوات
+        // عداد الوقت
         // ============================================
-        function saveHistory() {
-            history.push({ grid: grid.map(r => [...r]), waiting: waitingInput });
-            document.getElementById('undoBtn').disabled = false;
+        async function startTimer() {
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
         }
-
-        window.cancelTool = function() {
-            activeTool = null;
-            swapCell = null;
-            updateGridUI();
-            const g = document.getElementById('statusMsg');
-            
-            if (waitingInput) {
-                g.innerHTML = "<i class='fas fa-exclamation-triangle'></i> ضع الحيوانات الجديدة!";
-                g.className = "text-center text-xs font-bold text-pink-400 h-4 animate-pulse";
-            } else {
-                g.innerHTML = "جاهز للعب!";
-                g.className = "text-center text-xs font-black theme-primary-text h-4 opacity-70";
-            }
-        };
-
-        document.getElementById('toolsBtn').onclick = () => {
-            document.getElementById('toolsOverlay').classList.remove('hidden');
-            playSFX('tool');
-        };
         
-        document.getElementById('useHammerBtn').onclick = () => {
-            activeTool = 'hammer';
-            document.getElementById('toolsOverlay').classList.add('hidden');
-            document.getElementById('statusMsg').innerHTML = '<i class="fas fa-gavel text-red-400"></i> اضغط على عنصر لحذفه <button onclick="cancelTool()" class="mr-2 text-[9px] bg-red-600 px-2 rounded text-white">إلغاء</button>';
-            document.getElementById('statusMsg').className = "text-center text-xs font-bold text-red-400 h-4 animate-pulse";
-            playSFX('tool');
-        };
-        
-        document.getElementById('useSwapBtn').onclick = () => {
-            activeTool = 'swap';
-            swapCell = null;
-            document.getElementById('toolsOverlay').classList.add('hidden');
-            document.getElementById('statusMsg').innerHTML = '<i class="fas fa-exchange-alt text-blue-400"></i> اختر العنصر الأول <button onclick="cancelTool()" class="mr-2 text-[9px] bg-red-600 px-2 rounded text-white">إلغاء</button>';
-            document.getElementById('statusMsg').className = "text-center text-xs font-bold text-blue-400 h-4 animate-pulse";
-            playSFX('tool');
-        };
-
-        // ============================================
-        // المشاركة والتقييم
-        // ============================================
-        document.getElementById('shareWaBtn').onclick = async () => {
-            const btn = document.getElementById('shareWaBtn');
-            const org = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            
+        async function updateTimer() {
             try {
-                const cvs = await html2canvas(document.getElementById('captureArea'), {
-                    backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-panel').trim() || '#1e293b',
-                    scale: 2
-                });
-                
-                cvs.toBlob(async (blob) => {
-                    const f = new File([blob], 'scorpion_board.png', { type: 'image/png' });
-                    const t = `تحدي ${appSettings.appName} 🌟\nسكوري: ${uData.highScore.toLocaleString()} نقطة 🏆\nتحالف: ${uData.alliance || 'بدون'}\nالعب معايا!`;
-                    
-                    // التحقق من دعم المشاركة مع الملفات
-                    const canShareFiles = navigator.canShare && navigator.canShare({ files: [f] });
-                    
-                    // التحقق من نوع الجهاز
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                    
-                    if (canShareFiles) {
-                        // ✅ أفضل خيار: مشاركة مباشرة مع الملف
-                        try {
-                            await navigator.share({ 
-                                title: 'تحدي اللعبة', 
-                                text: t, 
-                                files: [f] 
-                            });
-                            playSFX('success');
-                            return;
-                        } catch (shareError) {
-                            // المستخدم ألغى المشاركة أو حدث خطأ
-                            console.log('Share cancelled or failed:', shareError);
-                        }
-                    }
-                    
-                    // خيار بديل: تحميل الصورة + فتح واتساب
-                    const url = URL.createObjectURL(blob);
-                    
-                    // نسخ النص للحافظة
-                    try {
-                        await navigator.clipboard.writeText(t);
-                    } catch (e) {}
-                    
-                    // تحميل الصورة
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'scorpion_board.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
-                    // إظهار رسالة للمستخدم
-                    alert('📋 تم نسخ النص للحافظة!\n📷 تم تحميل الصورة.\n\nالآن افتح واتساب والصق النص وأرفق الصورة.');
-                    
-                    // فتح واتساب
-                    window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank');
-                    
-                }, 'image/png');
-                
-                playSFX('success');
-            } catch (e) {
-                console.error('Share error:', e);
-                playSFX('error');
-            } finally {
-                btn.innerHTML = org;
-                btn.disabled = false;
-            }
-        };
-
-        let selectedRating = 5;
-        document.getElementById('rateBtn').onclick = () => document.getElementById('reviewOverlay').classList.remove('hidden');
+                const res = await fetch(`${API_BASE}/api/event/timeleft`);
+                const d = await res.json();
+                if (d.success && d.timeLeft) {
+                    const t = d.timeLeft;
+                    document.getElementById('timerDays').textContent = t.days;
+                    document.getElementById('timerHours').textContent = String(t.hours).padStart(2, '0');
+                    document.getElementById('timerMinutes').textContent = String(t.minutes).padStart(2, '0');
+                    document.getElementById('timerSeconds').textContent = String(t.seconds).padStart(2, '0');
+                }
+            } catch (e) {}
+        }
         
-        document.querySelectorAll('.star-rating i').forEach(star => {
-            star.onclick = (e) => {
-                selectedRating = parseInt(e.target.getAttribute('data-rating'));
-                document.querySelectorAll('.star-rating i').forEach(s => {
-                    if (parseInt(s.getAttribute('data-rating')) <= selectedRating) s.classList.add('active');
-                    else s.classList.remove('active');
-                });
-                playSFX('tool');
-            };
-        });
-        document.querySelectorAll('.star-rating i').forEach(s => s.classList.add('active'));
-
-        document.getElementById('submitReviewBtn').onclick = async () => {
-            const txt = document.getElementById('reviewTextInput').value.trim();
-            const msgEl = document.getElementById('reviewMsg');
-            const btn = document.getElementById('submitReviewBtn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
+        // ============================================
+        // التنقل
+        // ============================================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('tab' + tab).classList.add('active');
+            event.currentTarget.classList.add('active');
             
+            if (tab === 'Leaderboard') loadLeaderboard();
+        }
+        
+        // ============================================
+        // المتصدرين
+        // ============================================
+        async function loadLeaderboard() {
             try {
-                await fetch(API_BASE + '/api/reviews/add', {
+                const res = await fetch(`${API_BASE}/api/leaderboard`);
+                const data = await res.json();
+                const medals = ['🥇', '🥈', '🥉'];
+                
+                document.getElementById('leaderboardList').innerHTML = data.map((p, i) => `
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank">${i < 3 ? medals[i] : i + 1}</div>
+                        <div class="leaderboard-avatar">${p.username.charAt(0).toUpperCase()}</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">${p.username}</div>
+                            <div class="leaderboard-badges">${p.kingdom ? `K:${p.kingdom}` : ''} ${p.alliance ? `A:${p.alliance}` : ''}</div>
+                        </div>
+                        <div class="leaderboard-score">${p.score.toLocaleString()}</div>
+                    </div>
+                `).join('');
+            } catch (e) {}
+        }
+        
+        // ============================================
+        // الملف الشخصي
+        // ============================================
+        function showProfile() {
+            document.getElementById('profileName').textContent = uData.username;
+            document.getElementById('profileScore').textContent = uData.highScore.toLocaleString();
+            document.getElementById('profileMaxLvl').textContent = uData.stats.maxLvl || 0;
+            document.getElementById('profileMoves').textContent = uData.stats.moves || 0;
+            document.getElementById('kingdomInput').value = uData.kingdom || '';
+            document.getElementById('allianceInput').value = uData.alliance || '';
+            document.getElementById('profileOverlay').classList.remove('hidden');
+        }
+        
+        function hideProfile() { document.getElementById('profileOverlay').classList.add('hidden'); }
+        
+        document.getElementById('saveProfileBtn').onclick = async () => {
+            uData.kingdom = document.getElementById('kingdomInput').value.trim();
+            uData.alliance = document.getElementById('allianceInput').value.trim();
+            try {
+                await fetch(`${API_BASE}/api/profile/update`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: uData.username, rating: selectedRating, text: txt })
+                    body: JSON.stringify({ username: uData.username, password: uData.password, kingdom: uData.kingdom, alliance: uData.alliance })
                 });
-                
-                msgEl.innerText = "شكراً لتقييمك!";
-                msgEl.className = "text-emerald-400 text-xs mt-2 block";
-                msgEl.classList.remove('hidden');
-                document.getElementById('reviewTextInput').value = '';
-                playSFX('success');
-                
-                setTimeout(() => {
-                    document.getElementById('reviewOverlay').classList.add('hidden');
-                    msgEl.classList.add('hidden');
-                }, 2000);
-            } catch (e) {
-                msgEl.innerText = "فشل الإرسال";
-                msgEl.className = "text-red-400 text-xs mt-2 block";
-                msgEl.classList.remove('hidden');
-                playSFX('error');
-            }
-            
-            btn.innerHTML = 'إرسال التقييم <i class="fas fa-paper-plane"></i>';
-            btn.disabled = false;
+                updateUI();
+                hideProfile();
+            } catch (e) {}
         };
-
+        
         // ============================================
-        // منطق اللعبة
+        // الأدوات
         // ============================================
-        function initPalette() {
-            const p = document.getElementById('palette');
-            p.innerHTML = '<button class="palette-btn cell lvl-0 opacity-40 border border-white/10"><i class="fas fa-eraser"></i></button>';
-            p.firstChild.onclick = () => {
-                selectedLvl = 0;
-                document.querySelectorAll('.palette-btn').forEach(x => x.classList.remove('selected'));
-                p.firstChild.classList.add('selected');
-                playSFX('tool');
+        function showTools() { document.getElementById('toolsOverlay').classList.remove('hidden'); }
+        function hideTools() { document.getElementById('toolsOverlay').classList.add('hidden'); }
+        
+        document.getElementById('hammerBtn').onclick = () => { activeTool = 'hammer'; hideTools(); };
+        document.getElementById('swapBtn').onclick = () => { activeTool = 'swap'; hideTools(); };
+        
+        // ============================================
+        // التقييم
+        // ============================================
+        function showReview() { document.getElementById('reviewOverlay').classList.remove('hidden'); }
+        function hideReview() { document.getElementById('reviewOverlay').classList.add('hidden'); }
+        
+        document.querySelectorAll('#reviewRating i').forEach(star => {
+            star.onclick = () => {
+                reviewRating = parseInt(star.dataset.rating);
+                document.querySelectorAll('#reviewRating i').forEach((s, i) => s.classList.toggle('active', i < reviewRating));
             };
-            
-            for (let i = 1; i <= 11; i++) {
-                if (!appSettings.animals[i]) continue;
-                const b = document.createElement('button');
-                b.className = `palette-btn cell lvl-${i} shadow-md`;
-                b.innerHTML = getCellHtml(i);
-                b.onclick = () => {
-                    selectedLvl = i;
-                    document.querySelectorAll('.palette-btn').forEach(x => x.classList.remove('selected'));
-                    b.classList.add('selected');
-                    playSFX('tool');
-                };
-                if (i === selectedLvl) b.classList.add('selected');
-                p.appendChild(b);
-            }
-        }
-
-        function getCellHtml(lvl) {
-            if (lvl === 0 || !appSettings.animals[lvl]) return '';
-            const ani = appSettings.animals[lvl];
-            const ic = (ani.icon.startsWith('http') || ani.icon.startsWith('/uploads')) ?
-                `<img src="${ani.icon.startsWith('/') ? API_BASE + ani.icon : ani.icon}" class="cell-img">` :
-                `<span class="text-3xl drop-shadow-md">${ani.icon}</span>`;
-            return `${ic}<span class="lvl-badge">${lvl}</span>`;
-        }
-
-        function updateGridUI() {
-            const g = document.getElementById('gameGrid');
-            g.innerHTML = '';
-            let total = 0;
-            
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = `cell lvl-${grid[r][c]} shadow-inner border border-white/5`;
-                    
-                    if (activeTool === 'swap' && swapCell && swapCell.r === r && swapCell.c === c) {
-                        cell.classList.add('swap-highlight');
-                    }
-                    
-                    cell.innerHTML = getCellHtml(grid[r][c]);
-                    
-                    if (grid[r][c] > 0) total += Math.pow(2, grid[r][c]);
-                    if (grid[r][c] > uData.stats.maxLvl) {
-                        uData.stats.maxLvl = grid[r][c];
-                        document.getElementById('statMaxLvl').innerText = grid[r][c];
-                    }
-                    
-                    cell.onclick = () => {
-                        if (activeTool === 'hammer') {
-                            saveHistory();
-                            grid[r][c] = 0;
-                            activeTool = null;
-                            updateGridUI();
-                            saveState();
-                            playSFX('merge');
-                            document.getElementById('statusMsg').innerHTML = '💥 تم الحذف!';
-                            document.getElementById('statusMsg').className = "text-center text-xs font-bold text-red-400 h-4";
-                            setTimeout(cancelTool, 1500);
-                            return;
-                        }
-                        
-                        if (activeTool === 'swap') {
-                            if (!swapCell) {
-                                swapCell = { r, c };
-                                updateGridUI();
-                                playSFX('tool');
-                                document.getElementById('statusMsg').innerHTML = '<i class="fas fa-exchange-alt text-blue-400"></i> اختر العنصر الثاني <button onclick="cancelTool()" class="mr-2 text-[9px] bg-red-600 px-2 rounded text-white">إلغاء</button>';
-                            } else {
-                                saveHistory();
-                                let temp = grid[r][c];
-                                grid[r][c] = grid[swapCell.r][swapCell.c];
-                                grid[swapCell.r][swapCell.c] = temp;
-                                activeTool = null;
-                                swapCell = null;
-                                updateGridUI();
-                                saveState();
-                                playSFX('merge');
-                                document.getElementById('statusMsg').innerHTML = '🔄 تم التبديل!';
-                                document.getElementById('statusMsg').className = "text-center text-xs font-bold text-blue-400 h-4";
-                                setTimeout(cancelTool, 1500);
-                            }
-                            return;
-                        }
-                        
-                        saveHistory();
-                        if (grid[r][c] !== selectedLvl) playSFX('tool');
-                        grid[r][c] = selectedLvl;
-                        updateGridUI();
-                        
-                        if (waitingInput) {
-                            waitingInput = false;
-                            g.classList.remove('waiting-input');
-                            document.getElementById('calcMoveBtn').disabled = false;
-                            document.getElementById('statusMsg').innerHTML = "<i class='fas fa-check-circle text-emerald-400'></i> جاهز!";
-                            document.getElementById('statusMsg').className = "text-center text-xs font-black theme-primary-text h-4 opacity-70";
-                            analyzeGridAndGiveTip();
-                            saveState();
-                        }
-                    };
-                    
-                    g.appendChild(cell);
-                }
-            }
-            
-            if (total > uData.highScore) {
-                uData.highScore = total;
-                document.getElementById('highScoreDisplay').innerText = total.toLocaleString();
-                saveState();
-            }
-        }
-
-        // ============================================
-        // الطاقة والعداد
-        // ============================================
-        const liveEnergyInputEl = document.getElementById('liveEnergy');
-        const energyTimerSpan = document.getElementById('energyTimer');
-        
-        function updateEnergyUI() {
-            if (document.activeElement !== liveEnergyInputEl) {
-                liveEnergyInputEl.value = uData.energy;
-            }
-            
-            if (uData.energy < 200) {
-                energyTimerSpan.classList.remove('hidden');
-                let m = Math.floor(energySecondsLeft / 60);
-                let s = energySecondsLeft % 60;
-                energyTimerSpan.querySelector('span').innerText = `0${m}:${s < 10 ? '0' : ''}${s}`;
-            } else {
-                energyTimerSpan.classList.add('hidden');
-                energySecondsLeft = 60;
-            }
-        }
-        
-        function startEnergyTimer() {
-            setInterval(() => {
-                if (uData.energy < 200) {
-                    energySecondsLeft--;
-                    if (energySecondsLeft <= 0) {
-                        uData.energy++;
-                        energySecondsLeft = 60;
-                        saveState();
-                    }
-                    updateEnergyUI();
-                }
-            }, 1000);
-        }
-        
-        liveEnergyInputEl.addEventListener('input', (e) => {
-            let val = parseInt(e.target.value);
-            if (!isNaN(val)) {
-                if (val < 0) val = 0;
-                uData.energy = val;
-                if (uData.energy >= 200) {
-                    energySecondsLeft = 60;
-                    energyTimerSpan.classList.add('hidden');
-                } else {
-                    energyTimerSpan.classList.remove('hidden');
-                }
-                saveState();
-            }
         });
-
-        // ============================================
-        // خوارزمية الدمج (2048)
-        // ============================================
-        const W = [[65536, 32768, 16384, 8192], [512, 1024, 2048, 4096], [256, 128, 64, 32], [2, 4, 8, 16]];
         
-        function slide(row) {
-            let n = row.filter(v => v !== 0);
-            for (let i = 0; i < n.length - 1; i++) {
-                if (n[i] !== 0 && n[i] === n[i + 1] && n[i] < 11) {
-                    n[i]++;
-                    n[i + 1] = 0;
-                }
-            }
-            return n.filter(v => v !== 0).concat([0, 0, 0, 0]).slice(0, 4);
-        }
-        
-        function move(g, d) {
-            let ng = g.map(r => [...r]);
-            let mv = false;
-            
-            if (d === 'LEFT' || d === 'RIGHT') {
-                for (let r = 0; r < 4; r++) {
-                    let orig = [...ng[r]];
-                    let row = [...ng[r]];
-                    if (d === 'RIGHT') row.reverse();
-                    let nr = slide(row);
-                    if (d === 'RIGHT') nr.reverse();
-                    if (orig.join(',') !== nr.join(',')) mv = true;
-                    ng[r] = nr;
-                }
-            } else {
-                for (let c = 0; c < 4; c++) {
-                    let orig = [ng[0][c], ng[1][c], ng[2][c], ng[3][c]];
-                    let col = [...orig];
-                    if (d === 'DOWN') col.reverse();
-                    let nc = slide(col);
-                    if (d === 'DOWN') nc.reverse();
-                    for (let r = 0; r < 4; r++) {
-                        if (orig[r] !== nc[r]) mv = true;
-                        ng[r][c] = nc[r];
-                    }
-                }
-            }
-            
-            return { board: ng, moved: mv };
-        }
-        
-        function expectimax(g, d, p) {
-            const k = g.flat().join(',') + "_" + d + "_" + p;
-            if (memo.has(k)) {
-                cacheHits++;
-                return memo.get(k);
-            }
-            nodesChecked++;
-            
-            if (d === 0) {
-                let s = 0, e = 0;
-                for (let r = 0; r < 4; r++) {
-                    for (let c = 0; c < 4; c++) {
-                        if (g[r][c] === 0) e++;
-                        else s += (g[r][c] === 11 ? Math.pow(2, g[r][c]) * 1.5 : Math.pow(2, g[r][c])) * W[r][c];
-                    }
-                }
-                return s + (e * 300000);
-            }
-            
-            let s = 0;
-            if (p) {
-                let b = -1;
-                for (let dr of ['UP', 'DOWN', 'LEFT', 'RIGHT']) {
-                    const r = move(g, dr);
-                    if (r.moved) {
-                        const sc = expectimax(r.board, d, false);
-                        if (sc > b) b = sc;
-                    }
-                }
-                s = b === -1 ? expectimax(g, 0, false) : b;
-            } else {
-                let f = [];
-                for (let r = 0; r < 4; r++) {
-                    for (let c = 0; c < 4; c++) {
-                        if (g[r][c] === 0) f.push({ r, c });
-                    }
-                }
-                if (f.length === 0) {
-                    s = expectimax(g, 0, false);
-                } else {
-                    let ss = 0;
-                    for (let sp of f) {
-                        let ng = g.map(r => [...r]);
-                        ng[sp.r][sp.c] = 1;
-                        ss += expectimax(ng, d - 1, true);
-                    }
-                    s = ss / f.length;
-                }
-            }
-            
-            memo.set(k, s);
-            return s;
-        }
-
-        // ============================================
-        // الدمج اليدوي
-        // ============================================
-        window.manualMove = function(direction) {
-            if (waitingInput) {
-                playSFX('error');
-                alert("يرجى وضع الحيوانات الجديدة أولاً!");
-                return;
-            }
-            
-            let result = move(grid, direction);
-            if (result.moved) {
-                saveHistory();
-                playSFX('merge');
-                grid = result.board;
-                uData.stats.moves++;
-                document.getElementById('statMoves').innerText = uData.stats.moves;
-                updateGridUI();
-                
-                waitingInput = true;
-                document.getElementById('gameGrid').classList.add('waiting-input');
-                document.getElementById('statusMsg').innerHTML = "<i class='fas fa-exclamation-triangle'></i> ضع الحيوانات الجديدة!";
-                document.getElementById('calcMoveBtn').disabled = true;
-                document.getElementById('resultArea').classList.remove('hidden');
-                
-                const names = { UP: 'أعلى', DOWN: 'أسفل', LEFT: 'يسار', RIGHT: 'يمين' };
-                const icons = { UP: 'fa-arrow-up', DOWN: 'fa-arrow-down', LEFT: 'fa-arrow-left', RIGHT: 'fa-arrow-right' };
-                document.getElementById('moveResult').innerHTML = `<span class="text-sm">حركة يدوية:</span> <i class="fas ${icons[direction]} text-[var(--color-primary)]"></i>`;
-                document.getElementById('statsBox').innerHTML = `تم تطبيق الحركة اليدوية.`;
-                saveState();
-            } else {
-                playSFX('error');
-            }
+        document.getElementById('submitReviewBtn').onclick = async () => {
+            if (reviewRating === 0) return;
+            try {
+                await fetch(`${API_BASE}/api/reviews/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: uData.username, rating: reviewRating, text: document.getElementById('reviewText').value })
+                });
+                document.getElementById('reviewMsg').textContent = 'شكراً لتقييمك!';
+                document.getElementById('reviewMsg').style.color = '#4ade80';
+                document.getElementById('reviewMsg').classList.remove('hidden');
+                setTimeout(hideReview, 1500);
+            } catch (e) {}
         };
-
+        
         // ============================================
-        // الذكاء الاصطناعي
+        // مشاركة
         // ============================================
-        document.getElementById('calcMoveBtn').onclick = () => {
-            if (waitingInput) return;
-            
-            const btn = document.getElementById('calcMoveBtn');
-            const cd = parseInt(document.getElementById('aiDepth').value);
-            btn.innerHTML = 'يحلل الشبكة... <i class="fas fa-spinner fa-spin"></i>';
-            btn.classList.add('opacity-80');
-            
-            setTimeout(() => {
-                memo.clear();
-                nodesChecked = 0;
-                cacheHits = 0;
-                let startTime = performance.now();
-                let bs = -1, bm = null, bg = null;
-                
-                for (let d of ['UP', 'DOWN', 'LEFT', 'RIGHT']) {
-                    const r = move(grid, d);
-                    if (r.moved) {
-                        const s = expectimax(r.board, cd, false);
-                        if (s > bs) {
-                            bs = s;
-                            bm = d;
-                            bg = r.board;
-                        }
-                    }
-                }
-                
-                let timeTaken = (performance.now() - startTime).toFixed(0);
-                btn.innerHTML = '<span class="relative z-10">دمـــج</span> <i class="fas fa-magic relative z-10 group-hover:rotate-180 transition-transform"></i>';
-                btn.classList.remove('opacity-80');
-                
-                if (bm) {
-                    saveHistory();
-                    playSFX('merge');
-                    uData.stats.moves++;
-                    document.getElementById('statMoves').innerText = uData.stats.moves;
-                    
-                    const names = { UP: 'أعلى', DOWN: 'أسفل', LEFT: 'يسار', RIGHT: 'يمين' };
-                    const icons = { UP: 'fa-arrow-up', DOWN: 'fa-arrow-down', LEFT: 'fa-arrow-left', RIGHT: 'fa-arrow-right' };
-                    document.getElementById('moveResult').innerHTML = `<span>اسحب ${names[bm]}</span> <i class="fas ${icons[bm]} text-[var(--color-primary)]"></i>`;
-                    document.getElementById('statsBox').innerHTML = `⏱️ ${timeTaken}ms | 🧠 ${nodesChecked.toLocaleString()} احتمالات`;
-                    
-                    grid = bg;
-                    updateGridUI();
-                    waitingInput = true;
-                    document.getElementById('gameGrid').classList.add('waiting-input');
-                    document.getElementById('statusMsg').innerHTML = "<i class='fas fa-exclamation-triangle'></i> ضع الحيوانات الجديدة!";
-                    document.getElementById('calcMoveBtn').disabled = true;
-                    document.getElementById('resultArea').classList.remove('hidden');
-                    saveState();
-                } else {
-                    playSFX('error');
-                    document.getElementById('moveResult').innerHTML = `<i class="fas fa-skull-crossbones text-[var(--color-secondary)]"></i> <span class="text-[var(--color-secondary)]">هزيمة</span>`;
-                    document.getElementById('statsBox').innerHTML = "تم حصار عناصرك! استخدم التراجع أو التصفير.";
-                    document.getElementById('resultArea').classList.remove('hidden');
-                }
-            }, 50);
-        };
-
+        function shareScore() {
+            if (navigator.share) {
+                navigator.share({ title: 'مساعد عقروب', text: `نقاطي: ${uData.highScore} | أعلى مستوى: ${uData.stats.maxLvl}` });
+            }
+        }
+        
         // ============================================
         // لوحة الإدارة
         // ============================================
-        window.resetUserScore = async function(username) {
-            if (!confirm(`هل أنت متأكد من تصفير نقاط [ ${username} ]؟`)) return;
-            
-            try {
-                const res = await fetch(API_BASE + '/api/admin/reset_score', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, targetUser: username })
-                });
-                const d = await res.json();
-                alert(d.message);
-                if (d.success) loadAdminUsersList();
-            } catch (e) {
-                alert('فشل الاتصال بالسيرفر');
-            }
-        };
-
-        function switchAdminTab(t) {
-            ['Users', 'Settings', 'Reviews', 'Online'].forEach(s => {
-                document.getElementById('section' + s).classList.remove('active');
-                document.getElementById('tab' + s).classList.remove('bg-[var(--color-secondary)]', 'text-white', 'opacity-100');
-                document.getElementById('tab' + s).classList.add('opacity-60');
-            });
-            
-            document.getElementById('section' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
-            document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('opacity-60');
-            document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('bg-[var(--color-secondary)]', 'text-white');
-            
-            if (t === 'settings') populateAdminSettings();
-            if (t === 'users') loadAdminUsersList();
-            if (t === 'reviews') loadAdminReviewsList();
+        function showAdmin() { 
+            document.getElementById('adminOverlay').classList.remove('hidden');
+            loadUsers();
+            loadArchive();
+            loadReviews();
+        }
+        function hideAdmin() { document.getElementById('adminOverlay').classList.add('hidden'); }
+        
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
         }
         
-        async function loadAdminUsersList() {
-            const listEl = document.getElementById('adminUsersDatabaseList');
-            listEl.innerHTML = '<div class="text-center text-xs opacity-50 py-2"><i class="fas fa-spinner fa-spin"></i></div>';
+        document.getElementById('addUserBtn').onclick = async () => {
+            const user = document.getElementById('newUser').value.trim();
+            const pass = document.getElementById('newPass').value.trim();
+            const admin = document.getElementById('newAdmin').checked;
+            
+            if (!user || !pass) return;
             
             try {
-                const res = await fetch(API_BASE + '/api/admin/users', {
+                const res = await fetch(`${API_BASE}/api/users/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, newUsername: user, newPassword: pass, isAdmin: admin })
+                });
+                const d = await res.json();
+                document.getElementById('addUserMsg').textContent = d.message;
+                document.getElementById('addUserMsg').classList.remove('hidden');
+                if (d.success) {
+                    document.getElementById('newUser').value = '';
+                    document.getElementById('newPass').value = '';
+                    loadUsers();
+                }
+            } catch (e) {}
+        };
+        
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password })
                 });
-                const data = await res.json();
-                
-                if (data.success) {
-                    listEl.innerHTML = data.users.map(u => `
-                        <div class="bg-black/40 p-2 rounded-lg flex justify-between items-center border border-white/5">
-                            <div class="flex flex-col">
-                                <span class="text-[11px] font-bold text-white flex items-center gap-1">
-                                    ${u.username} ${u.isAdmin ? '<i class="fas fa-crown text-[var(--color-secondary)] text-[8px]"></i>' : ''}
-                                </span>
-                                <span class="text-[8px] text-[var(--color-primary)]">مملكة: ${u.kingdom || '-'} | تحالف: ${u.alliance || '-'}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-mono text-slate-400">${u.score.toLocaleString()}</span>
-                                <button onclick="resetUserScore('${u.username}')" class="bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded text-[9px]"><i class="fas fa-trash"></i></button>
-                            </div>
+                const d = await res.json();
+                if (d.success) {
+                    document.getElementById('usersList').innerHTML = d.users.map(u => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 11px;">
+                            <span>${u.username} ${u.isAdmin ? '<i class="fas fa-crown" style="color: #fbbf24;"></i>' : ''}</span>
+                            <span style="color: var(--color-gold);">${u.score}</span>
                         </div>
                     `).join('');
                 }
-            } catch (e) {
-                listEl.innerHTML = '<div class="text-xs text-red-400">فشل الجلب</div>';
-            }
+            } catch (e) {}
         }
         
-        document.getElementById('refreshUsersList').onclick = loadAdminUsersList;
-
-        async function loadAdminReviewsList() {
-            const listEl = document.getElementById('adminReviewsList');
-            listEl.innerHTML = '<div class="text-center text-xs opacity-50 py-2"><i class="fas fa-spinner fa-spin"></i></div>';
-            
+        async function loadArchive() {
             try {
-                const res = await fetch(API_BASE + '/api/admin/reviews', {
+                const res = await fetch(`${API_BASE}/api/admin/achievements`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password })
                 });
-                const data = await res.json();
-                
-                if (data.success) {
-                    listEl.innerHTML = data.reviews.length > 0 ?
-                        data.reviews.map(r => `
-                            <div class="bg-black/40 p-3 rounded-lg border border-white/5">
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-[11px] font-bold text-[var(--color-primary)]">${r.username}</span>
-                                    <span class="text-[10px] text-yellow-400">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
-                                </div>
-                                <p class="text-xs text-white opacity-90">${r.text || 'بدون تعليق'}</p>
-                                <div class="text-[8px] text-slate-500 mt-2">${new Date(r.date).toLocaleString('ar-EG')}</div>
-                            </div>
-                        `).join('') :
-                        '<div class="text-xs text-center opacity-50">لا توجد تقييمات</div>';
-                }
-            } catch (e) {
-                listEl.innerHTML = '<div class="text-xs text-red-400">فشل الجلب</div>';
-            }
-        }
-
-        function populateAdminSettings() {
-            document.getElementById('settingAppName').value = appSettings.appName;
-            document.getElementById('settingGeminiKey').value = "";
-            document.getElementById('settingTermsTitle').value = appSettings.termsTitle || "";
-            document.getElementById('settingTermsText').value = appSettings.termsText || "";
-            
-            const list = document.getElementById('animalsSettingsList');
-            list.innerHTML = '';
-            
-            for (let i = 1; i <= 11; i++) {
-                const ani = appSettings.animals[i] || { icon: '', name: '' };
-                const div = document.createElement('div');
-                div.className = "p-3 bg-black/40 rounded-2xl border border-white/5 flex items-center gap-3";
-                let isUrl = ani.icon.startsWith('http') || ani.icon.startsWith('/uploads');
-                
-                div.innerHTML = `
-                    <div class="w-12 h-12 bg-black/50 rounded-xl flex justify-center items-center text-2xl border border-white/10">
-                        ${isUrl ? `<img src="${ani.icon.startsWith('/') ? API_BASE + ani.icon : ani.icon}" class="w-8 h-8 object-contain">` : ani.icon}
-                    </div>
-                    <div class="flex-1 space-y-2">
-                        <input type="text" id="set_name_${i}" value="${ani.name}" class="w-full bg-black/60 p-2 rounded-lg text-xs outline-none border border-[var(--color-primary)]/20 text-white" placeholder="اسم الرتبة">
-                        <div class="flex gap-2">
-                            <input type="text" id="set_emoji_${i}" value="${!isUrl ? ani.icon : ''}" class="w-1/3 bg-black/60 p-2 rounded-lg text-xs outline-none border border-white/10 text-white" placeholder="إيموجي">
-                            <input type="file" id="set_file_${i}" class="w-2/3 text-[9px] file:bg-[var(--color-primary)] file:border-none file:text-white file:px-2 file:py-1 file:rounded cursor-pointer">
-                        </div>
-                        <input type="hidden" id="ex_ic_${i}" value="${ani.icon}">
-                    </div>
-                `;
-                list.appendChild(div);
-            }
-        }
-
-        document.getElementById('saveSettingsBtn').onclick = async () => {
-            const btn = document.getElementById('saveSettingsBtn');
-            const msgEl = document.getElementById('saveSettingsMsg');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            msgEl.classList.add('hidden');
-            
-            try {
-                let newSet = {
-                    appName: document.getElementById('settingAppName').value.trim(),
-                    geminiApiKey: document.getElementById('settingGeminiKey').value.trim(),
-                    termsTitle: document.getElementById('settingTermsTitle').value.trim(),
-                    termsText: document.getElementById('settingTermsText').value.trim(),
-                    logoUrl: appSettings.logoUrl,
-                    colors: { bodyBg: "#09090b", panelBg: "#18181b", primary: "#ea580c", text: "#f8fafc" },
-                    animals: { 0: { icon: '', name: 'فارغ' } }
-                };
-                
-                const up = async (f) => {
-                    const fd = new FormData();
-                    fd.append('image', f);
-                    const r = await fetch(API_BASE + '/api/upload', { method: 'POST', body: fd });
-                    const d = await r.json();
-                    return d.url;
-                };
-                
-                for (let i = 1; i <= 11; i++) {
-                    let n = document.getElementById(`set_name_${i}`).value;
-                    let e = document.getElementById(`set_emoji_${i}`).value;
-                    let f = document.getElementById(`set_file_${i}`).files[0];
-                    let ic = document.getElementById(`ex_ic_${i}`).value;
-                    
-                    if (f) ic = await up(f);
-                    else if (e) ic = e;
-                    
-                    newSet.animals[i] = { icon: ic, name: n };
-                }
-                
-                const res = await fetch(API_BASE + '/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, newSettings: newSet })
-                });
-                
-                const data = await res.json();
-                msgEl.innerText = data.message;
-                msgEl.className = `text-xs text-center mt-2 block font-bold ${data.success ? 'text-[var(--color-primary)]' : 'text-red-400'}`;
-                msgEl.classList.remove('hidden');
-                playSFX(data.success ? 'success' : 'error');
-            } catch (e) {
-                msgEl.innerText = "خطأ!";
-                msgEl.className = "text-xs text-center mt-2 block font-bold text-red-400";
-                msgEl.classList.remove('hidden');
-                playSFX('error');
-            } finally {
-                btn.innerHTML = 'نشر التحديثات 📡';
-                btn.disabled = false;
-            }
-        };
-
-        document.getElementById('addUserBtn').onclick = async () => {
-            const btn = document.getElementById('addUserBtn');
-            const msg = document.getElementById('addUserMsg');
-            const u = document.getElementById('newUsername').value.trim();
-            const p = document.getElementById('newPassword').value.trim();
-            const a = document.getElementById('newIsAdmin').checked;
-            
-            msg.classList.remove('hidden');
-            if (!u || !p) {
-                msg.innerText = "الرجاء إدخال البيانات!";
-                msg.className = "text-xs text-center mt-2 text-red-400 block font-bold";
-                return;
-            }
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            
-            try {
-                const r = await fetch(API_BASE + '/api/users/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, newUsername: u, newPassword: p, isAdmin: a })
-                });
-                const d = await r.json();
-                msg.innerText = d.message;
-                msg.className = `text-xs text-center mt-2 block font-bold ${d.success ? 'text-emerald-400' : 'text-red-400'}`;
-                
+                const d = await res.json();
                 if (d.success) {
-                    document.getElementById('newUsername').value = '';
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('newIsAdmin').checked = false;
-                    loadAdminUsersList();
-                    playSFX('success');
-                } else {
-                    playSFX('error');
+                    document.getElementById('archiveList').innerHTML = d.achievements.map(a => `
+                        <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 10px;">
+                            <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">${a.username}</span><span style="color: var(--color-gold);">👑 LVL 11</span></div>
+                            <div style="color: var(--color-text-muted); margin-top: 4px;">النقاط: ${a.score} | التحركات: ${a.moves}</div>
+                        </div>
+                    `).join('');
                 }
-            } catch (e) {
-                msg.innerText = "خطأ في الاتصال!";
-                msg.className = "text-xs text-center mt-2 text-red-400 block font-bold";
-                playSFX('error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'إضافة لاعب جديد';
-            }
-        };
-
-        // ============================================
-        // الشات
-        // ============================================
-        const chatBtn = document.getElementById('chatBtn');
-        const chatBox = document.getElementById('chatBox');
-        const chatIn = document.getElementById('chatInput');
-        const aiChatMsgs = document.getElementById('aiChatMessages');
-        const globalChatMsgs = document.getElementById('globalChatMessages');
-        
-        chatBtn.onclick = () => {
-            chatBox.style.display = 'flex';
-            chatBtn.style.display = 'none';
-            document.getElementById('chatNotification').classList.add('hidden');
-        };
-        
-        document.getElementById('closeChatBtn').onclick = () => {
-            chatBox.style.display = 'none';
-            chatBtn.style.display = 'flex';
-        };
-        
-        document.getElementById('tabAiChat').onclick = () => {
-            currentChatTab = 'ai';
-            document.getElementById('tabAiChat').classList.replace('text-slate-400', 'bg-[var(--color-primary)]');
-            document.getElementById('tabAiChat').classList.add('text-white');
-            document.getElementById('tabGlobalChat').classList.replace('bg-[var(--color-primary)]', 'text-slate-400');
-            document.getElementById('tabGlobalChat').classList.remove('text-white');
-            aiChatMsgs.classList.remove('hidden');
-            globalChatMsgs.classList.add('hidden');
-            chatIn.placeholder = "استشر الذكاء الاصطناعي...";
-        };
-        
-        document.getElementById('tabGlobalChat').onclick = () => {
-            currentChatTab = 'global';
-            document.getElementById('tabGlobalChat').classList.replace('text-slate-400', 'bg-[var(--color-primary)]');
-            document.getElementById('tabGlobalChat').classList.add('text-white');
-            document.getElementById('tabAiChat').classList.replace('bg-[var(--color-primary)]', 'text-slate-400');
-            document.getElementById('tabAiChat').classList.remove('text-white');
-            globalChatMsgs.classList.remove('hidden');
-            aiChatMsgs.classList.add('hidden');
-            chatIn.placeholder = "تحدث مع الممالك الأخرى...";
-            document.getElementById('chatNotification').classList.add('hidden');
-        };
-
-        async function sendMsg() {
-            const t = chatIn.value.trim();
-            if (!t) return;
-            chatIn.value = '';
-            
-            if (currentChatTab === 'global') {
-                if (socket) {
-                    socket.emit('global_msg', {
-                        sender: uData.username,
-                        text: t,
-                        kingdom: uData.kingdom,
-                        alliance: uData.alliance,
-                        avatarUrl: uData.avatarUrl
-                    });
-                }
-            } else {
-                const uM = document.createElement('div');
-                uM.className = 'msg user shadow-md';
-                uM.innerText = t;
-                aiChatMsgs.appendChild(uM);
-                
-                const loadDiv = document.createElement('div');
-                loadDiv.className = 'msg bot opacity-50 text-[10px]';
-                loadDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> يفكر...';
-                aiChatMsgs.appendChild(loadDiv);
-                aiChatMsgs.scrollTop = aiChatMsgs.scrollHeight;
-                
-                try {
-                    // استدعاء AI عبر السيرفر
-                    const res = await fetch(API_BASE + '/api/ai/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            username: uData.username,
-                            password: uData.password,
-                            message: t
-                        })
-                    });
-                    
-                    const j = await res.json();
-                    loadDiv.remove();
-                    
-                    const bM = document.createElement('div');
-                    bM.className = 'msg bot shadow-md';
-                    bM.innerText = j.success ? j.response : j.message;
-                    aiChatMsgs.appendChild(bM);
-                    playSFX('tool');
-                } catch (e) {
-                    loadDiv.remove();
-                    const err = document.createElement('div');
-                    err.className = 'msg bot opacity-50 text-[var(--color-secondary)] text-[10px]';
-                    err.innerText = 'حدث خطأ في الاتصال بالذكاء الاصطناعي.';
-                    aiChatMsgs.appendChild(err);
-                }
-                
-                aiChatMsgs.scrollTop = aiChatMsgs.scrollHeight;
-            }
+            } catch (e) {}
         }
         
-        document.getElementById('sendChatBtn').onclick = sendMsg;
-        chatIn.onkeypress = (e) => { if (e.key === 'Enter') sendMsg(); };
-
-        // ============================================
-        // التراجع والتصفير
-        // ============================================
-        document.getElementById('clearBtn').onclick = () => {
-            cancelTool();
-            saveHistory();
-            grid = Array(4).fill().map(() => Array(4).fill(0));
-            waitingInput = false;
-            document.getElementById('gameGrid').classList.remove('waiting-input');
-            document.getElementById('calcMoveBtn').disabled = false;
-            document.getElementById('resultArea').classList.add('hidden');
-            updateGridUI();
-            saveState();
-            playSFX('tool');
-        };
-
-        document.getElementById('undoBtn').onclick = () => {
-            cancelTool();
-            if (history.length > 0) {
-                let p = history.pop();
-                grid = p.grid.map(r => [...r]);
-                waitingInput = p.waiting;
-                updateGridUI();
-                saveState();
-                playSFX('tool');
-                
-                if (history.length === 0) document.getElementById('undoBtn').disabled = true;
-                if (waitingInput) {
-                    document.getElementById('gameGrid').classList.add('waiting-input');
-                    document.getElementById('calcMoveBtn').disabled = true;
-                } else {
-                    document.getElementById('gameGrid').classList.remove('waiting-input');
-                    document.getElementById('calcMoveBtn').disabled = false;
+        async function loadReviews() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password })
+                });
+                const d = await res.json();
+                if (d.success) {
+                    document.getElementById('reviewsList').innerHTML = d.reviews.map(r => `
+                        <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 10px;">
+                            <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">${r.username}</span><span style="color: #fbbf24;">${'★'.repeat(r.rating)}</span></div>
+                            <div style="color: var(--color-text-muted); margin-top: 4px;">${r.text || 'لا يوجد نص'}</div>
+                        </div>
+                    `).join('');
                 }
-            }
+            } catch (e) {}
+        }
+        
+        document.getElementById('saveSettingsBtn').onclick = async () => {
+            try {
+                await fetch(`${API_BASE}/api/settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminUser: uData.username, adminPass: uData.password, newSettings: { appName: document.getElementById('settingName').value, geminiApiKey: document.getElementById('settingGemini').value } })
+                });
+                document.getElementById('saveSettingsMsg').textContent = 'تم الحفظ!';
+                document.getElementById('saveSettingsMsg').style.color = '#4ade80';
+                document.getElementById('saveSettingsMsg').classList.remove('hidden');
+            } catch (e) {}
         };
-
+        
         // ============================================
-        // تعريض الدوال
+        // الاحتفال
         // ============================================
-        window.switchAdminTab = switchAdminTab;
-        window.loadAdminReviewsList = loadAdminReviewsList;
-        window.openProfile = openProfile;
-
-        // تهيئة التطبيق
-        window.onload = fetchSettings;
+        function showCelebration() {
+            document.getElementById('celebScore').textContent = uData.highScore.toLocaleString();
+            document.getElementById('celebMoves').textContent = uData.stats.moves || 0;
+            document.getElementById('celebL11').textContent = (uData.stats.level11Merges || 0) + 1;
+            document.getElementById('celebrationOverlay').classList.add('show');
+            
+            // تحديث الإحصائيات
+            uData.stats.level11Merges = (uData.stats.level11Merges || 0) + 1;
+            updateUI();
+        }
+        
+        document.querySelectorAll('#celebRating i').forEach(star => {
+            star.onclick = () => {
+                celebRating = parseInt(star.dataset.rating);
+                document.querySelectorAll('#celebRating i').forEach((s, i) => s.classList.toggle('active', i < celebRating));
+            };
+        });
+        
+        document.getElementById('celebSubmit').onclick = async () => {
+            try {
+                await fetch(`${API_BASE}/api/achievements/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: uData.username, password: uData.password, gridSnapshot: grid, score: uData.highScore, moves: uData.stats.moves, rating: celebRating, comment: document.getElementById('celebComment').value })
+                });
+                saveGame();
+            } catch (e) {}
+            document.getElementById('celebrationOverlay').classList.remove('show');
+            celebRating = 0;
+            document.querySelectorAll('#celebRating i').forEach(s => s.classList.remove('active'));
+            document.getElementById('celebComment').value = '';
+        };
+        
+        // ============================================
+        // الصوت
+        // ============================================
+        let audioCtx;
+        document.getElementById('soundToggleBtn').onclick = () => {
+            isMuted = !isMuted;
+            document.getElementById('soundToggleBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-sm text-red-400"></i>' : '<i class="fas fa-volume-up text-sm text-white/70"></i>';
+        };
+        
+        // ============================================
+        // بدء التطبيق
+        // ============================================
+        initSplash();
     </script>
 </body>
 </html>
