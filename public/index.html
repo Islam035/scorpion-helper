@@ -9,7 +9,6 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
         :root {
             --gold: #D4AF37;
             --gold-dark: #B8860B;
@@ -18,381 +17,68 @@
             --text: #F5F5DC;
             --muted: #8B7355;
             --bg: #0a0a0a;
-            --panel: #1a1a1a;
         }
-        
-        html, body {
-            height: 100%;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-        }
-        
-        /* حاوية التطبيق */
-        .app {
-            max-width: 420px;
-            margin: 0 auto;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        /* الشاشات */
-        .screen {
-            display: none;
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--bg);
-            z-index: 100;
-        }
+        html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; position: fixed; width: 100%; }
+        .app { max-width: 420px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .screen { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 100; }
         .screen.active { display: flex; flex-direction: column; }
-        
-        /* شاشة البداية - كهف عقرب */
-        #splash {
-            background: radial-gradient(ellipse at center bottom, #1a0a00 0%, #000 50%, #000 100%);
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
-        }
-        
-        .cave {
-            position: relative;
-            width: 200px;
-            height: 150px;
-        }
-        
-        .cave-entrance {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 100px;
-            background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%);
-            border-radius: 50% 50% 0 0;
-            box-shadow: inset 0 -20px 40px rgba(0,0,0,0.8);
-        }
-        
-        .scorpion-logo {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 50px;
-            animation: scorpion-walk 2s infinite;
-            filter: drop-shadow(0 0 10px var(--gold));
-        }
-        
-        @keyframes scorpion-walk {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(-10px); }
-        }
-        
-        .splash-title {
-            font-size: 24px;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--gold), #FFD700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-top: 30px;
-            text-align: center;
-        }
-        
-        .splash-loader {
-            width: 150px;
-            height: 3px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            margin-top: 20px;
-            overflow: hidden;
-        }
-        .splash-loader div {
-            height: 100%;
-            background: var(--gold);
-            animation: load 2s forwards;
-        }
+        #splash { background: radial-gradient(ellipse at center bottom, #1a0a00 0%, #000 50%, #000 100%); justify-content: center; align-items: center; z-index: 200; }
+        .cave { position: relative; width: 200px; height: 150px; }
+        .cave-entrance { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 100px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 40px rgba(0,0,0,0.8); }
+        .scorpion-logo { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-size: 50px; animation: scorpion-walk 2s infinite; filter: drop-shadow(0 0 10px var(--gold)); }
+        @keyframes scorpion-walk { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-10px); } }
+        .splash-title { font-size: 24px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 30px; text-align: center; }
+        .splash-loader { width: 150px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 20px; overflow: hidden; }
+        .splash-loader div { height: 100%; background: var(--gold); animation: load 2s forwards; }
         @keyframes load { from { width: 0; } to { width: 100%; } }
-        
-        /* نافذة منبثقة */
-        .popup {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 150;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-        }
+        .popup { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 150; display: none; justify-content: center; align-items: center; padding: 10px; }
         .popup.show { display: flex; }
-        .popup-box {
-            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 16px;
-            padding: 15px;
-            max-width: 380px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        /* أزرار */
-        .btn {
-            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-            color: #000;
-            font-weight: bold;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 12px;
-        }
+        .popup-box { background: linear-gradient(145deg, #1a1a1a, #0d0d0d); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 16px; padding: 15px; max-width: 380px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; font-weight: bold; border: none; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-size: 12px; }
         .btn:active { transform: scale(0.97); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; }
-        
-        /* حقل إدخال */
-        .input {
-            width: 100%;
-            background: rgba(0,0,0,0.6);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            padding: 10px;
-            color: white;
-            text-align: center;
-            font-size: 12px;
-            margin-bottom: 8px;
-            outline: none;
-        }
+        .input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 10px; color: white; text-align: center; font-size: 12px; margin-bottom: 8px; outline: none; }
         .input:focus { border-color: var(--gold); }
-        
-        /* المحتوى الرئيسي */
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-            padding-bottom: 70px;
-        }
-        
-        /* شريط التنقل */
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(180deg, rgba(20,20,20,0.99), #000);
-            border-top: 1px solid rgba(212, 175, 55, 0.3);
-            display: flex;
-            justify-content: space-around;
-            padding: 6px 0;
-            padding-bottom: max(6px, env(safe-area-inset-bottom));
-            z-index: 50;
-        }
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 6px 16px;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-radius: 8px;
-        }
+        .main-content { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 70px; }
+        .navbar { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(180deg, rgba(20,20,20,0.99), #000); border-top: 1px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: space-around; padding: 6px 0; padding-bottom: max(6px, env(safe-area-inset-bottom)); z-index: 50; }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; padding: 6px 16px; color: #666; cursor: pointer; border-radius: 8px; }
         .nav-btn.active { color: var(--gold); }
         .nav-btn i { font-size: 16px; margin-bottom: 2px; }
         .nav-btn span { font-size: 9px; font-weight: bold; }
-        
-        /* صفحة التبويب */
         .tab { display: none; }
         .tab.active { display: block; }
-        
-        /* العنوان */
-        .header-title {
-            text-align: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-            margin-bottom: 8px;
-        }
-        .header-title h1 {
-            font-size: 16px;
-            font-weight: 900;
-            color: var(--gold);
-        }
-        
-        /* عداد الوقت */
-        .timer-box {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 3px;
-            padding: 6px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        .timer-val {
-            background: rgba(0,0,0,0.5);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-            color: var(--gold);
-            font-size: 11px;
-            min-width: 24px;
-            text-align: center;
-        }
+        .header-title { text-align: center; padding: 8px 0; border-bottom: 1px solid rgba(212, 175, 55, 0.2); margin-bottom: 8px; }
+        .header-title h1 { font-size: 16px; font-weight: 900; color: var(--gold); }
+        .timer-box { display: flex; justify-content: center; align-items: center; gap: 3px; padding: 6px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; margin-bottom: 8px; }
+        .timer-val { background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: var(--gold); font-size: 11px; min-width: 24px; text-align: center; }
         .timer-label { font-size: 8px; color: var(--muted); }
-        
-        /* إحصائيات اللاعب */
-        .player-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 8px;
-        }
-        .stat-box {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 8px;
-            padding: 6px;
-            text-align: center;
-        }
+        .player-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+        .stat-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 6px; text-align: center; }
         .stat-box.clickable { cursor: pointer; }
-        .stat-box.clickable:active { background: rgba(212, 175, 55, 0.1); }
         .stat-label { font-size: 8px; color: var(--muted); }
         .stat-value { font-size: 12px; font-weight: 900; color: var(--gold); }
         .stat-value.red { color: var(--red); }
-        
-        /* الطاقة */
-        .energy-box {
-            position: relative;
-            background: rgba(196, 30, 58, 0.1);
-            border: 1px solid rgba(196, 30, 58, 0.3);
-        }
-        .energy-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: var(--red);
-            border-radius: 8px 8px 0 0;
-            transition: width 0.3s;
-        }
-        .energy-input {
-            width: 40px;
-            background: transparent;
-            border: none;
-            color: var(--red);
-            font-weight: 900;
-            text-align: center;
-            font-size: 14px;
-            outline: none;
-        }
-        
-        /* شريط الأدوات السريع */
-        .tools-bar {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
-            margin-bottom: 8px;
-        }
-        .tool-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 6px 2px;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 8px;
-            cursor: pointer;
-            position: relative;
-            min-height: 45px;
-        }
+        .energy-box { position: relative; background: rgba(196, 30, 58, 0.1); border: 1px solid rgba(196, 30, 58, 0.3); }
+        .energy-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--red); border-radius: 8px 8px 0 0; transition: width 0.3s; }
+        .energy-input { width: 40px; background: transparent; border: none; color: var(--red); font-weight: 900; text-align: center; font-size: 14px; outline: none; }
+        .tools-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 8px; }
+        .tool-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 2px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; cursor: pointer; position: relative; min-height: 45px; }
         .tool-btn:active { background: var(--gold); }
         .tool-btn:active * { color: #000 !important; }
         .tool-btn.active { border-color: var(--gold); background: rgba(212, 175, 55, 0.3); }
         .tool-btn.disabled { opacity: 0.4; cursor: not-allowed; }
         .tool-icon { font-size: 16px; }
         .tool-name { font-size: 7px; color: var(--gold); margin-top: 2px; }
-        .tool-count {
-            position: absolute;
-            top: -3px;
-            right: -3px;
-            background: var(--red);
-            color: white;
-            font-size: 8px;
-            padding: 1px 4px;
-            border-radius: 6px;
-            min-width: 14px;
-            text-align: center;
-        }
-        .tool-limit {
-            font-size: 7px;
-            color: var(--muted);
-        }
-        
-        /* لوحة الاختيار */
-        .palette {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 3px;
-            margin-bottom: 6px;
-        }
-        
-        /* شبكة اللعب */
-        .grid-4x4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4px;
-            background: #050505;
-            padding: 6px;
-            border-radius: 10px;
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            margin-bottom: 8px;
-        }
-        .cell {
-            aspect-ratio: 1;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.15s;
-            position: relative;
-            font-size: clamp(18px, 4vw, 24px);
-            background: #1a1a1a;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
+        .tool-count { position: absolute; top: -3px; right: -3px; background: var(--red); color: white; font-size: 8px; padding: 1px 4px; border-radius: 6px; min-width: 14px; text-align: center; }
+        .tool-limit { font-size: 7px; color: var(--muted); }
+        .palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; margin-bottom: 6px; }
+        .grid-4x4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #050505; padding: 6px; border-radius: 10px; border: 2px solid rgba(212, 175, 55, 0.3); margin-bottom: 8px; }
+        .cell { aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; font-size: clamp(18px, 4vw, 24px); background: #1a1a1a; border: 1px solid rgba(255,255,255,0.05); }
         .cell:active { transform: scale(0.92); }
-        .cell .lvl-num {
-            position: absolute;
-            bottom: 1px;
-            right: 2px;
-            font-size: 7px;
-            font-weight: bold;
-            color: var(--gold);
-            background: rgba(0,0,0,0.7);
-            padding: 0 3px;
-            border-radius: 2px;
-        }
-        .cell.selected-tool {
-            border: 2px dashed var(--gold) !important;
-            animation: pulse-border 1s infinite;
-        }
-        @keyframes pulse-border {
-            0%, 100% { border-color: var(--gold); }
-            50% { border-color: transparent; }
-        }
-        
-        /* ألوان المستويات */
+        .cell .lvl-num { position: absolute; bottom: 1px; right: 2px; font-size: 7px; font-weight: bold; color: var(--gold); background: rgba(0,0,0,0.7); padding: 0 3px; border-radius: 2px; }
+        .cell.selected-tool { border: 2px dashed var(--gold) !important; animation: pulse-border 1s infinite; }
+        @keyframes pulse-border { 0%, 100% { border-color: var(--gold); } 50% { border-color: transparent; } }
         .lvl-0 { background: #18181b; }
         .lvl-1 { background: radial-gradient(circle, #4ade80, #14532d); }
         .lvl-2 { background: radial-gradient(circle, #38bdf8, #0c4a6e); }
@@ -404,291 +90,54 @@
         .lvl-8 { background: radial-gradient(circle, #ea580c, #7c2d12); }
         .lvl-9 { background: radial-gradient(circle, #ef4444, #7f1d1d); }
         .lvl-10 { background: radial-gradient(circle, #dc2626, #450a0a); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
-        .lvl-11 {
-            background: radial-gradient(circle, var(--gold), var(--gold-dark));
-            border: 2px solid #FFD700 !important;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
-            animation: glow-gold 1.5s infinite;
-        }
-        @keyframes glow-gold {
-            0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
-            50% { box-shadow: 0 0 30px rgba(212, 175, 55, 1); }
-        }
-        
-        .palette .cell {
-            aspect-ratio: auto;
-            height: clamp(30px, 7vw, 38px);
-            font-size: clamp(12px, 2.5vw, 16px);
-        }
-        .palette .cell.selected {
-            border: 2px solid var(--gold) !important;
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-            transform: scale(1.1);
-        }
-        
-        /* أزرار التحكم */
-        .controls-row {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 8px;
-        }
-        .ctrl-btn {
-            flex: 1;
-            padding: 8px;
-            border-radius: 8px;
-            border: none;
-            font-weight: bold;
-            font-size: 10px;
-            cursor: pointer;
-        }
+        .lvl-11 { background: radial-gradient(circle, var(--gold), var(--gold-dark)); border: 2px solid #FFD700 !important; box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); animation: glow-gold 1.5s infinite; }
+        @keyframes glow-gold { 0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); } 50% { box-shadow: 0 0 30px rgba(212, 175, 55, 1); } }
+        .palette .cell { aspect-ratio: auto; height: clamp(30px, 7vw, 38px); font-size: clamp(12px, 2.5vw, 16px); }
+        .palette .cell.selected { border: 2px solid var(--gold) !important; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); transform: scale(1.1); }
+        .ctrl-btn { flex: 1; padding: 8px; border-radius: 8px; border: none; font-weight: bold; font-size: 10px; cursor: pointer; }
         .ctrl-btn:active { transform: scale(0.96); }
         .ctrl-undo { background: rgba(255,255,255,0.1); color: white; }
         .ctrl-reset { background: rgba(196, 30, 58, 0.3); color: var(--red); border: 1px solid rgba(196, 30, 58, 0.5); }
-        .ctrl-new { background: rgba(34, 197, 94, 0.3); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.5); }
-        
-        /* أزرار الاتجاهات */
-        .arrows {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4px;
-            margin-bottom: 8px;
-        }
-        .arrow-btn {
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 8px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-        }
+        .arrows { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
+        .arrow-btn { padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; color: white; font-size: 14px; cursor: pointer; }
         .arrow-btn:active { background: var(--gold); color: #000; }
-        
-        /* زر الدمج الذكي */
-        .smart-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-            border: none;
-            border-radius: 10px;
-            color: #000;
-            font-weight: 900;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+        .smart-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); border: none; border-radius: 10px; color: #000; font-weight: 900; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .smart-btn:active { transform: scale(0.98); }
         .smart-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        
-        /* نتيجة الحركة */
-        .result-box {
-            margin-top: 8px;
-            background: rgba(212,175,55,0.1);
-            border: 1px solid rgba(212,175,55,0.3);
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-        }
-        .result-direction {
-            font-size: 18px;
-            font-weight: 900;
-            color: var(--gold);
-        }
-        .result-reason {
-            font-size: 10px;
-            color: var(--muted);
-            margin-top: 4px;
-        }
-        
-        /* تحليل AI */
-        .ai-analysis {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(212,175,55,0.2);
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 8px;
-            font-size: 10px;
-            line-height: 1.6;
-        }
-        .ai-header {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 6px;
-            color: var(--gold);
-            font-weight: bold;
-        }
-        
-        /* زر الإدارة العائم */
-        .admin-fab {
-            position: fixed;
-            bottom: 60px;
-            left: 8px;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--red), #800);
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            display: none;
-            z-index: 40;
-            box-shadow: 0 4px 15px rgba(196, 30, 58, 0.5);
-        }
-        
-        /* احتفال */
-        .celebration {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 300;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-        }
+        .result-box { margin-top: 8px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 10px; padding: 10px; text-align: center; }
+        .result-direction { font-size: 18px; font-weight: 900; color: var(--gold); }
+        .result-reason { font-size: 10px; color: var(--muted); margin-top: 4px; }
+        .ai-analysis { background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.2); border-radius: 10px; padding: 10px; margin-top: 8px; font-size: 10px; line-height: 1.6; }
+        .ai-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--gold); font-weight: bold; }
+        .admin-fab { position: fixed; bottom: 60px; left: 8px; width: 40px; height: 40px; background: linear-gradient(135deg, var(--red), #800); border: none; border-radius: 50%; color: white; font-size: 16px; cursor: pointer; display: none; z-index: 40; box-shadow: 0 4px 15px rgba(196, 30, 58, 0.5); }
+        .celebration { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; justify-content: center; align-items: center; padding: 10px; }
         .celebration.show { display: flex; }
-        
-        .celeb-content {
-            text-align: center;
-            animation: celeb-pop 0.5s;
-        }
-        @keyframes celeb-pop {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .celeb-icon {
-            font-size: 60px;
-            animation: celeb-float 1s infinite;
-        }
-        @keyframes celeb-float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-        .celeb-title {
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--gold);
-            margin: 10px 0;
-        }
-        
-        /* إحصائيات سريعة */
-        .quick-stats {
-            display: flex;
-            justify-content: space-around;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 6px;
-            margin-bottom: 8px;
-            font-size: 9px;
-        }
-        
-        /* أقسام متعددة */
-        .section {
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            border: 1px solid rgba(212, 175, 55, 0.1);
-        }
-        .section-title {
-            font-size: 11px;
-            font-weight: bold;
-            color: var(--gold);
-            margin-bottom: 8px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-        }
-        
-        /* تصنيف الأدوات في الإدارة */
-        .admin-tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 10px;
-        }
-        .admin-tab {
-            flex: 1;
-            padding: 6px;
-            text-align: center;
-            background: rgba(212,175,55,0.1);
-            border-radius: 6px;
-            font-size: 9px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .celeb-content { text-align: center; animation: celeb-pop 0.5s; }
+        @keyframes celeb-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .celeb-icon { font-size: 60px; animation: celeb-float 1s infinite; }
+        @keyframes celeb-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .celeb-title { font-size: 20px; font-weight: 900; color: var(--gold); margin: 10px 0; }
+        .quick-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 6px; margin-bottom: 8px; font-size: 9px; }
+        .section { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(212, 175, 55, 0.1); }
+        .section-title { font-size: 11px; font-weight: bold; color: var(--gold); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
+        .admin-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+        .admin-tab { flex: 1; padding: 6px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer; }
         .admin-tab.active { background: var(--red); color: white; }
         .admin-section { display: none; }
         .admin-section.active { display: block; }
-        
-        /* المتصدرين */
-        .leaderboard-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            margin-bottom: 6px;
-        }
-        .rank-badge {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #1a1a1a;
-            border: 2px solid var(--gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            color: var(--gold);
-        }
-        
-        /* إدخال البيانات اليدوي */
-        .manual-input-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4px;
-        }
-        .manual-input-grid input {
-            width: 100%;
-            padding: 8px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        
+        .leaderboard-item { display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 6px; }
+        .rank-badge { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: var(--gold); }
+        .manual-input-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .manual-input-grid input { width: 100%; padding: 8px; text-align: center; font-size: 14px; font-weight: bold; }
         .hidden { display: none !important; }
-        
-        /* تأثير التحميل */
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: var(--gold);
-            animation: spin 1s linear infinite;
-        }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--gold); animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="app">
-        <!-- ==================== شاشة البداية (كهف عقرب) ==================== -->
+        <!-- شاشة البداية -->
         <div id="splash" class="screen active">
             <div class="cave">
                 <div class="cave-entrance"></div>
@@ -698,11 +147,10 @@
             <div class="splash-loader"><div></div></div>
         </div>
 
-        <!-- ==================== شاشة تسجيل الدخول ==================== -->
+        <!-- شاشة تسجيل الدخول -->
         <div id="loginScreen" class="screen">
             <div class="popup-box" style="margin: auto;">
                 <div style="text-align: center; margin-bottom: 15px;">
-                    <img id="loginLogo" src="" class="hidden" style="height: 60px; margin-bottom: 8px;">
                     <div id="loginLogoDefault" style="font-size: 50px;">🦂</div>
                     <div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="loginAppName">مساعد عقروب</div>
                     <div style="font-size: 10px; color: var(--muted);">أدخل بياناتك للدخول</div>
@@ -714,7 +162,7 @@
             </div>
         </div>
 
-        <!-- ==================== شاشة الشروط ==================== -->
+        <!-- شاشة الشروط -->
         <div id="termsScreen" class="screen">
             <div class="popup-box">
                 <div style="font-size: 14px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 10px;" id="termsTitle">📜 ميثاق الشرف</div>
@@ -722,21 +170,10 @@
                     <b>🦂 مرحباً بك!</b><br><br>
                     <b>📌 البرنامج:</b> مساعد لعبة بهجة الحيوانات<br><br>
                     <b>🎯 الهدف:</b> تحقيق 3 دمجات للمستوى 11 في جولة واحدة<br><br>
-                    <b>⚡ الطاقة:</b> 200 وحدة، تستهلك 1 لكل حركة<br>
-                    الاستعادة: 1 نقطة كل 1:12 دقيقة<br><br>
+                    <b>⚡ الطاقة:</b> 200 وحدة، تستهلك 1 لكل حركة<br><br>
                     <b>🛠️ الأدوات:</b><br>
-                    🔄 تحديث مجاني - إنهاء الجولة<br>
-                    💎 الجوهر - +15 طاقة (999 يومياً)<br>
-                    ⬆️ الترقية - رفع مستوى حيوان<br>
-                    🦅 المخلب - حذف حيوان<br>
-                    🎡 العجلة - تبديل موقع<br><br>
-                    <b>🏆 عند دمج 11:</b><br>
-                    +2048 نقطة + يختفي الحيوان<br>
-                    +20 استخدام لكل أداة<br><br>
-                    <b>📜 الشروط:</b><br>
-                    • استخدام ترفيهي فقط<br>
-                    • عدم مشاركة الحساب<br>
-                    • احترام الآخرين
+                    🔄 تحديث مجاني - 💎 جوهر - ⬆️ ترقية - 🦅 مخلب - 🎡 عجلة<br><br>
+                    <b>🏆 عند دمج 11:</b> +2048 نقطة + يختفي الحيوان
                 </div>
                 <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 10px;">
                     <input type="checkbox" id="agreeCheck">
@@ -746,16 +183,12 @@
             </div>
         </div>
 
-        <!-- ==================== التطبيق الرئيسي ==================== -->
+        <!-- التطبيق الرئيسي -->
         <div id="mainApp" class="screen">
-            <!-- شريط الحالة العلوي -->
             <div class="header-title">
-                <img id="headerLogo" src="" class="hidden" style="height: 30px; margin-bottom: 4px;">
                 <h1 id="headerTitle">🦂 مساعد عقروب V14</h1>
             </div>
-
             <div class="main-content">
-                <!-- عداد الوقت -->
                 <div class="timer-box" id="timerBox">
                     <span>⏰</span>
                     <div><div class="timer-val" id="tDay">1</div><div class="timer-label">يوم</div></div>
@@ -763,8 +196,6 @@
                     <div><div class="timer-val" id="tMin">28</div><div class="timer-label">دقيقة</div></div>
                     <div><div class="timer-val" id="tSec">10</div><div class="timer-label">ثانية</div></div>
                 </div>
-
-                <!-- إحصائيات اللاعب -->
                 <div class="player-stats">
                     <div class="stat-box clickable" onclick="showProfile()">
                         <div class="stat-label">اللاعب</div>
@@ -782,15 +213,11 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- إحصائيات سريعة -->
                 <div class="quick-stats">
                     <span>تحركات: <b id="mMoves" style="color: var(--gold);">0</b></span>
                     <span>أعلى: <b id="mMax" style="color: var(--red);">0</b></span>
                     <span>دمجات 11: <b id="mL11" style="color: var(--gold);">0</b>/3</span>
                 </div>
-
-                <!-- شريط الأدوات السريع -->
                 <div class="tools-bar" id="toolsBar">
                     <div class="tool-btn" id="toolFree" onclick="useTool('free')">
                         <span class="tool-icon">🔄</span>
@@ -801,29 +228,23 @@
                         <span class="tool-icon">💎</span>
                         <span class="tool-name">جوهر</span>
                         <span class="tool-count" id="cntGem">0</span>
-                        <span class="tool-limit" id="limGem">999</span>
                     </div>
                     <div class="tool-btn" id="toolUpgrade" onclick="useTool('upgrade')">
                         <span class="tool-icon">⬆️</span>
                         <span class="tool-name">ترقية</span>
                         <span class="tool-count" id="cntUpg">0</span>
-                        <span class="tool-limit" id="limUpg">20</span>
                     </div>
                     <div class="tool-btn" id="toolClaw" onclick="useTool('claw')">
                         <span class="tool-icon">🦅</span>
                         <span class="tool-name">مخلب</span>
                         <span class="tool-count" id="cntClaw">0</span>
-                        <span class="tool-limit" id="limClaw">20</span>
                     </div>
                     <div class="tool-btn" id="toolWheel" onclick="useTool('wheel')">
                         <span class="tool-icon">🎡</span>
                         <span class="tool-name">عجلة</span>
                         <span class="tool-count" id="cntWheel">0</span>
-                        <span class="tool-limit" id="limWheel">20</span>
                     </div>
                 </div>
-
-                <!-- لوحة الاختيار -->
                 <div class="section">
                     <div class="section-title">🎨 اختر مستوى للإضافة</div>
                     <div class="palette" id="palette"></div>
@@ -838,1368 +259,982 @@
                         <button class="ctrl-btn ctrl-reset" onclick="resetGrid()" style="flex: 1;">🗑️ تصفير</button>
                     </div>
                 </div>
-
-                <!-- شبكة اللعب -->
                 <div class="grid-4x4" id="gridBox"></div>
-
-                <!-- أزرار الاتجاهات -->
                 <div class="arrows">
                     <button class="arrow-btn" onclick="manualMove('UP')">⬆️</button>
                     <button class="arrow-btn" onclick="manualMove('DOWN')">⬇️</button>
                     <button class="arrow-btn" onclick="manualMove('LEFT')">➡️</button>
                     <button class="arrow-btn" onclick="manualMove('RIGHT')">⬅️</button>
                 </div>
-
-                <!-- زر الدمج الذكي -->
-                <button class="smart-btn" id="smartBtn">
-                    <span>✨ دمج ذكي</span>
-                </button>
-
-                <!-- نتيجة الحركة -->
+                <button class="smart-btn" id="smartBtn"><span>✨ دمج ذكي</span></button>
                 <div id="resultBox" class="result-box hidden">
                     <div class="result-direction" id="resultDir"></div>
                     <div class="result-reason" id="resultReason"></div>
                 </div>
-
-                <!-- تحليل AI -->
                 <div id="aiBox" class="ai-analysis hidden">
-                    <div class="ai-header">
-                        <i class="fas fa-brain"></i>
-                        <span>تحليل ذكي</span>
-                    </div>
+                    <div class="ai-header"><i class="fas fa-brain"></i><span>تحليل ذكي</span></div>
                     <div id="aiText"></div>
                 </div>
             </div>
-
-            <!-- شريط التنقل -->
             <nav class="navbar">
-                <div class="nav-btn active" onclick="goTab('play')">
-                    <i class="fas fa-gamepad"></i>
-                    <span>اللعب</span>
-                </div>
-                <div class="nav-btn" onclick="goTab('rank')">
-                    <i class="fas fa-trophy"></i>
-                    <span>المتصدرين</span>
-                </div>
-                <div class="nav-btn" onclick="goTab('tools')">
-                    <i class="fas fa-toolbox"></i>
-                    <span>الأدوات</span>
-                </div>
-                <div class="nav-btn" onclick="goTab('more')">
-                    <i class="fas fa-ellipsis-h"></i>
-                    <span>المزيد</span>
-                </div>
+                <div class="nav-btn active" onclick="goTab('play')"><i class="fas fa-gamepad"></i><span>اللعب</span></div>
+                <div class="nav-btn" onclick="goTab('rank')"><i class="fas fa-trophy"></i><span>المتصدرين</span></div>
+                <div class="nav-btn" onclick="goTab('tools')"><i class="fas fa-toolbox"></i><span>الأدوات</span></div>
+                <div class="nav-btn" onclick="goTab('more')"><i class="fas fa-ellipsis-h"></i><span>المزيد</span></div>
             </nav>
-
-            <!-- زر الإدارة العائم -->
             <button class="admin-fab" id="adminFab" onclick="showAdmin()">⚙️</button>
         </div>
 
-        <!-- ==================== صفحة المتصدرين ==================== -->
+        <!-- صفحة المتصدرين -->
         <div id="tabRank" class="tab">
             <div class="main-content">
-                <div class="header-title">
-                    <h1>🏆 المتصدرين</h1>
-                </div>
+                <div class="header-title"><h1>🏆 المتصدرين</h1></div>
                 <div id="rankList"></div>
             </div>
         </div>
 
-        <!-- ==================== صفحة الأدوات ==================== -->
+        <!-- صفحة الأدوات -->
         <div id="tabTools" class="tab">
             <div class="main-content">
-                <div class="header-title">
-                    <h1>🛠️ الأدوات المساعدة</h1>
-                </div>
-                
+                <div class="header-title"><h1>🛠️ الأدوات المساعدة</h1></div>
                 <div class="section">
                     <div class="section-title">💎 الجوهر - زيادة الطاقة</div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 30px;">💎</span>
-                        <div style="flex: 1;">
-                            <div style="font-size: 10px;">الامتلاك: <b id="tGemOwned" style="color: var(--gold);">0</b></div>
-                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tGemLimit" style="color: var(--gold);">999/999</b></div>
-                        </div>
-                        <button class="btn" onclick="useTool('gem')" style="padding: 6px 12px;">استخدام +15⚡</button>
-                    </div>
+                    <div style="font-size: 10px;">الامتلاك: <b id="tGemOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tGemLimit" style="color: var(--gold);">999/999</b></div>
+                    <button class="btn" onclick="useTool('gem')" style="margin-top: 6px; padding: 6px 12px;">استخدام +15⚡</button>
                 </div>
-
                 <div class="section">
                     <div class="section-title">⬆️ الترقية - رفع مستوى حيوان</div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 30px;">⬆️</span>
-                        <div style="flex: 1;">
-                            <div style="font-size: 10px;">الامتلاك: <b id="tUpgOwned" style="color: var(--gold);">0</b></div>
-                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tUpgLimit" style="color: var(--gold);">20/20</b></div>
-                            <div style="font-size: 9px; color: var(--muted);">يرفع حيوان واحد (<7) مستوى</div>
-                        </div>
-                        <button class="btn" onclick="useTool('upgrade')" style="padding: 6px 12px;">استخدام</button>
-                    </div>
+                    <div style="font-size: 10px;">الامتلاك: <b id="tUpgOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tUpgLimit" style="color: var(--gold);">20/20</b></div>
+                    <button class="btn" onclick="useTool('upgrade')" style="margin-top: 6px; padding: 6px 12px;">استخدام</button>
                 </div>
-
                 <div class="section">
                     <div class="section-title">🦅 المخلب - حذف حيوان</div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 30px;">🦅</span>
-                        <div style="flex: 1;">
-                            <div style="font-size: 10px;">الامتلاك: <b id="tClawOwned" style="color: var(--gold);">0</b></div>
-                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tClawLimit" style="color: var(--gold);">20/20</b></div>
-                            <div style="font-size: 9px; color: var(--muted);">يحذف حيوان واحد من أي مكان</div>
-                        </div>
-                        <button class="btn" onclick="useTool('claw')" style="padding: 6px 12px;">استخدام</button>
-                    </div>
+                    <div style="font-size: 10px;">الامتلاك: <b id="tClawOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tClawLimit" style="color: var(--gold);">20/20</b></div>
+                    <button class="btn" onclick="useTool('claw')" style="margin-top: 6px; padding: 6px 12px;">استخدام</button>
                 </div>
-
                 <div class="section">
                     <div class="section-title">🎡 العجلة - تبديل المواقع</div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 30px;">🎡</span>
-                        <div style="flex: 1;">
-                            <div style="font-size: 10px;">الامتلاك: <b id="tWheelOwned" style="color: var(--gold);">0</b></div>
-                            <div style="font-size: 10px;">الاستخدام اليومي: <b id="tWheelLimit" style="color: var(--gold);">20/20</b></div>
-                            <div style="font-size: 9px; color: var(--muted);">يبدل موقع حيوانين</div>
-                        </div>
-                        <button class="btn" onclick="useTool('wheel')" style="padding: 6px 12px;">استخدام</button>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">📊 معلومات</div>
-                    <div style="font-size: 10px; line-height: 1.8;">
-                        • عند دمج 11: +20 استخدام لكل أداة<br>
-                        • التجديد اليومي: الساعة 2:00 AM (مصر)<br>
-                        • التحديث المجاني: بدون حد
-                    </div>
+                    <div style="font-size: 10px;">الامتلاك: <b id="tWheelOwned" style="color: var(--gold);">0</b> | الاستخدام اليومي: <b id="tWheelLimit" style="color: var(--gold);">20/20</b></div>
+                    <button class="btn" onclick="useTool('wheel')" style="margin-top: 6px; padding: 6px 12px;">استخدام</button>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== صفحة المزيد ==================== -->
+        <!-- صفحة المزيد -->
         <div id="tabMore" class="tab">
             <div class="main-content">
-                <div class="header-title">
-                    <h1>⚙️ المزيد</h1>
-                </div>
-
+                <div class="header-title"><h1>⚙️ المزيد</h1></div>
                 <div class="section">
                     <div class="section-title">📊 إحصائياتي</div>
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
-                        <div>
-                            <div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myScore">0</div>
-                            <div style="font-size: 8px; color: var(--muted);">أعلى نقاط</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 16px; font-weight: 900; color: var(--red);" id="myMax">0</div>
-                            <div style="font-size: 8px; color: var(--muted);">أعلى مستوى</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 16px; font-weight: 900; color: #60a5fa;" id="myMoves">0</div>
-                            <div style="font-size: 8px; color: var(--muted);">التحركات</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myL11">0</div>
-                            <div style="font-size: 8px; color: var(--muted);">دمجات 11</div>
-                        </div>
+                        <div><div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myScore">0</div><div style="font-size: 8px; color: var(--muted);">أعلى نقاط</div></div>
+                        <div><div style="font-size: 16px; font-weight: 900; color: var(--red);" id="myMax">0</div><div style="font-size: 8px; color: var(--muted);">أعلى مستوى</div></div>
+                        <div><div style="font-size: 16px; font-weight: 900; color: #60a5fa;" id="myMoves">0</div><div style="font-size: 8px; color: var(--muted);">التحركات</div></div>
+                        <div><div style="font-size: 16px; font-weight: 900; color: var(--gold);" id="myL11">0</div><div style="font-size: 8px; color: var(--muted);">دمجات 11</div></div>
                     </div>
                 </div>
-
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                    <div class="section" onclick="showProfile()" style="cursor: pointer; text-align: center;">
-                        <div style="font-size: 24px;">👤</div>
-                        <div style="font-size: 10px; font-weight: bold;">بياناتي</div>
-                    </div>
-                    <div class="section" onclick="showReview()" style="cursor: pointer; text-align: center;">
-                        <div style="font-size: 24px;">⭐</div>
-                        <div style="font-size: 10px; font-weight: bold;">تقييم</div>
-                    </div>
-                    <div class="section" onclick="showManualInput()" style="cursor: pointer; text-align: center;">
-                        <div style="font-size: 24px;">✏️</div>
-                        <div style="font-size: 10px; font-weight: bold;">تعديل يدوي</div>
-                    </div>
-                    <div class="section" onclick="newSession()" style="cursor: pointer; text-align: center;">
-                        <div style="font-size: 24px;">🔄</div>
-                        <div style="font-size: 10px; font-weight: bold;">جولة جديدة</div>
-                    </div>
+                    <div class="section" onclick="showProfile()" style="cursor: pointer; text-align: center;"><div style="font-size: 24px;">👤</div><div style="font-size: 10px; font-weight: bold;">بياناتي</div></div>
+                    <div class="section" onclick="showReview()" style="cursor: pointer; text-align: center;"><div style="font-size: 24px;">⭐</div><div style="font-size: 10px; font-weight: bold;">تقييم</div></div>
                 </div>
-
-                <button id="adminBtn" class="hidden btn btn-red" style="margin-top: 10px; width: 100%;">⚙️ لوحة الإدارة</button>
             </div>
         </div>
 
-        <!-- ==================== نافذة الملف الشخصي ==================== -->
-        <div id="profilePopup" class="popup">
-            <div class="popup-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">👤 بياناتي</div>
-                    <div onclick="hidePopup('profilePopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
-                </div>
-                
-                <div style="text-align: center; margin-bottom: 12px;">
-                    <div style="width: 50px; height: 50px; background: #1a1a1a; border: 2px solid var(--gold); border-radius: 50%; margin: 0 auto 6px; display: flex; justify-content: center; align-items: center; font-size: 20px; color: var(--gold);" id="profAvatar">؟</div>
-                    <div style="font-weight: bold; color: var(--gold);" id="profName">---</div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; text-align: center;">
-                    <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px;">
-                        <div style="font-size: 12px; font-weight: 900; color: var(--gold);" id="profScore">0</div>
-                        <div style="font-size: 7px; color: var(--muted);">أعلى نقاط</div>
-                    </div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px;">
-                        <div style="font-size: 12px; font-weight: 900; color: var(--red);" id="profMax">0</div>
-                        <div style="font-size: 7px; color: var(--muted);">أعلى مستوى</div>
-                    </div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px;">
-                        <div style="font-size: 12px; font-weight: 900; color: #60a5fa;" id="profMoves">0</div>
-                        <div style="font-size: 7px; color: var(--muted);">التحركات</div>
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 8px;">
-                    <label style="font-size: 9px; color: var(--muted);">الاسم الظاهر</label>
-                    <input type="text" id="editName" class="input" placeholder="اسمك الذي سيظهر للآخرين" maxlength="20">
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;">
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">المملكة</label>
-                        <input type="text" id="editKingdom" class="input" placeholder="123">
-                    </div>
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">التحالف</label>
-                        <input type="text" id="editAlliance" class="input" placeholder="الأبطال">
-                    </div>
-                </div>
-                
-                <button class="btn" id="saveProfileBtn" style="width: 100%;">💾 حفظ</button>
-            </div>
-        </div>
-
-        <!-- ==================== نافذة التقييم ==================== -->
-        <div id="reviewPopup" class="popup">
-            <div class="popup-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">⭐ تقييم</div>
-                    <div onclick="hidePopup('reviewPopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
-                </div>
-                <div style="text-align: center; margin-bottom: 12px;">
-                    <div id="stars" style="font-size: 24px; cursor: pointer;">
-                        <span data="1">☆</span><span data="2">☆</span><span data="3">☆</span><span data="4">☆</span><span data="5">☆</span>
-                    </div>
-                </div>
-                <textarea id="reviewText" class="input" rows="3" placeholder="اقتراحاتك..." style="text-align: right;"></textarea>
-                <button class="btn" id="sendReviewBtn" style="width: 100%;">📤 إرسال</button>
-            </div>
-        </div>
-
-        <!-- ==================== نافذة التعديل اليدوي ==================== -->
-        <div id="manualPopup" class="popup">
-            <div class="popup-box" style="max-width: 400px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">✏️ تعديل يدوي</div>
-                    <div onclick="hidePopup('manualPopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
-                </div>
-                
-                <div class="section-title">🎮 الشبكة (أدخل الأرقام 0-11)</div>
-                <div class="manual-input-grid" id="manualGrid"></div>
-                
-                <div class="section-title" style="margin-top: 10px;">🛠️ الأدوات</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">امتلاك الجوهر</label>
-                        <input type="number" id="editGemOwned" class="input" min="0">
-                    </div>
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">امتلاك الترقية</label>
-                        <input type="number" id="editUpgOwned" class="input" min="0">
-                    </div>
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">امتلاك المخلب</label>
-                        <input type="number" id="editClawOwned" class="input" min="0">
-                    </div>
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">امتلاك العجلة</label>
-                        <input type="number" id="editWheelOwned" class="input" min="0">
-                    </div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">نقاط الجولة</label>
-                        <input type="number" id="editSessionScore" class="input" min="0">
-                    </div>
-                    <div>
-                        <label style="font-size: 9px; color: var(--muted);">الطاقة</label>
-                        <input type="number" id="editEnergy" class="input" min="0" max="200">
-                    </div>
-                </div>
-                
-                <button class="btn" id="applyManualBtn" style="width: 100%; margin-top: 10px;">✅ تطبيق</button>
-            </div>
-        </div>
-
-        <!-- ==================== نافذة الاحتفال ==================== -->
-        <div id="celebPopup" class="celebration">
+        <!-- النوافذ المنبثقة -->
+        <div class="celebration" id="celebration">
             <div class="celeb-content">
                 <div class="celeb-icon">👑</div>
-                <div class="celeb-title">🏆 مبروك! المستوى 11!</div>
-                <div style="background: rgba(212,175,55,0.1); border-radius: 10px; padding: 10px; margin: 10px 0; text-align: right;">
-                    <div style="display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0;">
-                        <span>النقاط</span>
-                        <span id="cScore" style="color: var(--gold);">0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0;">
-                        <span>التحركات</span>
-                        <span id="cMoves">0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0;">
-                        <span>دمجات 11</span>
-                        <span id="cL11" style="color: var(--gold);">0</span>
-                    </div>
-                </div>
-                <div style="margin-bottom: 8px;">
-                    <div style="font-size: 10px; color: var(--muted); margin-bottom: 4px;">قيّم تجربتك:</div>
-                    <div id="cStars" style="font-size: 20px; cursor: pointer;">
-                        <span data="1">☆</span><span data="2">☆</span><span data="3">☆</span><span data="4">☆</span><span data="5">☆</span>
-                    </div>
-                </div>
-                <textarea id="cComment" class="input" rows="2" placeholder="تعليقك..." style="text-align: right;"></textarea>
-                <button class="btn" id="cSaveBtn" style="width: 100%;">✅ حفظ ومتابعة</button>
+                <div class="celeb-title">تهانينا! وصلت للمستوى 11!</div>
+                <div style="font-size: 12px; color: var(--muted); margin-bottom: 15px;">+2048 نقطة</div>
+                <button class="btn" onclick="closeCelebration()">متابعة</button>
             </div>
         </div>
 
-        <!-- ==================== نافذة الإدارة ==================== -->
-        <div id="adminPopup" class="popup">
+        <div class="popup" id="profilePopup">
+            <div class="popup-box">
+                <div style="font-size: 14px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 10px;">👤 الملف الشخصي</div>
+                <input type="text" id="profileDisplayName" class="input" placeholder="الاسم الظاهري">
+                <input type="text" id="profileKingdom" class="input" placeholder="المملكة">
+                <input type="text" id="profileAlliance" class="input" placeholder="التحالف">
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn" onclick="saveProfile()" style="flex: 1;">حفظ</button>
+                    <button class="btn btn-red" onclick="closePopup('profilePopup')" style="flex: 1;">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="popup" id="adminPopup">
             <div class="popup-box" style="max-width: 400px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div style="font-size: 12px; font-weight: 900; color: var(--red);">⚙️ لوحة الإدارة</div>
-                    <div onclick="hidePopup('adminPopup')" style="cursor: pointer; color: #666; font-size: 18px;">×</div>
-                </div>
-                
+                <div style="font-size: 14px; font-weight: 900; color: var(--red); text-align: center; margin-bottom: 10px;">⚙️ لوحة الإدارة</div>
                 <div class="admin-tabs">
-                    <div class="admin-tab active" onclick="adminTab('users')">اللاعبين</div>
-                    <div class="admin-tab" onclick="adminTab('archive')">الأرشيف</div>
-                    <div class="admin-tab" onclick="adminTab('reviews')">التقييمات</div>
-                    <div class="admin-tab" onclick="adminTab('settings')">الإعدادات</div>
+                    <div class="admin-tab active" onclick="goAdminTab('users')">المستخدمين</div>
+                    <div class="admin-tab" onclick="goAdminTab('settings')">الإعدادات</div>
+                    <div class="admin-tab" onclick="goAdminTab('archive')">الأرشيف</div>
                 </div>
-                
-                <!-- قسم اللاعبين -->
-                <div id="adminUsers" class="admin-section active">
-                    <input type="text" id="newUser" class="input" placeholder="اسم اللاعب الجديد">
-                    <input type="text" id="newPass" class="input" placeholder="كلمة السر">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 8px;">
-                        <input type="checkbox" id="newAdmin"> صلاحيات مدير
-                    </label>
-                    <button class="btn btn-red" id="addUserBtn" style="width: 100%;">➕ إضافة</button>
-                    <div id="addUserMsg" class="hidden" style="font-size: 9px; text-align: center; margin-top: 6px;"></div>
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
-                    <div style="font-size: 10px; color: var(--gold); margin-bottom: 6px;">اللاعبين:</div>
-                    <div id="usersList" style="max-height: 150px; overflow-y: auto;"></div>
-                </div>
-                
-                <!-- قسم الأرشيف -->
-                <div id="adminArchive" class="admin-section">
-                    <div style="font-size: 10px; color: var(--gold); margin-bottom: 6px;">🏆 إنجازات المستوى 11:</div>
-                    <div id="archiveList" style="max-height: 200px; overflow-y: auto;"></div>
-                </div>
-                
-                <!-- قسم التقييمات -->
-                <div id="adminReviews" class="admin-section">
-                    <div style="font-size: 10px; color: var(--gold); margin-bottom: 6px;">التقييمات:</div>
-                    <div id="reviewsList" style="max-height: 200px; overflow-y: auto;"></div>
-                </div>
-                
-                <!-- قسم الإعدادات -->
-                <div id="adminSettings" class="admin-section">
-                    <input type="text" id="setAppName" class="input" placeholder="اسم التطبيق">
-                    <input type="text" id="setGeminiKey" class="input" placeholder="Gemini API Key">
-                    <input type="text" id="setLogo" class="input" placeholder="رابط اللوجو">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                        <input type="text" id="setTermsTitle" class="input" placeholder="عنوان الشروط">
-                        <input type="datetime-local" id="setEventEnd" class="input">
-                    </div>
-                    <textarea id="setTermsText" class="input" rows="2" placeholder="نص الشروط"></textarea>
-                    <button class="btn btn-red" id="saveSettingsBtn" style="width: 100%;">💾 حفظ الإعدادات</button>
-                    <div id="saveSettingsMsg" class="hidden" style="font-size: 9px; text-align: center; margin-top: 6px;"></div>
-                </div>
+                <div id="adminUsers" class="admin-section active"></div>
+                <div id="adminSettings" class="admin-section"></div>
+                <div id="adminArchive" class="admin-section"></div>
+                <button class="btn btn-red" onclick="closePopup('adminPopup')" style="width: 100%; margin-top: 10px;">إغلاق</button>
             </div>
         </div>
     </div>
+<script>
+// ============================================
+// المتغيرات العامة
+// ============================================
+let user = null;
+let grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+let selectedLevel = 0;
+let activeTool = null;
+let wheelFirst = null;
+let history = [];
+let animals = {};
+let settings = {};
 
-    <script>
-        // ============================================
-        // المتغيرات الأساسية
-        // ============================================
-        const API = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
-        
-        // الحيوانات
-        const ANIMALS = {
-            0: '', 1: '🐭', 2: '🐰', 3: '🦊', 4: '🐺', 5: '🦁',
-            6: '🐯', 7: '🦅', 8: '🐉', 9: '🔥', 10: '⚡', 11: '👑'
-        };
-        
-        // بيانات المستخدم
-        let U = {
-            user: '', pass: '', name: '',
-            score: 0, sessionScore: 0, energy: 200,
-            stats: { moves: 0, maxLvl: 0, level11Count: 0 },
-            tools: {
-                gem: { owned: 0, dailyLimit: 999, used: 0 },
-                upgrade: { owned: 0, dailyLimit: 20, used: 0 },
-                claw: { owned: 0, dailyLimit: 20, used: 0 },
-                wheel: { owned: 0, dailyLimit: 20, used: 0 }
-            },
-            kingdom: '', alliance: '', admin: false
-        };
-        
-        let grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-        let history = [];
-        let selected = 1;
-        let activeTool = null;
-        let swapCell = null;
-        let appSettings = {};
-        
-        // ============================================
-        // المراحل (Splash → Login → Terms → App)
-        // ============================================
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+// ============================================
+// التهيئة
+// ============================================
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadSettings();
+    initGrid();
+    initPalette();
+    initEvents();
+    
+    setTimeout(() => {
+        document.getElementById('splash').classList.remove('active');
+        document.getElementById('loginScreen').classList.add('active');
+    }, 2500);
+});
+
+async function loadSettings() {
+    try {
+        const res = await fetch('/api/settings');
+        settings = await res.json();
+        animals = settings.animals || getDefaultAnimals();
+        if (settings.appName) {
+            document.getElementById('loginAppName').textContent = settings.appName;
+            document.getElementById('headerTitle').textContent = '🦂 ' + settings.appName;
         }
+    } catch (e) {
+        animals = getDefaultAnimals();
+    }
+}
+
+function getDefaultAnimals() {
+    return {
+        '0': { icon: '', name: 'فارغ' },
+        '1': { icon: '🐭', name: 'فأر' },
+        '2': { icon: '🐰', name: 'أرنب' },
+        '3': { icon: '🦊', name: 'ثعلب' },
+        '4': { icon: '🐺', name: 'ذئب' },
+        '5': { icon: '🦁', name: 'أسد' },
+        '6': { icon: '🐯', name: 'نمر' },
+        '7': { icon: '🦅', name: 'نسر' },
+        '8': { icon: '🐉', name: 'تنين' },
+        '9': { icon: '🔥', name: 'عنقاء' },
+        '10': { icon: '⚡', name: 'برق' },
+        '11': { icon: '👑', name: 'ملك' }
+    };
+}
+
+function initGrid() {
+    const gridBox = document.getElementById('gridBox');
+    gridBox.innerHTML = '';
+    for (let i = 0; i < 16; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell lvl-0';
+        cell.dataset.row = Math.floor(i / 4);
+        cell.dataset.col = i % 4;
+        cell.onclick = () => onCellClick(cell);
+        gridBox.appendChild(cell);
+    }
+    renderGrid();
+}
+
+function initPalette() {
+    const palette = document.getElementById('palette');
+    palette.innerHTML = '';
+    for (let i = 1; i <= 11; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell lvl-' + i;
+        cell.innerHTML = `<span>${animals[i]?.icon || ''}</span><span class="lvl-num">${i}</span>`;
+        cell.dataset.level = i;
+        cell.onclick = () => selectLevel(i);
+        palette.appendChild(cell);
+    }
+}
+
+function initEvents() {
+    document.getElementById('loginBtn').onclick = login;
+    document.getElementById('agreeCheck').onchange = (e) => {
+        document.getElementById('acceptTerms').disabled = !e.target.checked;
+    };
+    document.getElementById('acceptTerms').onclick = acceptTerms;
+    document.getElementById('smartBtn').onclick = smartMerge;
+    document.getElementById('energy').oninput = updateEnergyBar;
+    
+    document.getElementById('loginPass').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') login();
+    });
+}
+
+// ============================================
+// تسجيل الدخول
+// ============================================
+async function login() {
+    const username = document.getElementById('loginUser').value.trim();
+    const password = document.getElementById('loginPass').value;
+    
+    if (!username || !password) {
+        showError('أدخل البيانات كاملة');
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
         
-        // بدء التطبيق
-        setTimeout(() => {
-            showScreen('loginScreen');
-        }, 2500);
-        
-        // ============================================
-        // تسجيل الدخول
-        // ============================================
-        document.getElementById('loginBtn').onclick = async () => {
-            const user = document.getElementById('loginUser').value.trim().toLowerCase();
-            const pass = document.getElementById('loginPass').value.trim();
-            const err = document.getElementById('loginErr');
+        if (data.success) {
+            user = { username, password, ...data.userData };
+            document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('mainApp').classList.add('active');
             
-            if (!user || !pass) {
-                err.textContent = 'أدخل البيانات كاملة';
-                err.classList.remove('hidden');
-                return;
-            }
-            
-            document.getElementById('loginBtn').disabled = true;
-            document.getElementById('loginBtn').innerHTML = '<span class="loading"></span>';
-            
-            try {
-                const res = await fetch(`${API}/api/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user, password: pass })
-                });
-                const d = await res.json();
-                
-                if (d.success) {
-                    U.user = user;
-                    U.pass = pass;
-                    U.admin = d.isAdmin;
-                    if (d.userData) {
-                        U.score = d.userData.highScore || 0;
-                        U.sessionScore = d.userData.sessionScore || 0;
-                        U.energy = d.userData.energy ?? 200;
-                        U.name = d.userData.displayName || user;
-                        U.stats = d.userData.stats || {};
-                        U.tools = d.userData.tools || U.tools;
-                        U.kingdom = d.userData.kingdom || '';
-                        U.alliance = d.userData.alliance || '';
-                        if (d.userData.grid) grid = d.userData.grid;
-                    }
-                    showScreen('termsScreen');
-                } else {
-                    err.textContent = d.message || 'خطأ في الدخول';
-                    err.classList.remove('hidden');
-                }
-            } catch (e) {
-                err.textContent = 'لا يمكن الاتصال بالسيرفر';
-                err.classList.remove('hidden');
-            }
-            
-            document.getElementById('loginBtn').disabled = false;
-            document.getElementById('loginBtn').textContent = 'دخول 🚀';
-        };
-        
-        // ============================================
-        // الشروط
-        // ============================================
-        document.getElementById('agreeCheck').onchange = (e) => {
-            document.getElementById('acceptTerms').disabled = !e.target.checked;
-        };
-        
-        document.getElementById('acceptTerms').onclick = () => {
-            showScreen('mainApp');
-            initApp();
-        };
-        
-        // ============================================
-        // تهيئة التطبيق
-        // ============================================
-        async function initApp() {
-            await loadSettings();
+            if (user.grid) grid = user.grid;
+            renderGrid();
             updateUI();
-            buildPalette();
-            buildGrid();
-            startTimer();
             
-            if (U.admin) {
-                document.getElementById('adminBtn').classList.remove('hidden');
+            if (data.isAdmin) {
                 document.getElementById('adminFab').style.display = 'block';
             }
+        } else {
+            showError(data.message || 'خطأ في الدخول');
         }
+    } catch (e) {
+        showError('خطأ في الاتصال');
+    }
+}
+
+function showError(msg) {
+    const err = document.getElementById('loginErr');
+    err.textContent = msg;
+    err.classList.remove('hidden');
+    setTimeout(() => err.classList.add('hidden'), 3000);
+}
+
+function acceptTerms() {
+    document.getElementById('termsScreen').classList.remove('active');
+    document.getElementById('mainApp').classList.add('active');
+}
+
+// ============================================
+// الشبكة
+// ============================================
+function renderGrid() {
+    const cells = document.querySelectorAll('#gridBox .cell');
+    cells.forEach((cell, i) => {
+        const row = Math.floor(i / 4);
+        const col = i % 4;
+        const val = grid[row][col];
+        cell.className = 'cell lvl-' + val;
+        cell.innerHTML = '';
         
-        async function loadSettings() {
-            try {
-                const res = await fetch(`${API}/api/settings`);
-                appSettings = await res.json();
-                
-                if (appSettings.logoUrl) {
-                    document.getElementById('loginLogo').src = appSettings.logoUrl;
-                    document.getElementById('loginLogo').classList.remove('hidden');
-                    document.getElementById('loginLogoDefault').classList.add('hidden');
-                    document.getElementById('headerLogo').src = appSettings.logoUrl;
-                    document.getElementById('headerLogo').classList.remove('hidden');
-                }
-                
-                if (appSettings.appName) {
-                    document.getElementById('loginAppName').textContent = appSettings.appName;
-                    document.getElementById('headerTitle').innerHTML = '🦂 ' + appSettings.appName;
-                    document.title = appSettings.appName;
-                }
-                
-                if (appSettings.termsTitle) {
-                    document.getElementById('termsTitle').textContent = '📜 ' + appSettings.termsTitle;
-                }
-                
-                if (appSettings.termsText) {
-                    document.getElementById('termsText').innerHTML = appSettings.termsText;
-                }
-                
-                if (appSettings.animals) {
-                    Object.assign(ANIMALS, appSettings.animals);
-                }
-            } catch (e) {}
+        if (val > 0 && animals[val]) {
+            cell.innerHTML = `<span>${animals[val].icon}</span>`;
         }
-        
-        function updateUI() {
-            document.getElementById('playerName').textContent = U.name || U.user;
-            document.getElementById('sessionScore').textContent = U.sessionScore.toLocaleString();
-            document.getElementById('energy').value = U.energy;
-            document.getElementById('energyBar').style.width = (U.energy / 200 * 100) + '%';
-            
-            document.getElementById('mMoves').textContent = U.stats.moves || 0;
-            document.getElementById('mMax').textContent = U.stats.maxLvl || 0;
-            document.getElementById('mL11').textContent = U.stats.level11Count || 0;
-            
-            document.getElementById('myScore').textContent = U.score.toLocaleString();
-            document.getElementById('myMax').textContent = U.stats.maxLvl || 0;
-            document.getElementById('myMoves').textContent = U.stats.moves || 0;
-            document.getElementById('myL11').textContent = U.stats.level11Count || 0;
-            
-            // الأدوات
-            updateToolsUI();
+        if (val > 0) {
+            cell.innerHTML += `<span class="lvl-num">${val}</span>`;
         }
-        
-        function updateToolsUI() {
-            // الجوهر
-            const gem = U.tools.gem || { owned: 0, dailyLimit: 999, used: 0 };
-            document.getElementById('cntGem').textContent = gem.owned;
-            document.getElementById('limGem').textContent = `${gem.dailyLimit - gem.used}/${gem.dailyLimit}`;
-            document.getElementById('tGemOwned').textContent = gem.owned;
-            document.getElementById('tGemLimit').textContent = `${gem.dailyLimit - gem.used}/${gem.dailyLimit}`;
-            
-            // الترقية
-            const upg = U.tools.upgrade || { owned: 0, dailyLimit: 20, used: 0 };
-            document.getElementById('cntUpg').textContent = upg.owned;
-            document.getElementById('limUpg').textContent = `${upg.dailyLimit - upg.used}/${upg.dailyLimit}`;
-            document.getElementById('tUpgOwned').textContent = upg.owned;
-            document.getElementById('tUpgLimit').textContent = `${upg.dailyLimit - upg.used}/${upg.dailyLimit}`;
-            
-            // المخلب
-            const claw = U.tools.claw || { owned: 0, dailyLimit: 20, used: 0 };
-            document.getElementById('cntClaw').textContent = claw.owned;
-            document.getElementById('limClaw').textContent = `${claw.dailyLimit - claw.used}/${claw.dailyLimit}`;
-            document.getElementById('tClawOwned').textContent = claw.owned;
-            document.getElementById('tClawLimit').textContent = `${claw.dailyLimit - claw.used}/${claw.dailyLimit}`;
-            
-            // العجلة
-            const wheel = U.tools.wheel || { owned: 0, dailyLimit: 20, used: 0 };
-            document.getElementById('cntWheel').textContent = wheel.owned;
-            document.getElementById('limWheel').textContent = `${wheel.dailyLimit - wheel.used}/${wheel.dailyLimit}`;
-            document.getElementById('tWheelOwned').textContent = wheel.owned;
-            document.getElementById('tWheelLimit').textContent = `${wheel.dailyLimit - wheel.used}/${wheel.dailyLimit}`;
-            
-            // تحديث حالة الأزرار
-            checkToolAvailability();
+    });
+}
+
+function selectLevel(level) {
+    selectedLevel = level;
+    document.querySelectorAll('#palette .cell').forEach(c => c.classList.remove('selected'));
+    document.querySelector(`#palette .cell[data-level="${level}"]`).classList.add('selected');
+    activeTool = null;
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+}
+
+function onCellClick(cell) {
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
+    
+    if (activeTool === 'upgrade') {
+        if (grid[row][col] > 0 && grid[row][col] < 7) {
+            saveHistory();
+            grid[row][col]++;
+            renderGrid();
+            checkLevel11(row, col);
+            saveGame();
+            deactivateTool();
         }
-        
-        function checkToolAvailability() {
-            const tools = ['gem', 'upgrade', 'claw', 'wheel'];
-            tools.forEach(t => {
-                const tool = U.tools[t];
-                const btn = document.getElementById('tool' + t.charAt(0).toUpperCase() + t.slice(1));
-                if (btn) {
-                    const available = tool.owned > 0 && (tool.used < tool.dailyLimit);
-                    btn.classList.toggle('disabled', !available);
-                }
-            });
+    } else if (activeTool === 'claw') {
+        if (grid[row][col] > 0) {
+            saveHistory();
+            grid[row][col] = 0;
+            renderGrid();
+            saveGame();
+            deactivateTool();
         }
-        
-        // ============================================
-        // بناء اللوحة والشبكة
-        // ============================================
-        function buildPalette() {
-            const el = document.getElementById('palette');
-            el.innerHTML = '';
-            for (let i = 1; i <= 11; i++) {
-                const cell = document.createElement('div');
-                cell.className = `cell lvl-${i}` + (i === selected ? ' selected' : '');
-                cell.innerHTML = `<span>${ANIMALS[i]}</span><span class="lvl-num">${i}</span>`;
-                cell.onclick = () => selectLvl(i);
-                el.appendChild(cell);
-            }
-        }
-        
-        function selectLvl(i) {
-            selected = i;
-            buildPalette();
-        }
-        
-        function buildGrid() {
-            const el = document.getElementById('gridBox');
-            el.innerHTML = '';
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = `cell lvl-${grid[r][c]}`;
-                    cell.dataset.r = r;
-                    cell.dataset.c = c;
-                    if (grid[r][c] > 0) {
-                        cell.innerHTML = `<span>${ANIMALS[grid[r][c]]}</span><span class="lvl-num">${grid[r][c]}</span>`;
-                    }
-                    cell.onclick = () => cellClick(r, c);
-                    el.appendChild(cell);
-                }
-            }
-        }
-        
-        function cellClick(r, c) {
-            // ترقية
-            if (activeTool === 'upgrade') {
-                if (grid[r][c] > 0 && grid[r][c] < 7) {
-                    grid[r][c]++;
-                    U.tools.upgrade.used++;
-                    addScore(grid[r][c]);
-                }
-                activeTool = null;
-                updateUI();
-                buildGrid();
+    } else if (activeTool === 'wheel') {
+        if (grid[row][col] > 0) {
+            if (wheelFirst === null) {
+                wheelFirst = { row, col };
+                cell.classList.add('selected-tool');
+            } else {
+                saveHistory();
+                const temp = grid[row][col];
+                grid[row][col] = grid[wheelFirst.row][wheelFirst.col];
+                grid[wheelFirst.row][wheelFirst.col] = temp;
+                renderGrid();
                 saveGame();
-                return;
+                wheelFirst = null;
+                deactivateTool();
             }
-            
-            // مخلب
-            if (activeTool === 'claw') {
-                if (grid[r][c] > 0) {
+        }
+    } else if (selectedLevel > 0) {
+        saveHistory();
+        grid[row][col] = selectedLevel;
+        renderGrid();
+        checkLevel11(row, col);
+        saveGame();
+    }
+}
+
+function checkLevel11(row, col) {
+    if (grid[row][col] === 11) {
+        showCelebration();
+    }
+}
+
+function showCelebration() {
+    document.getElementById('celebration').classList.add('show');
+}
+
+function closeCelebration() {
+    document.getElementById('celebration').classList.remove('show');
+}
+
+// ============================================
+// الأدوات
+// ============================================
+function useTool(tool) {
+    if (activeTool === tool) {
+        deactivateTool();
+        return;
+    }
+    
+    deactivateTool();
+    
+    if (tool === 'free') {
+        if (confirm('هل تريد إنهاء الجولة وبدء واحدة جديدة؟')) {
+            resetSession();
+        }
+        return;
+    }
+    
+    if (tool === 'gem') {
+        addEnergy(15);
+        updateUI();
+        return;
+    }
+    
+    activeTool = tool;
+    document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1)).classList.add('active');
+}
+
+function deactivateTool() {
+    activeTool = null;
+    wheelFirst = null;
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected-tool'));
+}
+
+// ============================================
+// الحركة والدمج
+// ============================================
+function manualMove(direction) {
+    saveHistory();
+    
+    let moved = false;
+    const newGrid = JSON.parse(JSON.stringify(grid));
+    
+    if (direction === 'UP') {
+        for (let col = 0; col < 4; col++) {
+            let merged = [false, false, false, false];
+            for (let row = 1; row < 4; row++) {
+                if (newGrid[row][col] === 0) continue;
+                let targetRow = row;
+                while (targetRow > 0 && newGrid[targetRow - 1][col] === 0) targetRow--;
+                if (targetRow > 0 && newGrid[targetRow - 1][col] === newGrid[row][col] && !merged[targetRow - 1]) {
+                    newGrid[targetRow - 1][col]++;
+                    newGrid[row][col] = 0;
+                    merged[targetRow - 1] = true;
+                    moved = true;
+                } else if (targetRow !== row) {
+                    newGrid[targetRow][col] = newGrid[row][col];
+                    newGrid[row][col] = 0;
+                    moved = true;
+                }
+            }
+        }
+    } else if (direction === 'DOWN') {
+        for (let col = 0; col < 4; col++) {
+            let merged = [false, false, false, false];
+            for (let row = 2; row >= 0; row--) {
+                if (newGrid[row][col] === 0) continue;
+                let targetRow = row;
+                while (targetRow < 3 && newGrid[targetRow + 1][col] === 0) targetRow++;
+                if (targetRow < 3 && newGrid[targetRow + 1][col] === newGrid[row][col] && !merged[targetRow + 1]) {
+                    newGrid[targetRow + 1][col]++;
+                    newGrid[row][col] = 0;
+                    merged[targetRow + 1] = true;
+                    moved = true;
+                } else if (targetRow !== row) {
+                    newGrid[targetRow][col] = newGrid[row][col];
+                    newGrid[row][col] = 0;
+                    moved = true;
+                }
+            }
+        }
+    } else if (direction === 'LEFT') {
+        for (let row = 0; row < 4; row++) {
+            let merged = [false, false, false, false];
+            for (let col = 1; col < 4; col++) {
+                if (newGrid[row][col] === 0) continue;
+                let targetCol = col;
+                while (targetCol > 0 && newGrid[row][targetCol - 1] === 0) targetCol--;
+                if (targetCol > 0 && newGrid[row][targetCol - 1] === newGrid[row][col] && !merged[targetCol - 1]) {
+                    newGrid[row][targetCol - 1]++;
+                    newGrid[row][col] = 0;
+                    merged[targetCol - 1] = true;
+                    moved = true;
+                } else if (targetCol !== col) {
+                    newGrid[row][targetCol] = newGrid[row][col];
+                    newGrid[row][col] = 0;
+                    moved = true;
+                }
+            }
+        }
+    } else if (direction === 'RIGHT') {
+        for (let row = 0; row < 4; row++) {
+            let merged = [false, false, false, false];
+            for (let col = 2; col >= 0; col--) {
+                if (newGrid[row][col] === 0) continue;
+                let targetCol = col;
+                while (targetCol < 3 && newGrid[row][targetCol + 1] === 0) targetCol++;
+                if (targetCol < 3 && newGrid[row][targetCol + 1] === newGrid[row][col] && !merged[targetCol + 1]) {
+                    newGrid[row][targetCol + 1]++;
+                    newGrid[row][col] = 0;
+                    merged[targetCol + 1] = true;
+                    moved = true;
+                } else if (targetCol !== col) {
+                    newGrid[row][targetCol] = newGrid[row][col];
+                    newGrid[row][col] = 0;
+                    moved = true;
+                }
+            }
+        }
+    }
+    
+    if (moved) {
+        grid = newGrid;
+        
+        // فحص المستوى 11 وإزالته
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                if (grid[r][c] === 11) {
+                    showCelebration();
                     grid[r][c] = 0;
-                    U.tools.claw.used++;
                 }
-                activeTool = null;
-                updateUI();
-                buildGrid();
-                saveGame();
-                return;
             }
-            
-            // عجلة
-            if (activeTool === 'wheel') {
-                if (!swapCell) {
-                    if (grid[r][c] > 0) {
-                        swapCell = { r, c };
-                        document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('selected-tool');
-                    }
-                } else {
-                    const temp = grid[r][c];
-                    grid[r][c] = grid[swapCell.r][swapCell.c];
-                    grid[swapCell.r][swapCell.c] = temp;
-                    U.tools.wheel.used++;
-                    swapCell = null;
-                    activeTool = null;
-                    updateUI();
-                    buildGrid();
-                    saveGame();
+        }
+        
+        renderGrid();
+        consumeEnergy();
+        saveGame();
+    }
+}
+
+// ============================================
+// الدمج الذكي (Expectimax)
+// ============================================
+function smartMerge() {
+    const depth = parseInt(document.getElementById('aiDepth').value);
+    const result = expectimax(grid, depth, true);
+    
+    if (result.move) {
+        document.getElementById('resultBox').classList.remove('hidden');
+        document.getElementById('resultDir').textContent = getArrowDirection(result.move);
+        document.getElementById('resultReason').textContent = result.reason || '';
+        
+        setTimeout(() => {
+            manualMove(result.move);
+        }, 500);
+    }
+}
+
+function expectimax(g, depth, isMax) {
+    if (depth === 0) return { score: evaluateGrid(g) };
+    
+    if (isMax) {
+        let best = { score: -Infinity, move: null };
+        const moves = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+        
+        for (const move of moves) {
+            const newGrid = simulateMove(g, move);
+            if (JSON.stringify(newGrid) !== JSON.stringify(g)) {
+                const result = expectimax(newGrid, depth - 1, false);
+                if (result.score > best.score) {
+                    best = { score: result.score, move, reason: result.reason };
                 }
-                return;
             }
-            
-            // إضافة عادي
-            if (grid[r][c] === 0) {
-                grid[r][c] = selected;
-                addScore(selected);
-                buildGrid();
-                saveGame();
+        }
+        return best;
+    } else {
+        let totalScore = 0;
+        let emptyCells = [];
+        
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                if (g[r][c] === 0) emptyCells.push({ r, c });
             }
         }
         
-        function addScore(lvl) {
-            U.sessionScore += Math.pow(2, lvl);
+        if (emptyCells.length === 0) return { score: evaluateGrid(g) };
+        
+        for (const cell of emptyCells.slice(0, 6)) {
+            const newGrid = JSON.parse(JSON.stringify(g));
+            newGrid[cell.r][cell.c] = 1;
+            totalScore += expectimax(newGrid, depth - 1, true).score;
         }
         
-        // ============================================
-        // استخدام الأدوات
-        // ============================================
-        function useTool(t) {
-            if (t === 'free') {
-                newSession();
-                return;
-            }
-            
-            const tool = U.tools[t];
-            if (!tool || tool.owned <= 0) {
-                showToast('ليس لديك هذه الأداة!');
-                return;
-            }
-            if (tool.used >= tool.dailyLimit) {
-                showToast('تم استخدام الحد اليومي!');
-                return;
-            }
-            
-            if (t === 'gem') {
-                U.energy = Math.min(200, U.energy + 15);
-                tool.used++;
-                updateUI();
-                saveGame();
-                showToast('تم إضافة 15 طاقة ⚡');
-                return;
-            }
-            
-            activeTool = t;
-            const names = { upgrade: 'الترقية - اختر حيوان (<7)', claw: 'المخلب - اختر حيوان للحذف', wheel: 'العجلة - اختر حيوانين للتبديل' };
-            showToast(names[t]);
-        }
-        
-        function showToast(msg) {
-            const box = document.getElementById('resultBox');
-            document.getElementById('resultDir').textContent = msg;
-            document.getElementById('resultReason').textContent = '';
-            box.classList.remove('hidden');
-            setTimeout(() => box.classList.add('hidden'), 3000);
-        }
-        
-        // ============================================
-        // التحركات
-        // ============================================
-        function manualMove(dir) {
-            history.push(JSON.parse(JSON.stringify(grid)));
-            const res = doMove(dir);
-            if (res.moved) {
-                grid = res.grid;
-                U.energy = Math.max(0, U.energy - 1);
-                U.stats.moves = (U.stats.moves || 0) + 1;
-                checkMax();
-                updateUI();
-                buildGrid();
-                saveGame();
-            }
-        }
-        
-        function doMove(dir) {
-            let moved = false;
-            let g = JSON.parse(JSON.stringify(grid));
-            let mergeScore = 0;
-            
-            const merge = (row) => {
-                let r = row.filter(v => v !== 0);
-                for (let i = 0; i < r.length - 1; i++) {
-                    if (r[i] === r[i + 1] && r[i] < 11) {
-                        r[i]++;
-                        r.splice(i + 1, 1);
-                        mergeScore += Math.pow(2, r[i]);
-                        if (r[i] === 11) {
-                            showCeleb();
-                        }
-                    }
+        return { score: totalScore / Math.min(6, emptyCells.length) };
+    }
+}
+
+function simulateMove(g, direction) {
+    const newGrid = JSON.parse(JSON.stringify(g));
+    
+    if (direction === 'UP') {
+        for (let col = 0; col < 4; col++) {
+            let merged = [false, false, false, false];
+            for (let row = 1; row < 4; row++) {
+                if (newGrid[row][col] === 0) continue;
+                let targetRow = row;
+                while (targetRow > 0 && newGrid[targetRow - 1][col] === 0) targetRow--;
+                if (targetRow > 0 && newGrid[targetRow - 1][col] === newGrid[row][col] && !merged[targetRow - 1]) {
+                    newGrid[targetRow - 1][col]++;
+                    newGrid[row][col] = 0;
+                    merged[targetRow - 1] = true;
+                } else if (targetRow !== row) {
+                    newGrid[targetRow][col] = newGrid[row][col];
+                    newGrid[row][col] = 0;
                 }
-                while (r.length < 4) r.push(0);
-                return r;
-            };
-            
-            if (dir === 'RIGHT') for (let i = 0; i < 4; i++) { let m = merge([...g[i]].reverse()).reverse(); if (JSON.stringify(g[i]) !== JSON.stringify(m)) moved = true; g[i] = m; }
-            if (dir === 'LEFT') for (let i = 0; i < 4; i++) { let m = merge(g[i]); if (JSON.stringify(g[i]) !== JSON.stringify(m)) moved = true; g[i] = m; }
-            if (dir === 'UP') for (let j = 0; j < 4; j++) { let col = [g[0][j], g[1][j], g[2][j], g[3][j]]; let m = merge(col); if (JSON.stringify(col) !== JSON.stringify(m)) moved = true; for (let i = 0; i < 4; i++) g[i][j] = m[i]; }
-            if (dir === 'DOWN') for (let j = 0; j < 4; j++) { let col = [g[3][j], g[2][j], g[1][j], g[0][j]]; let m = merge(col).reverse(); if (JSON.stringify([g[0][j], g[1][j], g[2][j], g[3][j]]) !== JSON.stringify(m)) moved = true; for (let i = 0; i < 4; i++) g[i][j] = m[i]; }
-            
-            U.sessionScore += mergeScore;
-            
-            return { moved, grid: g };
+            }
         }
-        
-        function undo() {
-            if (history.length > 0) {
-                grid = history.pop();
-                buildGrid();
-                saveGame();
-                showToast('تم التراجع');
+    } else if (direction === 'DOWN') {
+        for (let col = 0; col < 4; col++) {
+            let merged = [false, false, false, false];
+            for (let row = 2; row >= 0; row--) {
+                if (newGrid[row][col] === 0) continue;
+                let targetRow = row;
+                while (targetRow < 3 && newGrid[targetRow + 1][col] === 0) targetRow++;
+                if (targetRow < 3 && newGrid[targetRow + 1][col] === newGrid[row][col] && !merged[targetRow + 1]) {
+                    newGrid[targetRow + 1][col]++;
+                    newGrid[row][col] = 0;
+                    merged[targetRow + 1] = true;
+                } else if (targetRow !== row) {
+                    newGrid[targetRow][col] = newGrid[row][col];
+                    newGrid[row][col] = 0;
+                }
+            }
+        }
+    } else if (direction === 'LEFT') {
+        for (let row = 0; row < 4; row++) {
+            let merged = [false, false, false, false];
+            for (let col = 1; col < 4; col++) {
+                if (newGrid[row][col] === 0) continue;
+                let targetCol = col;
+                while (targetCol > 0 && newGrid[row][targetCol - 1] === 0) targetCol--;
+                if (targetCol > 0 && newGrid[row][targetCol - 1] === newGrid[row][col] && !merged[targetCol - 1]) {
+                    newGrid[row][targetCol - 1]++;
+                    newGrid[row][col] = 0;
+                    merged[targetCol - 1] = true;
+                } else if (targetCol !== col) {
+                    newGrid[row][targetCol] = newGrid[row][col];
+                    newGrid[row][col] = 0;
+                }
+            }
+        }
+    } else if (direction === 'RIGHT') {
+        for (let row = 0; row < 4; row++) {
+            let merged = [false, false, false, false];
+            for (let col = 2; col >= 0; col--) {
+                if (newGrid[row][col] === 0) continue;
+                let targetCol = col;
+                while (targetCol < 3 && newGrid[row][targetCol + 1] === 0) targetCol++;
+                if (targetCol < 3 && newGrid[row][targetCol + 1] === newGrid[row][col] && !merged[targetCol + 1]) {
+                    newGrid[row][targetCol + 1]++;
+                    newGrid[row][col] = 0;
+                    merged[targetCol + 1] = true;
+                } else if (targetCol !== col) {
+                    newGrid[row][targetCol] = newGrid[row][col];
+                    newGrid[row][col] = 0;
+                }
+            }
+        }
+    }
+    
+    return newGrid;
+}
+
+function evaluateGrid(g) {
+    let score = 0;
+    let emptyCells = 0;
+    let maxVal = 0;
+    
+    const weights = [
+        [15, 14, 13, 12],
+        [8, 9, 10, 11],
+        [7, 6, 5, 4],
+        [0, 1, 2, 3]
+    ];
+    
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (g[r][c] === 0) {
+                emptyCells++;
             } else {
-                showToast('لا توجد حركات سابقة');
+                score += g[r][c] * weights[r][c];
+                maxVal = Math.max(maxVal, g[r][c]);
             }
         }
-        
-        function resetGrid() {
-            if (confirm('تصفير الشبكة؟')) {
-                history.push(JSON.parse(JSON.stringify(grid)));
-                grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-                buildGrid();
-                saveGame();
-            }
+    }
+    
+    score += emptyCells * 10;
+    score += maxVal * 5;
+    
+    // مكافأة للدمج المحتمل
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 3; c++) {
+            if (g[r][c] === g[r][c + 1] && g[r][c] > 0) score += 20;
         }
-        
-        function newSession() {
-            if (confirm('إنهاء الجولة والبدء من جديد؟')) {
-                fetch(`${API}/api/session/reset`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: U.user, password: U.pass })
-                });
-                grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-                U.sessionScore = 0;
-                U.stats.level11Count = 0;
-                U.stats.moves = 0;
-                history = [];
-                updateUI();
-                buildGrid();
-                showToast('جولة جديدة! 🔄');
-            }
+    }
+    for (let c = 0; c < 4; c++) {
+        for (let r = 0; r < 3; r++) {
+            if (g[r][c] === g[r + 1][c] && g[r][c] > 0) score += 20;
         }
+    }
+    
+    return score;
+}
+
+function getArrowDirection(move) {
+    const arrows = { UP: '⬆️ للأعلى', DOWN: '⬇️ للأسفل', LEFT: '➡️ لليمين', RIGHT: '⬅️ لليسار' };
+    return arrows[move] || move;
+}
+
+// ============================================
+// التحكم
+// ============================================
+function undo() {
+    if (history.length > 0) {
+        grid = history.pop();
+        renderGrid();
+    }
+}
+
+function saveHistory() {
+    history.push(JSON.parse(JSON.stringify(grid)));
+    if (history.length > 10) history.shift();
+}
+
+function resetGrid() {
+    if (confirm('هل تريد تصفير الشبكة؟')) {
+        grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+        renderGrid();
+        saveGame();
+    }
+}
+
+function resetSession() {
+    grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    renderGrid();
+    saveGame();
+}
+
+// ============================================
+// الطاقة
+// ============================================
+function addEnergy(amount) {
+    const energyInput = document.getElementById('energy');
+    let current = parseInt(energyInput.value) || 0;
+    current = Math.min(200, current + amount);
+    energyInput.value = current;
+    updateEnergyBar();
+    saveGame();
+}
+
+function consumeEnergy() {
+    const energyInput = document.getElementById('energy');
+    let current = parseInt(energyInput.value) || 0;
+    current = Math.max(0, current - 1);
+    energyInput.value = current;
+    updateEnergyBar();
+}
+
+function updateEnergyBar() {
+    const energy = parseInt(document.getElementById('energy').value) || 0;
+    const percent = (energy / 200) * 100;
+    document.getElementById('energyBar').style.width = percent + '%';
+}
+
+// ============================================
+// حفظ وتحميل
+// ============================================
+async function saveGame() {
+    if (!user) return;
+    
+    try {
+        await fetch('/api/user/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: user.username,
+                password: user.password,
+                grid: grid,
+                energy: parseInt(document.getElementById('energy').value),
+                sessionScore: parseInt(document.getElementById('sessionScore').textContent) || 0
+            })
+        });
+    } catch (e) {}
+}
+
+function updateUI() {
+    if (!user) return;
+    
+    document.getElementById('playerName').textContent = user.displayName || user.username;
+    document.getElementById('sessionScore').textContent = user.sessionScore || 0;
+    document.getElementById('energy').value = user.energy || 200;
+    updateEnergyBar();
+    
+    // تحديث الأدوات
+    if (user.tools) {
+        document.getElementById('cntGem').textContent = user.tools.gem?.owned || 0;
+        document.getElementById('cntUpg').textContent = user.tools.upgrade?.owned || 0;
+        document.getElementById('cntClaw').textContent = user.tools.claw?.owned || 0;
+        document.getElementById('cntWheel').textContent = user.tools.wheel?.owned || 0;
+    }
+    
+    // تحديث الإحصائيات
+    document.getElementById('mMoves').textContent = user.stats?.moves || 0;
+    document.getElementById('mMax').textContent = user.stats?.maxLvl || 0;
+    document.getElementById('mL11').textContent = user.stats?.level11Count || 0;
+    
+    document.getElementById('myScore').textContent = user.highScore || 0;
+    document.getElementById('myMax').textContent = user.stats?.maxLvl || 0;
+    document.getElementById('myMoves').textContent = user.stats?.moves || 0;
+    document.getElementById('myL11').textContent = user.stats?.level11Count || 0;
+}
+
+// ============================================
+// التنقل
+// ============================================
+function goTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    document.querySelector(`.nav-btn[onclick="goTab('${tab}')"]`).classList.add('active');
+    
+    if (tab === 'rank') loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+    try {
+        const res = await fetch('/api/leaderboard');
+        const data = await res.json();
         
-        function checkMax() {
-            let max = 0;
-            for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (grid[r][c] > max) max = grid[r][c];
-            U.stats.maxLvl = Math.max(U.stats.maxLvl || 0, max);
-            updateUI();
-        }
-        
-        // ============================================
-        // الدمج الذكي
-        // ============================================
-        document.getElementById('smartBtn').onclick = async () => {
-            const btn = document.getElementById('smartBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span> <span>يحسب...</span>';
-            
-            setTimeout(() => {
-                const depth = parseInt(document.getElementById('aiDepth').value);
-                const res = expectimax(grid, depth, true);
-                
-                const dirs = { UP: '⬆️ للأعلى', DOWN: '⬇️ للأسفل', LEFT: '➡️ لليمين', RIGHT: '⬅️ لليسار' };
-                
-                // إظهار النتيجة
-                document.getElementById('resultDir').textContent = dirs[res.dir] || res.dir;
-                document.getElementById('resultReason').textContent = res.reason || '';
-                document.getElementById('resultBox').classList.remove('hidden');
-                
-                // تنفيذ الحركة
-                if (res.dir) {
-                    history.push(JSON.parse(JSON.stringify(grid)));
-                    const m = doMove(res.dir);
-                    if (m.moved) {
-                        grid = m.grid;
-                        U.energy = Math.max(0, U.energy - 1);
-                        U.stats.moves = (U.stats.moves || 0) + 1;
-                        checkMax();
-                        updateUI();
-                        buildGrid();
-                        saveGame();
-                    }
-                }
-                
-                btn.disabled = false;
-                btn.innerHTML = '<span>✨ دمج ذكي</span>';
-            }, 100);
-        };
-        
-        function expectimax(g, depth, isMax) {
-            if (depth === 0) return { score: evalGrid(g), dir: null, reason: '' };
-            
-            if (isMax) {
-                let best = { score: -Infinity, dir: null, reason: '' };
-                for (let d of ['UP', 'DOWN', 'LEFT', 'RIGHT']) {
-                    const r = doMoveDir(d, g);
-                    if (r.moved) {
-                        const c = expectimax(r.grid, depth - 1, false);
-                        if (c.score > best.score) {
-                            best = { score: c.score, dir: d, reason: `درجة: ${c.score.toFixed(0)}` };
-                        }
-                    }
-                }
-                return best.score === -Infinity ? { score: evalGrid(g), dir: 'UP', reason: '' } : best;
-            } else {
-                let empty = [];
-                for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 0) empty.push({ r, c });
-                if (empty.length === 0) return { score: evalGrid(g), dir: null, reason: '' };
-                let total = 0;
-                for (let p of empty.slice(0, 6)) {
-                    for (let v = 1; v <= 7; v++) {
-                        let ng = JSON.parse(JSON.stringify(g));
-                        ng[p.r][p.c] = v;
-                        total += expectimax(ng, depth - 1, true).score;
-                    }
-                }
-                return { score: total / (Math.min(empty.length, 6) * 7), dir: null, reason: '' };
-            }
-        }
-        
-        function doMoveDir(dir, g) {
-            let moved = false;
-            let ng = JSON.parse(JSON.stringify(g));
-            const merge = (row) => { let r = row.filter(v => v !== 0); for (let i = 0; i < r.length - 1; i++) if (r[i] === r[i + 1] && r[i] < 11) { r[i]++; r.splice(i + 1, 1); } while (r.length < 4) r.push(0); return r; };
-            if (dir === 'RIGHT') for (let i = 0; i < 4; i++) { let m = merge([...ng[i]].reverse()).reverse(); if (JSON.stringify(ng[i]) !== JSON.stringify(m)) moved = true; ng[i] = m; }
-            if (dir === 'LEFT') for (let i = 0; i < 4; i++) { let m = merge(ng[i]); if (JSON.stringify(ng[i]) !== JSON.stringify(m)) moved = true; ng[i] = m; }
-            if (dir === 'UP') for (let j = 0; j < 4; j++) { let col = [ng[0][j], ng[1][j], ng[2][j], ng[3][j]]; let m = merge(col); if (JSON.stringify(col) !== JSON.stringify(m)) moved = true; for (let i = 0; i < 4; i++) ng[i][j] = m[i]; }
-            if (dir === 'DOWN') for (let j = 0; j < 4; j++) { let col = [ng[3][j], ng[2][j], ng[1][j], ng[0][j]]; let m = merge(col).reverse(); if (JSON.stringify([ng[0][j], ng[1][j], ng[2][j], ng[3][j]]) !== JSON.stringify(m)) moved = true; for (let i = 0; i < 4; i++) ng[i][j] = m[i]; }
-            return { moved, grid: ng };
-        }
-        
-        function evalGrid(g) {
-            let score = 0, empty = 0, max = 0;
-            const w = [[16,8,4,2],[8,4,2,1],[4,2,1,0.5],[2,1,0.5,0.25]];
-            for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
-                if (g[r][c] === 0) empty++;
-                else { score += Math.pow(2, g[r][c]) * w[r][c]; if (g[r][c] > max) max = g[r][c]; }
-            }
-            score += empty * 100 + Math.pow(2, max) * 2;
-            for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) if (g[r][c] === g[r][c+1] && g[r][c] !== 0) score += Math.pow(2, g[r][c]) * 10;
-            for (let c = 0; c < 4; c++) for (let r = 0; r < 3; r++) if (g[r][c] === g[r+1][c] && g[r][c] !== 0) score += Math.pow(2, g[r][c]) * 10;
-            for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 11) score += 100000;
-            return score;
-        }
-        
-        // ============================================
-        // حفظ اللعبة
-        // ============================================
-        async function saveGame() {
-            if (!U.user) return;
-            try {
-                await fetch(`${API}/api/user/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: U.user,
-                        password: U.pass,
-                        grid,
-                        energy: U.energy,
-                        sessionScore: U.sessionScore,
-                        stats: U.stats,
-                        tools: U.tools
-                    })
-                });
-            } catch (e) {}
-        }
-        
-        // ============================================
-        // عداد الوقت
-        // ============================================
-        function startTimer() {
-            updateTimer();
-            setInterval(updateTimer, 1000);
-        }
-        
-        async function updateTimer() {
-            try {
-                const res = await fetch(`${API}/api/event/timeleft`);
-                const d = await res.json();
-                if (d.success && d.timeLeft) {
-                    document.getElementById('tDay').textContent = d.timeLeft.days;
-                    document.getElementById('tHour').textContent = String(d.timeLeft.hours).padStart(2, '0');
-                    document.getElementById('tMin').textContent = String(d.timeLeft.minutes).padStart(2, '0');
-                    document.getElementById('tSec').textContent = String(d.timeLeft.seconds).padStart(2, '0');
-                }
-            } catch (e) {}
-        }
-        
-        // ============================================
-        // التنقل
-        // ============================================
-        function goTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
-            
-            if (tab === 'play') {
-                document.getElementById('mainApp').classList.add('active');
-            } else {
-                document.getElementById('mainApp').classList.remove('active');
-                document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-            }
-            
-            event.currentTarget.classList.add('active');
-            
-            if (tab === 'rank') loadRank();
-            if (tab === 'tools') updateToolsUI();
-        }
-        
-        // ============================================
-        // المتصدرين
-        // ============================================
-        async function loadRank() {
-            try {
-                const res = await fetch(`${API}/api/leaderboard`);
-                const data = await res.json();
-                const medals = ['🥇', '🥈', '🥉'];
-                document.getElementById('rankList').innerHTML = data.map((p, i) => `
-                    <div class="leaderboard-item">
-                        <div class="rank-badge">${i < 3 ? medals[i] : i + 1}</div>
-                        <div class="avatar">${(p.displayName || p.username).charAt(0)}</div>
-                        <div style="flex: 1;">
-                            <div style="font-size: 11px; font-weight: bold;">${p.displayName || p.username}</div>
-                            <div style="font-size: 9px; color: var(--muted);">${p.kingdom ? 'K:' + p.kingdom : ''} ${p.alliance ? 'A:' + p.alliance : ''}</div>
-                        </div>
-                        <div style="font-size: 12px; font-weight: 900; color: var(--gold);">${p.score.toLocaleString()}</div>
-                    </div>
-                `).join('');
-            } catch (e) {}
-        }
-        
-        // ============================================
-        // النوافذ المنبثقة
-        // ============================================
-        function showPopup(id) { document.getElementById(id).classList.add('show'); }
-        function hidePopup(id) { document.getElementById(id).classList.remove('show'); }
-        
-        function showProfile() {
-            document.getElementById('profName').textContent = U.name || U.user;
-            document.getElementById('profAvatar').textContent = (U.name || U.user).charAt(0).toUpperCase();
-            document.getElementById('profScore').textContent = U.score.toLocaleString();
-            document.getElementById('profMax').textContent = U.stats.maxLvl || 0;
-            document.getElementById('profMoves').textContent = U.stats.moves || 0;
-            document.getElementById('editName').value = U.name || '';
-            document.getElementById('editKingdom').value = U.kingdom || '';
-            document.getElementById('editAlliance').value = U.alliance || '';
-            showPopup('profilePopup');
-        }
-        
-        document.getElementById('saveProfileBtn').onclick = async () => {
-            U.name = document.getElementById('editName').value.trim() || U.user;
-            U.kingdom = document.getElementById('editKingdom').value.trim();
-            U.alliance = document.getElementById('editAlliance').value.trim();
-            
-            try {
-                await fetch(`${API}/api/profile/update`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: U.user,
-                        password: U.pass,
-                        displayName: U.name,
-                        kingdom: U.kingdom,
-                        alliance: U.alliance
-                    })
-                });
-                updateUI();
-                hidePopup('profilePopup');
-                showToast('تم الحفظ! ✓');
-            } catch (e) {
-                showToast('خطأ في الحفظ');
-            }
-        };
-        
-        // التقييم
-        let reviewRating = 0;
-        function showReview() { reviewRating = 0; updateStars('stars', 0); showPopup('reviewPopup'); }
-        
-        document.querySelectorAll('#stars span').forEach(s => {
-            s.onclick = () => {
-                reviewRating = parseInt(s.dataset.data);
-                updateStars('stars', reviewRating);
-            };
+        const rankList = document.getElementById('rankList');
+        rankList.innerHTML = data.map((u, i) => `
+            <div class="leaderboard-item">
+                <div class="rank-badge">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</div>
+                <div class="avatar">${u.displayName?.charAt(0) || u.username.charAt(0)}</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 11px; font-weight: bold;">${u.displayName || u.username}</div>
+                    <div style="font-size: 9px; color: var(--muted);">${u.kingdom || ''} ${u.alliance ? '| ' + u.alliance : ''}</div>
+                </div>
+                <div style="text-align: left;">
+                    <div style="font-size: 12px; font-weight: 900; color: var(--gold);">${u.score}</div>
+                    <div style="font-size: 8px; color: var(--muted);">أعلى: ${u.maxLvl}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {}
+}
+
+// ============================================
+// النوافذ المنبثقة
+// ============================================
+function showProfile() {
+    document.getElementById('profileDisplayName').value = user?.displayName || '';
+    document.getElementById('profileKingdom').value = user?.kingdom || '';
+    document.getElementById('profileAlliance').value = user?.alliance || '';
+    document.getElementById('profilePopup').classList.add('show');
+}
+
+async function saveProfile() {
+    const displayName = document.getElementById('profileDisplayName').value;
+    const kingdom = document.getElementById('profileKingdom').value;
+    const alliance = document.getElementById('profileAlliance').value;
+    
+    try {
+        const res = await fetch('/api/profile/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: user.username,
+                password: user.password,
+                displayName,
+                kingdom,
+                alliance
+            })
         });
         
-        function updateStars(id, n) {
-            document.querySelectorAll(`#${id} span`).forEach((s, i) => {
-                s.textContent = i < n ? '★' : '☆';
-                s.style.color = i < n ? 'var(--gold)' : '#666';
-            });
-        }
-        
-        document.getElementById('sendReviewBtn').onclick = async () => {
-            if (reviewRating === 0) { showToast('اختر تقييم'); return; }
-            try {
-                await fetch(`${API}/api/reviews/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: U.user,
-                        rating: reviewRating,
-                        text: document.getElementById('reviewText').value
-                    })
-                });
-                hidePopup('reviewPopup');
-                showToast('شكراً لك! ⭐');
-            } catch (e) {}
-        };
-        
-        // التعديل اليدوي
-        function showManualInput() {
-            const mg = document.getElementById('manualGrid');
-            mg.innerHTML = '';
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    const inp = document.createElement('input');
-                    inp.type = 'number';
-                    inp.min = 0;
-                    inp.max = 11;
-                    inp.value = grid[r][c];
-                    inp.dataset.r = r;
-                    inp.dataset.c = c;
-                    inp.className = 'input';
-                    inp.style.padding = '6px';
-                    mg.appendChild(inp);
-                }
-            }
-            
-            document.getElementById('editGemOwned').value = U.tools.gem.owned;
-            document.getElementById('editUpgOwned').value = U.tools.upgrade.owned;
-            document.getElementById('editClawOwned').value = U.tools.claw.owned;
-            document.getElementById('editWheelOwned').value = U.tools.wheel.owned;
-            document.getElementById('editSessionScore').value = U.sessionScore;
-            document.getElementById('editEnergy').value = U.energy;
-            
-            showPopup('manualPopup');
-        }
-        
-        document.getElementById('applyManualBtn').onclick = () => {
-            const inputs = document.querySelectorAll('#manualGrid input');
-            inputs.forEach(inp => {
-                const r = parseInt(inp.dataset.r);
-                const c = parseInt(inp.dataset.c);
-                grid[r][c] = Math.min(11, Math.max(0, parseInt(inp.value) || 0));
-            });
-            
-            U.tools.gem.owned = parseInt(document.getElementById('editGemOwned').value) || 0;
-            U.tools.upgrade.owned = parseInt(document.getElementById('editUpgOwned').value) || 0;
-            U.tools.claw.owned = parseInt(document.getElementById('editClawOwned').value) || 0;
-            U.tools.wheel.owned = parseInt(document.getElementById('editWheelOwned').value) || 0;
-            U.sessionScore = parseInt(document.getElementById('editSessionScore').value) || 0;
-            U.energy = Math.min(200, Math.max(0, parseInt(document.getElementById('editEnergy').value) || 200));
-            
+        if ((await res.json()).success) {
+            user.displayName = displayName;
+            user.kingdom = kingdom;
+            user.alliance = alliance;
             updateUI();
-            buildGrid();
-            saveGame();
-            hidePopup('manualPopup');
-            showToast('تم التحديث ✓');
-        };
-        
-        // الاحتفال
-        let celebRating = 0;
-        function showCeleb() {
-            U.stats.level11Count = (U.stats.level11Count || 0) + 1;
-            
-            // زيادة حدود الأدوات
-            U.tools.upgrade.dailyLimit = Math.min(99, (U.tools.upgrade.dailyLimit || 20) + 20);
-            U.tools.claw.dailyLimit = Math.min(99, (U.tools.claw.dailyLimit || 20) + 20);
-            U.tools.wheel.dailyLimit = Math.min(99, (U.tools.wheel.dailyLimit || 20) + 20);
-            
-            document.getElementById('cScore').textContent = U.sessionScore.toLocaleString();
-            document.getElementById('cMoves').textContent = U.stats.moves || 0;
-            document.getElementById('cL11').textContent = U.stats.level11Count;
-            celebRating = 0;
-            updateStars('cStars', 0);
-            showPopup('celebPopup');
-            updateUI();
-            
-            // إرسال للسيرفر
-            fetch(`${API}/api/achievements/add`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: U.user,
-                    password: U.pass,
-                    sessionScore: U.sessionScore,
-                    moves: U.stats.moves,
-                    rating: 0,
-                    comment: ''
-                })
-            });
+            closePopup('profilePopup');
         }
-        
-        document.querySelectorAll('#cStars span').forEach(s => {
-            s.onclick = () => {
-                celebRating = parseInt(s.dataset.data);
-                updateStars('cStars', celebRating);
-            };
+    } catch (e) {}
+}
+
+function showReview() {
+    alert('ميزة التقييم قيد التطوير');
+}
+
+function showAdmin() {
+    loadAdminUsers();
+    document.getElementById('adminPopup').classList.add('show');
+}
+
+function closePopup(id) {
+    document.getElementById(id).classList.remove('show');
+}
+
+function goAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    
+    document.querySelector(`.admin-tab[onclick="goAdminTab('${tab}')"]`).classList.add('active');
+    document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    
+    if (tab === 'users') loadAdminUsers();
+    if (tab === 'archive') loadAdminArchive();
+    if (tab === 'settings') loadAdminSettings();
+}
+
+async function loadAdminUsers() {
+    try {
+        const res = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUser: user.username, adminPass: user.password })
         });
+        const data = await res.json();
         
-        document.getElementById('cSaveBtn').onclick = async () => {
-            try {
-                await fetch(`${API}/api/achievements/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: U.user,
-                        password: U.pass,
-                        sessionScore: U.sessionScore,
-                        moves: U.stats.moves,
-                        rating: celebRating,
-                        comment: document.getElementById('cComment').value
-                    })
-                });
-            } catch (e) {}
-            hidePopup('celebPopup');
-            saveGame();
-        };
-        
-        // ============================================
-        // الإدارة
-        // ============================================
-        function showAdmin() {
-            loadUsers();
-            loadArchive();
-            loadReviews();
-            loadSettingsForm();
-            showPopup('adminPopup');
-        }
-        
-        function adminTab(tab) {
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-        }
-        
-        document.getElementById('adminBtn').onclick = showAdmin;
-        
-        document.getElementById('addUserBtn').onclick = async () => {
-            const user = document.getElementById('newUser').value.trim();
-            const pass = document.getElementById('newPass').value.trim();
-            const admin = document.getElementById('newAdmin').checked;
-            
-            if (!user || !pass) { showToast('أدخل البيانات'); return; }
-            
-            try {
-                const res = await fetch(`${API}/api/users/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        adminUser: U.user,
-                        adminPass: U.pass,
-                        newUsername: user,
-                        newPassword: pass,
-                        isAdmin: admin
-                    })
-                });
-                const d = await res.json();
-                const msg = document.getElementById('addUserMsg');
-                msg.textContent = d.message;
-                msg.classList.remove('hidden');
-                msg.style.color = d.success ? '#4ade80' : '#ef4444';
-                if (d.success) {
-                    document.getElementById('newUser').value = '';
-                    document.getElementById('newPass').value = '';
-                    loadUsers();
-                }
-            } catch (e) {}
-        };
-        
-        async function loadUsers() {
-            try {
-                const res = await fetch(`${API}/api/admin/users`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUser: U.user, adminPass: U.pass })
-                });
-                const d = await res.json();
-                if (d.success) {
-                    document.getElementById('usersList').innerHTML = d.users.map(u => `
-                        <div style="display: flex; justify-content: space-between; padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 4px; font-size: 10px;">
-                            <span>${u.username} ${u.isAdmin ? '👑' : ''}</span>
-                            <span style="color: var(--gold);">${u.highScore || 0}</span>
+        if (data.success) {
+            document.getElementById('adminUsers').innerHTML = `
+                <div style="max-height: 200px; overflow-y: auto;">
+                    ${data.users.map(u => `
+                        <div style="display: flex; justify-content: space-between; padding: 6px; border-bottom: 1px solid rgba(212,175,55,0.1);">
+                            <span style="font-size: 10px;">${u.displayName || u.username}</span>
+                            <span style="font-size: 10px; color: var(--gold);">${u.highScore || 0}</span>
                         </div>
-                    `).join('');
-                }
-            } catch (e) {}
+                    `).join('')}
+                </div>
+            `;
         }
+    } catch (e) {}
+}
+
+async function loadAdminArchive() {
+    try {
+        const res = await fetch('/api/admin/achievements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUser: user.username, adminPass: user.password })
+        });
+        const data = await res.json();
         
-        async function loadArchive() {
-            try {
-                const res = await fetch(`${API}/api/admin/achievements`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUser: U.user, adminPass: U.pass })
-                });
-                const d = await res.json();
-                if (d.success) {
-                    document.getElementById('archiveList').innerHTML = d.achievements.map(a => `
-                        <div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 4px; font-size: 9px;">
-                            <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">${a.username}</span><span style="color: var(--gold);">👑 LVL 11</span></div>
-                            <div style="color: var(--muted); margin-top: 2px;">النقاط: ${a.sessionScore} | التحركات: ${a.moves}</div>
+        if (data.success) {
+            document.getElementById('adminArchive').innerHTML = `
+                <div style="max-height: 200px; overflow-y: auto;">
+                    ${data.achievements.map(a => `
+                        <div style="padding: 6px; border-bottom: 1px solid rgba(212,175,55,0.1);">
+                            <div style="font-size: 10px; font-weight: bold;">${a.username}</div>
+                            <div style="font-size: 9px; color: var(--muted);">النقاط: ${a.sessionScore} | التحركات: ${a.moves}</div>
                         </div>
-                    `).join('') || '<div style="text-align: center; color: var(--muted); font-size: 10px;">لا توجد إنجازات</div>';
-                }
-            } catch (e) {}
+                    `).join('')}
+                </div>
+            `;
         }
-        
-        async function loadReviews() {
-            try {
-                const res = await fetch(`${API}/api/admin/reviews`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminUser: U.user, adminPass: U.pass })
-                });
-                const d = await res.json();
-                if (d.success) {
-                    document.getElementById('reviewsList').innerHTML = d.reviews.map(r => `
-                        <div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 4px; font-size: 9px;">
-                            <div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">${r.username}</span><span style="color: var(--gold);">${'★'.repeat(r.rating)}</span></div>
-                            <div style="color: var(--muted); margin-top: 2px;">${r.text || 'لا يوجد نص'}</div>
-                        </div>
-                    `).join('') || '<div style="text-align: center; color: var(--muted); font-size: 10px;">لا توجد تقييمات</div>';
+    } catch (e) {}
+}
+
+function loadAdminSettings() {
+    document.getElementById('adminSettings').innerHTML = `
+        <div style="font-size: 10px;">
+            <label>اسم التطبيق:</label>
+            <input type="text" id="setAppName" class="input" value="${settings.appName || ''}">
+            <label>Gemini API Key:</label>
+            <input type="text" id="setGeminiKey" class="input" value="${settings.geminiApiKey || ''}" placeholder="أدخل المفتاح">
+            <button class="btn" onclick="saveAdminSettings()" style="width: 100%; margin-top: 8px;">حفظ الإعدادات</button>
+        </div>
+    `;
+}
+
+async function saveAdminSettings() {
+    try {
+        await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminUser: user.username,
+                adminPass: user.password,
+                newSettings: {
+                    appName: document.getElementById('setAppName').value,
+                    geminiApiKey: document.getElementById('setGeminiKey').value
                 }
-            } catch (e) {}
-        }
+            })
+        });
+        alert('تم الحفظ');
+    } catch (e) {}
+}
+
+// ============================================
+// العد التنازلي
+// ============================================
+setInterval(async () => {
+    try {
+        const res = await fetch('/api/event/timeleft');
+        const data = await res.json();
         
-        async function loadSettingsForm() {
-            document.getElementById('setAppName').value = appSettings.appName || '';
-            document.getElementById('setGeminiKey').value = appSettings.geminiApiKey || '';
-            document.getElementById('setLogo').value = appSettings.logoUrl || '';
-            document.getElementById('setTermsTitle').value = appSettings.termsTitle || '';
-            document.getElementById('setTermsText').value = appSettings.termsText || '';
-            if (appSettings.eventEndTime) {
-                document.getElementById('setEventEnd').value = new Date(appSettings.eventEndTime).toISOString().slice(0, 16);
-            }
+        if (data.success) {
+            document.getElementById('tDay').textContent = data.timeLeft.days;
+            document.getElementById('tHour').textContent = data.timeLeft.hours;
+            document.getElementById('tMin').textContent = data.timeLeft.minutes;
+            document.getElementById('tSec').textContent = data.timeLeft.seconds;
         }
-        
-        document.getElementById('saveSettingsBtn').onclick = async () => {
-            try {
-                const res = await fetch(`${API}/api/settings`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        adminUser: U.user,
-                        adminPass: U.pass,
-                        newSettings: {
-                            appName: document.getElementById('setAppName').value,
-                            geminiApiKey: document.getElementById('setGeminiKey').value,
-                            logoUrl: document.getElementById('setLogo').value,
-                            termsTitle: document.getElementById('setTermsTitle').value,
-                            termsText: document.getElementById('setTermsText').value,
-                            eventEndTime: document.getElementById('setEventEnd').value
-                        }
-                    })
-                });
-                const d = await res.json();
-                const msg = document.getElementById('saveSettingsMsg');
-                msg.textContent = d.message;
-                msg.classList.remove('hidden');
-                msg.style.color = d.success ? '#4ade80' : '#ef4444';
-                if (d.success) {
-                    loadSettings();
-                }
-            } catch (e) {}
-        };
-    </script>
+    } catch (e) {}
+}, 1000);
+</script>
 </body>
 </html>
