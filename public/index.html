@@ -11,46 +11,19 @@
     
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
-        /* الألوان الأساسية للمتغيرات */
         :root {
-            --gold: #D4AF37; 
-            --gold-dark: #B8860B;
-            --red: #C41E3A; 
-            --red-dark: #8B0000;
-            --text: #F5F5DC; 
-            --muted: #8B7355; 
-            --bg: #0a0a0a;
-            --panel-bg: rgba(20, 20, 20, 0.95);
+            --gold: #D4AF37; --gold-dark: #B8860B;
+            --red: #C41E3A; --red-dark: #8B0000;
+            --text: #F5F5DC; --muted: #8B7355; 
+            --bg: #0a0a0a; --panel-bg: rgba(20, 20, 20, 0.95);
         }
         
-        /* ضبط الشاشة لمنع التمرير الخارجي */
-        html, body { 
-            height: 100%; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            overflow: hidden; 
-            position: fixed; 
-            width: 100%; 
-        }
-        
-        .app { 
-            max-width: 420px; 
-            margin: 0 auto; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            position: relative; 
-            overflow: hidden; 
-            background: radial-gradient(circle at top, #1a1a1a, #000); 
-        }
-        
-        /* إدارة الشاشات (الصفحات) */
+        html, body { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; position: fixed; width: 100%; }
+        .app { max-width: 420px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; overflow: hidden; background: radial-gradient(circle at top, #1a1a1a, #000); }
         .screen { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 100; flex-direction: column; }
         .screen.active { display: flex; }
         
-        /* ================= شاشة الدخول (Splash) ================= */
+        /* Splash Screen */
         #splash { background: radial-gradient(ellipse at center bottom, #2a0a00 0%, #000 70%, #000 100%); justify-content: center; align-items: center; z-index: 200; }
         .cave { position: relative; width: 250px; height: 200px; display: flex; justify-content: center; align-items: flex-end; }
         .cave-entrance { position: absolute; bottom: 0; width: 160px; height: 140px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(212, 175, 55, 0.2); }
@@ -58,49 +31,41 @@
         @keyframes logo-reveal { to { opacity: 1; transform: translateY(-10px) scale(1); } }
         .splash-title { font-size: 26px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #FFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        /* ================= العناصر العامة (الأزرار والمدخلات) ================= */
+        /* Buttons & Inputs */
         .btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; font-weight: 900; border: none; padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3); transition: transform 0.1s; }
         .btn:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); box-shadow: none; }
         .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; box-shadow: 0 4px 10px rgba(196, 30, 58, 0.3); }
-        
         .input { width: 100%; background: rgba(0,0,0,0.7); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 10px; color: white; text-align: center; font-size: 13px; margin-bottom: 8px; outline: none; transition: border-color 0.3s; }
         .input:focus { border-color: #FFF; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
         
-        /* ================= التخطيط الداخلي (Main Content) ================= */
+        /* Layout */
         .main-content { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; display: flex; flex-direction: column; gap: 8px; }
-        .main-content::-webkit-scrollbar { width: 4px; } 
-        .main-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 4px; }
+        .main-content::-webkit-scrollbar { width: 4px; } .main-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 4px; }
         
-        /* ================= شريط التنقل السفلي ================= */
+        /* Navbar */
         .navbar { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: linear-gradient(180deg, rgba(10,10,10,0.95), #000); border-top: 1px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: space-around; align-items: center; z-index: 50; padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(10px); }
         .nav-btn { display: flex; flex-direction: column; align-items: center; color: #666; cursor: pointer; border-radius: 8px; width: 60px; transition: color 0.3s; }
         .nav-btn.active { color: var(--gold); transform: translateY(-3px); }
         .nav-btn i { font-size: 20px; margin-bottom: 4px; }
         .nav-btn span { font-size: 10px; font-weight: bold; }
         
-        /* ================= التبويبات ================= */
-        .tab { display: none; flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; } 
-        .tab.active { display: flex; flex-direction: column; gap: 10px; }
-        
-        /* ================= الشريط العلوي والإحصائيات ================= */
+        /* Top Bar & Stats */
         .top-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.2); }
         .timer-box { display: flex; align-items: center; gap: 4px; color: var(--gold); font-size: 11px; font-weight: bold; }
         .timer-val { background: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 4px; min-width: 26px; text-align: center; font-variant-numeric: tabular-nums; }
         .sync-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;}
         .sync-btn:active { transform: scale(0.95); background: var(--gold); color: #000; }
-        
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .stat-card { background: linear-gradient(145deg, #111, #080808); border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 8px; padding: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
         .stat-title { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
         .stat-val { font-size: 15px; font-weight: 900; color: #FFF; }
-        
         .energy-wrap { position: relative; padding-top: 4px; }
         .energy-progress { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #222; border-radius: 3px; overflow: hidden; }
         .energy-fill { height: 100%; background: var(--gold); width: 100%; transition: width 0.3s, background 0.3s; }
         .energy-fill.low { background: var(--red); }
         
-        /* ================= شريط الأدوات الذكي ================= */
+        /* Tools Rack */
         .tools-rack { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; justify-content: space-between; }
         .tools-rack::-webkit-scrollbar { display: none; }
         .tool-item { flex: 1; min-width: 55px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 6px 2px; text-align: center; position: relative; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; }
@@ -112,334 +77,300 @@
         .tool-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 6px; border: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 2; }
         .tool-limit { font-size: 7px; color: #aaa; margin-top: 2px; }
 
-        /* ================= الشبكة (اللوحة) والحيوانات ================= */
+        /* Board */
         .board-container { aspect-ratio: 1; width: 100%; max-width: 350px; margin: 0 auto; background: #050505; padding: 6px; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.2); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .cell { background: #151515; border-radius: 8px; display: flex; justify-content: center; align-items: center; position: relative; font-size: 24px; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: transform 0.1s; }
         .cell img { max-width: 75%; max-height: 75%; object-fit: contain; user-select: none; pointer-events: none; }
         .cell:active { transform: scale(0.92); }
         .cell .lvl-num { position: absolute; bottom: 2px; right: 4px; font-size: 10px; font-weight: 900; color: #FFF; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.4); padding: 0 4px; border-radius: 4px; }
-        
-        /* حركة نبض عند اختيار أداة (المخلب/العجلة/الترقية) */
         .cell.target-tool { border: 2px dashed var(--gold); animation: pulse-border 1s infinite; z-index: 5; }
         @keyframes pulse-border { 0%, 100% { border-color: var(--gold); box-shadow: inset 0 0 10px rgba(212,175,55,0.5); } 50% { border-color: transparent; box-shadow: none; } }
         
-        /* تلوين المستويات بدقة */
-        .lvl-0 { background: #111; }
-        .lvl-1 { background: radial-gradient(circle, #2d3748, #1a202c); }
-        .lvl-2 { background: radial-gradient(circle, #2b6cb0, #1a365d); }
-        .lvl-3 { background: radial-gradient(circle, #2f855a, #1c4532); }
-        .lvl-4 { background: radial-gradient(circle, #b7791f, #744210); }
-        .lvl-5 { background: radial-gradient(circle, #c53030, #742a2a); }
-        .lvl-6 { background: radial-gradient(circle, #805ad5, #44337a); }
-        .lvl-7 { background: radial-gradient(circle, #d53f8c, #702459); }
-        .lvl-8 { background: radial-gradient(circle, #38b2ac, #234e52); }
-        .lvl-9 { background: radial-gradient(circle, #ed8936, #7b341e); }
-        .lvl-10 { background: radial-gradient(circle, #e53e3e, #822727); box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
-        
-        /* المستوى 11 - التاج */
+        .lvl-0 { background: #111; } .lvl-1 { background: radial-gradient(circle, #2d3748, #1a202c); } .lvl-2 { background: radial-gradient(circle, #2b6cb0, #1a365d); } .lvl-3 { background: radial-gradient(circle, #2f855a, #1c4532); } .lvl-4 { background: radial-gradient(circle, #b7791f, #744210); } .lvl-5 { background: radial-gradient(circle, #c53030, #742a2a); } .lvl-6 { background: radial-gradient(circle, #805ad5, #44337a); } .lvl-7 { background: radial-gradient(circle, #d53f8c, #702459); } .lvl-8 { background: radial-gradient(circle, #38b2ac, #234e52); } .lvl-9 { background: radial-gradient(circle, #ed8936, #7b341e); } .lvl-10 { background: radial-gradient(circle, #e53e3e, #822727); box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
         .lvl-11 { background: radial-gradient(circle, var(--gold), #8B6508); border: 2px solid #FFF !important; box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); animation: glow-11 2s infinite; }
         @keyframes glow-11 { 0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.5); transform: scale(1); } 50% { box-shadow: 0 0 25px rgba(212,175,55,1); transform: scale(1.02); } }
 
-        /* ================= أزرار التحكم والذكاء الاصطناعي ================= */
+        /* Controls */
         .controls-row { display: flex; gap: 8px; align-items: stretch; margin-top: auto; }
-        
-        /* أسهم التحريك (D-Pad) */
         .dpad { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 30px); gap: 3px; justify-content: center; }
         .dpad-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; transition: background 0.1s; }
         .dpad-btn:active { background: var(--gold); color: #000; transform: scale(0.9); }
-        .dpad-up { grid-column: 2; grid-row: 1; } 
-        .dpad-down { grid-column: 2; grid-row: 3; }
-        .dpad-left { grid-column: 1; grid-row: 2; } 
-        .dpad-right { grid-column: 3; grid-row: 2; }
-        
-        /* أزرار التحليل */
+        .dpad-up { grid-column: 2; grid-row: 1; } .dpad-down { grid-column: 2; grid-row: 3; } .dpad-left { grid-column: 1; grid-row: 2; } .dpad-right { grid-column: 3; grid-row: 2; }
         .ai-actions { flex: 1; display: flex; flex-direction: column; gap: 6px; }
         .ai-btn { flex: 1; background: linear-gradient(135deg, #18181b, #09090b); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold); font-weight: 900; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.1s; }
-        .ai-btn:active { transform: scale(0.97); }
-        .ai-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
-        
-        /* صندوق رسائل الذكاء الاصطناعي */
+        .ai-btn:active { transform: scale(0.97); } .ai-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
         .ai-response-box { background: rgba(212,175,55,0.1); border: 1px solid var(--gold); border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.6; position: relative; overflow: hidden; }
         .ai-response-box::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--gold); }
-        .ai-option { background: rgba(0,0,0,0.5); padding: 6px; border-radius: 6px; margin-top: 4px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* ================= النوافذ المنبثقة (Modals) ================= */
+        /* Modals */
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(5px); }
         .modal.show { display: flex; animation: fade-in 0.2s; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        
         .modal-box { background: linear-gradient(145deg, #18181b, #09090b); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
         .modal-box::-webkit-scrollbar { width: 4px; } .modal-box::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
-        
         .modal-title { font-size: 18px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 15px; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px; }
         
-        /* شبكة المزامنة البصرية */
+        /* Sync Modals */
         .sync-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; background: #000; padding: 6px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); }
         .sync-cell { aspect-ratio: 1; background: #1a1a1a; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: 1px solid #333; position: relative; }
-        .sync-cell img { max-width: 70%; max-height: 70%; }
-        .sync-cell:hover { border-color: var(--gold); }
+        .sync-cell img { max-width: 70%; max-height: 70%; } .sync-cell:hover { border-color: var(--gold); }
         .sync-cell .lvl-num { position: absolute; bottom: 2px; right: 2px; font-size: 8px; font-weight: bold; color: var(--gold); }
-        
-        /* قائمة اختيار الحيوان أثناء المزامنة */
         .animal-picker { display: none; grid-template-columns: repeat(4, 1fr); gap: 4px; position: absolute; background: #111; border: 2px solid var(--gold); border-radius: 8px; padding: 6px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
         .animal-picker.show { display: grid; }
         .picker-item { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #222; border-radius: 4px; cursor: pointer; border: 1px solid transparent; }
-        .picker-item:hover { border-color: var(--gold); background: #333; }
-        .picker-item img { max-width: 20px; max-height: 20px; }
-        .picker-item span { font-size: 8px; color: var(--gold); margin-top: 2px; }
-        
-        /* شبكة إدخال الأدوات في المزامنة */
+        .picker-item:hover { border-color: var(--gold); background: #333; } .picker-item img { max-width: 20px; max-height: 20px; } .picker-item span { font-size: 8px; color: var(--gold); margin-top: 2px; }
         .tools-sync-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .tool-sync-row { display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
         .tool-sync-icon { width: 25px; text-align: center; font-size: 16px; margin-left: 5px; }
         .tool-sync-inputs { display: flex; flex: 1; gap: 4px; }
         .tool-sync-inputs input { width: 100%; padding: 4px; text-align: center; background: #000; color: #FFF; border: 1px solid #444; border-radius: 4px; font-size: 11px; }
         
-        /* ================= الاحتفال ================= */
+        /* Celebration */
         .celebration-content { text-align: center; }
         .celeb-img-container { font-size: 80px; margin-bottom: 15px; animation: bounce-celeb 1s infinite alternate; filter: drop-shadow(0 0 20px var(--gold)); display: flex; justify-content: center; }
         .celeb-img-container img { max-width: 100px; max-height: 100px; }
         @keyframes bounce-celeb { from { transform: translateY(0) scale(1); } to { transform: translateY(-15px) scale(1.1); } }
         
-        /* ================= شاشات الإدارة ================= */
+        /* Admin */
         .admin-tabs { display: flex; gap: 4px; margin-bottom: 15px; }
         .admin-tab-btn { flex: 1; padding: 8px 4px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
         .admin-tab-btn.active { background: var(--red); color: white; border-color: var(--red-dark); }
-        .admin-section { display: none; }
-        .admin-section.active { display: block; animation: fade-in 0.3s; }
-        
+        .admin-section { display: none; } .admin-section.active { display: block; animation: fade-in 0.3s; }
         .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.05); }
         .admin-animal-edit { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2); }
         .admin-animal-edit img { width: 24px; height: 24px; object-fit: contain; }
         .admin-animal-edit input { flex: 1; background: #000; border: 1px solid #333; color: #FFF; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
-        
-        /* كلاسات مخفية */
         .hidden { display: none !important; }
     </style>
 </head>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مساعد عقروب V1.15 - المحاكي الاستراتيجي</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    
-    <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+<body>
+    <div class="app">
         
-        /* الألوان الأساسية للمتغيرات */
-        :root {
-            --gold: #D4AF37; 
-            --gold-dark: #B8860B;
-            --red: #C41E3A; 
-            --red-dark: #8B0000;
-            --text: #F5F5DC; 
-            --muted: #8B7355; 
-            --bg: #0a0a0a;
-            --panel-bg: rgba(20, 20, 20, 0.95);
-        }
-        
-        /* ضبط الشاشة لمنع التمرير الخارجي */
-        html, body { 
-            height: 100%; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            overflow: hidden; 
-            position: fixed; 
-            width: 100%; 
-        }
-        
-        .app { 
-            max-width: 420px; 
-            margin: 0 auto; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            position: relative; 
-            overflow: hidden; 
-            background: radial-gradient(circle at top, #1a1a1a, #000); 
-        }
-        
-        /* إدارة الشاشات (الصفحات) */
-        .screen { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 100; flex-direction: column; }
-        .screen.active { display: flex; }
-        
-        /* ================= شاشة الدخول (Splash) ================= */
-        #splash { background: radial-gradient(ellipse at center bottom, #2a0a00 0%, #000 70%, #000 100%); justify-content: center; align-items: center; z-index: 200; }
-        .cave { position: relative; width: 250px; height: 200px; display: flex; justify-content: center; align-items: flex-end; }
-        .cave-entrance { position: absolute; bottom: 0; width: 160px; height: 140px; background: radial-gradient(ellipse at center bottom, #000 60%, #1a1a1a 100%); border-radius: 50% 50% 0 0; box-shadow: inset 0 -20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(212, 175, 55, 0.2); }
-        .logo-img { position: relative; max-width: 100px; max-height: 100px; z-index: 10; animation: logo-reveal 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.8)); opacity: 0; transform: translateY(30px) scale(0.5); }
-        @keyframes logo-reveal { to { opacity: 1; transform: translateY(-10px) scale(1); } }
-        .splash-title { font-size: 26px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #FFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        
-        /* ================= العناصر العامة (الأزرار والمدخلات) ================= */
-        .btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; font-weight: 900; border: none; padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3); transition: transform 0.1s; }
-        .btn:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(212, 175, 55, 0.3); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); box-shadow: none; }
-        .btn-red { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: white; box-shadow: 0 4px 10px rgba(196, 30, 58, 0.3); }
-        
-        .input { width: 100%; background: rgba(0,0,0,0.7); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 10px; color: white; text-align: center; font-size: 13px; margin-bottom: 8px; outline: none; transition: border-color 0.3s; }
-        .input:focus { border-color: #FFF; box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
-        
-        /* ================= التخطيط الداخلي (Main Content) ================= */
-        .main-content { flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; display: flex; flex-direction: column; gap: 8px; }
-        .main-content::-webkit-scrollbar { width: 4px; } 
-        .main-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 4px; }
-        
-        /* ================= شريط التنقل السفلي ================= */
-        .navbar { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: linear-gradient(180deg, rgba(10,10,10,0.95), #000); border-top: 1px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: space-around; align-items: center; z-index: 50; padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(10px); }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #666; cursor: pointer; border-radius: 8px; width: 60px; transition: color 0.3s; }
-        .nav-btn.active { color: var(--gold); transform: translateY(-3px); }
-        .nav-btn i { font-size: 20px; margin-bottom: 4px; }
-        .nav-btn span { font-size: 10px; font-weight: bold; }
-        
-        /* ================= التبويبات ================= */
-        .tab { display: none; flex: 1; overflow-y: auto; padding: 8px; padding-bottom: 75px; } 
-        .tab.active { display: flex; flex-direction: column; gap: 10px; }
-        
-        /* ================= الشريط العلوي والإحصائيات ================= */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.2); }
-        .timer-box { display: flex; align-items: center; gap: 4px; color: var(--gold); font-size: 11px; font-weight: bold; }
-        .timer-val { background: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 4px; min-width: 26px; text-align: center; font-variant-numeric: tabular-nums; }
-        .sync-btn { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;}
-        .sync-btn:active { transform: scale(0.95); background: var(--gold); color: #000; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        .stat-card { background: linear-gradient(145deg, #111, #080808); border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 8px; padding: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
-        .stat-title { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
-        .stat-val { font-size: 15px; font-weight: 900; color: #FFF; }
-        
-        .energy-wrap { position: relative; padding-top: 4px; }
-        .energy-progress { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #222; border-radius: 3px; overflow: hidden; }
-        .energy-fill { height: 100%; background: var(--gold); width: 100%; transition: width 0.3s, background 0.3s; }
-        .energy-fill.low { background: var(--red); }
-        
-        /* ================= شريط الأدوات الذكي ================= */
-        .tools-rack { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; justify-content: space-between; }
-        .tools-rack::-webkit-scrollbar { display: none; }
-        .tool-item { flex: 1; min-width: 55px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 6px 2px; text-align: center; position: relative; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; }
-        .tool-item:active { transform: scale(0.95); }
-        .tool-item.active { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); box-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
-        .tool-item.empty { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-        .tool-icon { width: 20px; height: 20px; object-fit: contain; display: block; margin-bottom: 2px; font-size: 16px; }
-        .tool-name { font-size: 8px; color: var(--gold); display: block; white-space: nowrap; }
-        .tool-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 6px; border: 1px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 2; }
-        .tool-limit { font-size: 7px; color: #aaa; margin-top: 2px; }
+        <div id="splash" class="screen active">
+            <div class="cave">
+                <div class="cave-entrance"></div>
+                <img id="splashLogo" src="" class="logo-img" alt="Scorpion" onerror="this.outerHTML='<div class=\'logo-img\' style=\'font-size:70px; display:flex; justify-content:center; align-items:center;\'>🦂</div>'">
+            </div>
+            <div class="splash-title" id="uiTitleSplash">مساعد عقروب V1.15</div>
+        </div>
 
-        /* ================= الشبكة (اللوحة) والحيوانات ================= */
-        .board-container { aspect-ratio: 1; width: 100%; max-width: 350px; margin: 0 auto; background: #050505; padding: 6px; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.2); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
-        .cell { background: #151515; border-radius: 8px; display: flex; justify-content: center; align-items: center; position: relative; font-size: 24px; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: transform 0.1s; }
-        .cell img { max-width: 75%; max-height: 75%; object-fit: contain; user-select: none; pointer-events: none; }
-        .cell:active { transform: scale(0.92); }
-        .cell .lvl-num { position: absolute; bottom: 2px; right: 4px; font-size: 10px; font-weight: 900; color: #FFF; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.4); padding: 0 4px; border-radius: 4px; }
-        
-        /* حركة نبض عند اختيار أداة (المخلب/العجلة/الترقية) */
-        .cell.target-tool { border: 2px dashed var(--gold); animation: pulse-border 1s infinite; z-index: 5; }
-        @keyframes pulse-border { 0%, 100% { border-color: var(--gold); box-shadow: inset 0 0 10px rgba(212,175,55,0.5); } 50% { border-color: transparent; box-shadow: none; } }
-        
-        /* تلوين المستويات بدقة */
-        .lvl-0 { background: #111; }
-        .lvl-1 { background: radial-gradient(circle, #2d3748, #1a202c); }
-        .lvl-2 { background: radial-gradient(circle, #2b6cb0, #1a365d); }
-        .lvl-3 { background: radial-gradient(circle, #2f855a, #1c4532); }
-        .lvl-4 { background: radial-gradient(circle, #b7791f, #744210); }
-        .lvl-5 { background: radial-gradient(circle, #c53030, #742a2a); }
-        .lvl-6 { background: radial-gradient(circle, #805ad5, #44337a); }
-        .lvl-7 { background: radial-gradient(circle, #d53f8c, #702459); }
-        .lvl-8 { background: radial-gradient(circle, #38b2ac, #234e52); }
-        .lvl-9 { background: radial-gradient(circle, #ed8936, #7b341e); }
-        .lvl-10 { background: radial-gradient(circle, #e53e3e, #822727); box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
-        
-        /* المستوى 11 - التاج */
-        .lvl-11 { background: radial-gradient(circle, var(--gold), #8B6508); border: 2px solid #FFF !important; box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); animation: glow-11 2s infinite; }
-        @keyframes glow-11 { 0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.5); transform: scale(1); } 50% { box-shadow: 0 0 25px rgba(212,175,55,1); transform: scale(1.02); } }
+        <div id="loginScreen" class="screen" style="justify-content: center; padding: 20px;">
+            <div class="modal-box" style="margin: auto;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: var(--gold); font-size: 20px; font-weight: 900;" id="uiTitleLogin">مساعد عقروب المحاكي</h2>
+                    <p style="color: var(--muted); font-size: 11px; margin-top: 5px;">أدخل بيانات حسابك للمزامنة</p>
+                </div>
+                <input type="text" id="loginUser" class="input" placeholder="اسم المستخدم (Player ID)">
+                <input type="password" id="loginPass" class="input" placeholder="كلمة المرور">
+                <button class="btn" onclick="login()" style="width: 100%; margin-top: 10px; font-size: 16px;">دخول النظام 🚀</button>
+                <div id="loginErr" class="hidden" style="color: #ef4444; font-size: 11px; text-align: center; margin-top: 10px; font-weight: bold;"></div>
+            </div>
+        </div>
 
-        /* ================= أزرار التحكم والذكاء الاصطناعي ================= */
-        .controls-row { display: flex; gap: 8px; align-items: stretch; margin-top: auto; }
-        
-        /* أسهم التحريك (D-Pad) */
-        .dpad { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 30px); gap: 3px; justify-content: center; }
-        .dpad-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; transition: background 0.1s; }
-        .dpad-btn:active { background: var(--gold); color: #000; transform: scale(0.9); }
-        .dpad-up { grid-column: 2; grid-row: 1; } 
-        .dpad-down { grid-column: 2; grid-row: 3; }
-        .dpad-left { grid-column: 1; grid-row: 2; } 
-        .dpad-right { grid-column: 3; grid-row: 2; }
-        
-        /* أزرار التحليل */
-        .ai-actions { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-        .ai-btn { flex: 1; background: linear-gradient(135deg, #18181b, #09090b); border: 1px solid var(--gold); border-radius: 8px; color: var(--gold); font-weight: 900; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.1s; }
-        .ai-btn:active { transform: scale(0.97); }
-        .ai-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
-        
-        /* صندوق رسائل الذكاء الاصطناعي */
-        .ai-response-box { background: rgba(212,175,55,0.1); border: 1px solid var(--gold); border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.6; position: relative; overflow: hidden; }
-        .ai-response-box::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--gold); }
-        .ai-option { background: rgba(0,0,0,0.5); padding: 6px; border-radius: 6px; margin-top: 4px; border: 1px solid rgba(255,255,255,0.1); }
-        
-        /* ================= النوافذ المنبثقة (Modals) ================= */
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(5px); }
-        .modal.show { display: flex; animation: fade-in 0.2s; }
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        
-        .modal-box { background: linear-gradient(145deg, #18181b, #09090b); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
-        .modal-box::-webkit-scrollbar { width: 4px; } .modal-box::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
-        
-        .modal-title { font-size: 18px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 15px; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 10px; }
-        
-        /* شبكة المزامنة البصرية */
-        .sync-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; background: #000; padding: 6px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); }
-        .sync-cell { aspect-ratio: 1; background: #1a1a1a; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: 1px solid #333; position: relative; }
-        .sync-cell img { max-width: 70%; max-height: 70%; }
-        .sync-cell:hover { border-color: var(--gold); }
-        .sync-cell .lvl-num { position: absolute; bottom: 2px; right: 2px; font-size: 8px; font-weight: bold; color: var(--gold); }
-        
-        /* قائمة اختيار الحيوان أثناء المزامنة */
-        .animal-picker { display: none; grid-template-columns: repeat(4, 1fr); gap: 4px; position: absolute; background: #111; border: 2px solid var(--gold); border-radius: 8px; padding: 6px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
-        .animal-picker.show { display: grid; }
-        .picker-item { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #222; border-radius: 4px; cursor: pointer; border: 1px solid transparent; }
-        .picker-item:hover { border-color: var(--gold); background: #333; }
-        .picker-item img { max-width: 20px; max-height: 20px; }
-        .picker-item span { font-size: 8px; color: var(--gold); margin-top: 2px; }
-        
-        /* شبكة إدخال الأدوات في المزامنة */
-        .tools-sync-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .tool-sync-row { display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
-        .tool-sync-icon { width: 25px; text-align: center; font-size: 16px; margin-left: 5px; }
-        .tool-sync-inputs { display: flex; flex: 1; gap: 4px; }
-        .tool-sync-inputs input { width: 100%; padding: 4px; text-align: center; background: #000; color: #FFF; border: 1px solid #444; border-radius: 4px; font-size: 11px; }
-        
-        /* ================= الاحتفال ================= */
-        .celebration-content { text-align: center; }
-        .celeb-img-container { font-size: 80px; margin-bottom: 15px; animation: bounce-celeb 1s infinite alternate; filter: drop-shadow(0 0 20px var(--gold)); display: flex; justify-content: center; }
-        .celeb-img-container img { max-width: 100px; max-height: 100px; }
-        @keyframes bounce-celeb { from { transform: translateY(0) scale(1); } to { transform: translateY(-15px) scale(1.1); } }
-        
-        /* ================= شاشات الإدارة ================= */
-        .admin-tabs { display: flex; gap: 4px; margin-bottom: 15px; }
-        .admin-tab-btn { flex: 1; padding: 8px 4px; text-align: center; background: rgba(212,175,55,0.1); border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
-        .admin-tab-btn.active { background: var(--red); color: white; border-color: var(--red-dark); }
-        .admin-section { display: none; }
-        .admin-section.active { display: block; animation: fade-in 0.3s; }
-        
-        .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.05); }
-        .admin-animal-edit { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2); }
-        .admin-animal-edit img { width: 24px; height: 24px; object-fit: contain; }
-        .admin-animal-edit input { flex: 1; background: #000; border: 1px solid #333; color: #FFF; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
-        
-        /* كلاسات مخفية */
-        .hidden { display: none !important; }
-    </style>
-</head>
+        <div id="mainApp" class="screen">
+            <div class="main-content">
+                <div class="top-bar">
+                    <div class="timer-box" title="الوقت المتبقي لانتهاء الحدث">
+                        <i class="fas fa-stopwatch"></i>
+                        <span id="tDay" class="timer-val">0</span>ي
+                        <span id="tHour" class="timer-val">00</span>س
+                        <span id="tMin" class="timer-val">00</span>د
+                        <span id="tSec" class="timer-val">00</span>ث
+                    </div>
+                    <button class="sync-btn" onclick="openSyncModal()"><i class="fas fa-sync-alt"></i> مزامنة اللوحة</button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card" style="grid-column: span 2;">
+                        <div class="stat-title">النقاط الحالية (Score)</div>
+                        <div class="stat-val" id="uiScore">0</div>
+                    </div>
+                    <div class="stat-card energy-wrap" id="energyCard">
+                        <div class="stat-title">الطاقة ⚡</div>
+                        <div class="stat-val" id="uiEnergy" style="color: var(--gold);">200</div>
+                        <div class="energy-progress"><div class="energy-fill" id="uiEnergyBar"></div></div>
+                    </div>
+                </div>
+
+                <div class="tools-rack">
+                    <div class="tool-item" onclick="useTool('free')">
+                        <span class="tool-icon">🔄</span>
+                        <span class="tool-name">إعادة مجاني</span>
+                        <span class="tool-limit">تصفير</span>
+                    </div>
+                    <div class="tool-item" id="btnGem" onclick="useTool('gem')">
+                        <div class="tool-badge" id="bdgGem">0</div>
+                        <span class="tool-icon" id="iconGem">💎</span>
+                        <span class="tool-name" id="nameGem">جوهر (+15⚡)</span>
+                        <span class="tool-limit" id="limGem">0/0</span>
+                    </div>
+                    <div class="tool-item" id="btnUpg" onclick="useTool('upgrade')">
+                        <div class="tool-badge" id="bdgUpg">0</div>
+                        <span class="tool-icon" id="iconUpg">⬆️</span>
+                        <span class="tool-name" id="nameUpg">ترقية (<7)</span>
+                        <span class="tool-limit" id="limUpg">0/0</span>
+                    </div>
+                    <div class="tool-item" id="btnClaw" onclick="useTool('claw')">
+                        <div class="tool-badge" id="bdgClaw">0</div>
+                        <span class="tool-icon" id="iconClaw">🦅</span>
+                        <span class="tool-name" id="nameClaw">مخلب</span>
+                        <span class="tool-limit" id="limClaw">0/0</span>
+                    </div>
+                    <div class="tool-item" id="btnWheel" onclick="useTool('wheel')">
+                        <div class="tool-badge" id="bdgWheel">0</div>
+                        <span class="tool-icon" id="iconWheel">🎡</span>
+                        <span class="tool-name" id="nameWheel">عجلة</span>
+                        <span class="tool-limit" id="limWheel">0/0</span>
+                    </div>
+                </div>
+
+                <div id="aiResponseBox" class="hidden ai-response-box">
+                    <div style="color: var(--gold); font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                        <span><i class="fas fa-brain"></i> مستشار عقروب (AI):</span>
+                        <i class="fas fa-times" onclick="document.getElementById('aiResponseBox').classList.add('hidden')" style="cursor: pointer; font-size: 14px;"></i>
+                    </div>
+                    <div id="aiResponseText" style="color: #FFF;">جاري التحليل...</div>
+                </div>
+
+                <div class="board-container" id="gridBox"></div>
+
+                <div class="controls-row">
+                    <div class="dpad">
+                        <div class="dpad-btn dpad-up" onclick="manualMove('UP')"><i class="fas fa-chevron-up"></i></div>
+                        <div class="dpad-btn dpad-left" onclick="manualMove('LEFT')"><i class="fas fa-chevron-right"></i></div>
+                        <div class="dpad-btn dpad-right" onclick="manualMove('RIGHT')"><i class="fas fa-chevron-left"></i></div>
+                        <div class="dpad-btn dpad-down" onclick="manualMove('DOWN')"><i class="fas fa-chevron-down"></i></div>
+                    </div>
+                    <div class="ai-actions">
+                        <button class="ai-btn primary" onclick="smartMerge()"><i class="fas fa-bolt"></i> الحركة الآمنة (الخوارزمية)</button>
+                        <button class="ai-btn" onclick="askGemini()"><i class="fas fa-robot"></i> استشارة الخطة (AI + الأدوات)</button>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="navbar">
+                <div class="nav-btn active" onclick="goTab('play')"><i class="fas fa-gamepad"></i><span>اللوحة</span></div>
+                <div class="nav-btn" onclick="openProfile()"><i class="fas fa-user"></i><span>حسابي</span></div>
+                <div class="nav-btn" id="adminNavBtn" onclick="openAdmin()" style="display: none;"><i class="fas fa-cog"></i><span>الإدارة</span></div>
+            </nav>
+        </div>
+
+        <!-- Modals -->
+        <div class="modal" id="syncModal">
+            <div class="modal-box" style="position: relative;">
+                <div class="modal-title">🔄 مزامنة التطبيق مع اللعبة</div>
+                <p style="font-size: 10px; color: var(--muted); text-align: center; margin-bottom: 10px;">اضغط على المربع لتغيير الحيوان ليطابق اللعبة الأصلية بدقة.</p>
+                
+                <div class="sync-grid-container" id="syncVisualGrid"></div>
+
+                <div id="animalPicker" class="animal-picker"></div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;"><label style="font-size: 10px; color: var(--gold);">النقاط (Score)</label><input type="number" id="syncScore" class="input" style="margin: 0; padding: 6px;"></div>
+                    <div style="flex: 1;"><label style="font-size: 10px; color: var(--gold);">الطاقة (Energy)</label><input type="number" id="syncEnergy" class="input" style="margin: 0; padding: 6px;" max="200"></div>
+                </div>
+
+                <label style="font-size: 10px; color: var(--gold); display: block; margin-bottom: 4px;">الأدوات (الممتلك / المستخدم اليوم):</label>
+                <div class="tools-sync-grid">
+                    <div class="tool-sync-row"><span class="tool-sync-icon">💎</span><div class="tool-sync-inputs"><input type="number" id="syncGemO" title="ممتلك"><input type="number" id="syncGemU" title="مستخدم"></div></div>
+                    <div class="tool-sync-row"><span class="tool-sync-icon">⬆️</span><div class="tool-sync-inputs"><input type="number" id="syncUpgO" title="ممتلك"><input type="number" id="syncUpgU" title="مستخدم"></div></div>
+                    <div class="tool-sync-row"><span class="tool-sync-icon">🦅</span><div class="tool-sync-inputs"><input type="number" id="syncClawO" title="ممتلك"><input type="number" id="syncClawU" title="مستخدم"></div></div>
+                    <div class="tool-sync-row"><span class="tool-sync-icon">🎡</span><div class="tool-sync-inputs"><input type="number" id="syncWheelO" title="ممتلك"><input type="number" id="syncWheelU" title="مستخدم"></div></div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" onclick="applySync()" style="flex: 1;"><i class="fas fa-check"></i> حفظ الخطة</button>
+                    <button class="btn btn-red" onclick="closeModal('syncModal')" style="flex: 1;">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="celebModal">
+            <div class="modal-box celebration-content" style="background: radial-gradient(circle, #2a1a00, #000);">
+                <div class="modal-title" style="border: none; font-size: 24px;">👑 إنجاز أسطوري!</div>
+                <div class="celeb-img-container" id="celebIconContainer">👑</div>
+                <div style="font-size: 16px; font-weight: bold; color: #FFF; margin-bottom: 5px;">تم دمج الحيوان الملك بنجاح</div>
+                <div style="font-size: 28px; font-weight: 900; color: #4ade80; margin-bottom: 10px; text-shadow: 0 0 10px rgba(74,222,128,0.5);">+2048 نقطة</div>
+                <div style="font-size: 11px; color: var(--gold); margin-bottom: 20px; background: rgba(212,175,55,0.1); padding: 8px; border-radius: 8px; border: 1px dashed var(--gold);">تم إضافة <b style="color:#FFF;">+20</b> للحد اليومي لاستخدام (الترقية، المخلب، العجلة)!</div>
+                <button class="btn" onclick="closeCelebAndShowReview()" style="width: 100%;">استمرار المسيرة 🔥</button>
+            </div>
+        </div>
+
+        <div class="modal" id="reviewModal">
+            <div class="modal-box">
+                <div class="modal-title">⭐ رأيك يهمنا</div>
+                <p style="font-size: 11px; text-align: center; color: #CCC; margin-bottom: 15px;">بما أنك حققت إنجازاً رائعاً، ما رأيك في أداء المساعد؟</p>
+                <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 28px; color: #444; cursor: pointer;" id="starRating">
+                    <i class="fas fa-star" onclick="setStars(1)"></i><i class="fas fa-star" onclick="setStars(2)"></i><i class="fas fa-star" onclick="setStars(3)"></i><i class="fas fa-star" onclick="setStars(4)"></i><i class="fas fa-star" onclick="setStars(5)"></i>
+                </div>
+                <textarea id="reviewText" class="input" style="height: 80px; resize: none; font-family: inherit;" placeholder="اكتب مقترحك أو رأيك هنا للتحسين..."></textarea>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" onclick="submitReview()" style="flex: 1;">إرسال التقييم</button>
+                    <button class="btn btn-red" onclick="closeModal('reviewModal')" style="flex: 1;">تخطي</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="profileModal">
+            <div class="modal-box">
+                <div class="modal-title">👤 حسابي</div>
+                <label style="font-size: 10px; color: var(--gold);">الاسم الظاهري:</label>
+                <input type="text" id="profName" class="input">
+                <label style="font-size: 10px; color: var(--gold);">المملكة:</label>
+                <input type="text" id="profKingdom" class="input">
+                <label style="font-size: 10px; color: var(--gold);">التحالف:</label>
+                <input type="text" id="profAlliance" class="input">
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn" onclick="saveProfile()" style="flex: 1;">حفظ التعديلات</button>
+                    <button class="btn btn-red" onclick="closeModal('profileModal')" style="flex: 1;">إغلاق</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="adminModal">
+            <div class="modal-box" style="max-width: 400px;">
+                <div class="modal-title" style="color: var(--red);">⚙️ لوحة الإدارة الشاملة</div>
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" onclick="switchAdminTab('general')">عام</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('animals')">الحيوانات</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('tools')">الأدوات</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('users')">اللاعبين</button>
+                </div>
+
+                <div id="admin-general" class="admin-section active">
+                    <label style="font-size: 10px; color: var(--gold);">اسم البرنامج:</label><input type="text" id="admAppName" class="input">
+                    <label style="font-size: 10px; color: var(--gold);">رابط اللوجو (صورة PNG شفافة):</label><input type="text" id="admLogo" class="input" placeholder="رابط URL للوجو">
+                    <label style="font-size: 10px; color: var(--gold);">Gemini API Key:</label><input type="password" id="admGemini" class="input" placeholder="AIzaSy...">
+                    <label style="font-size: 10px; color: var(--gold);">موعد انتهاء الحدث:</label><input type="datetime-local" id="admEventTime" class="input" style="font-family: inherit;">
+                    <button class="btn btn-red" onclick="saveAdminGeneral()" style="width: 100%; margin-top: 10px;">حفظ الإعدادات العامة</button>
+                </div>
+
+                <div id="admin-animals" class="admin-section">
+                    <p style="font-size: 10px; color: var(--muted); margin-bottom: 10px;">ضع رابط صورة أو Emoji.</p>
+                    <div id="adminAnimalsList" style="max-height: 50vh; overflow-y: auto; padding-right: 4px;"></div>
+                    <button class="btn btn-red" onclick="saveAdminAnimals()" style="width: 100%; margin-top: 10px;">حفظ الحيوانات</button>
+                </div>
+
+                <div id="admin-tools" class="admin-section">
+                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">جوهر:</span><input type="text" id="admIconGem" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameGem" placeholder="الاسم"></div>
+                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">ترقية:</span><input type="text" id="admIconUpg" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameUpg" placeholder="الاسم"></div>
+                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">مخلب:</span><input type="text" id="admIconClaw" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameClaw" placeholder="الاسم"></div>
+                    <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">عجلة:</span><input type="text" id="admIconWheel" placeholder="أيقونة" style="width: 60px;"><input type="text" id="admNameWheel" placeholder="الاسم"></div>
+                    <button class="btn btn-red" onclick="saveAdminTools()" style="width: 100%; margin-top: 10px;">حفظ الأدوات</button>
+                </div>
+
+                <div id="admin-users" class="admin-section">
+                    <p style="font-size: 10px; color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 8px;">قائمة اللاعبين (تحديث حي):</p>
+                    <div id="adminUsersList" style="max-height: 40vh; overflow-y: auto;"></div>
+                </div>
+
+                <button class="btn" onclick="closeModal('adminModal')" style="width: 100%; margin-top: 15px; background: #333; color: #FFF;">إغلاق لوحة الإدارة</button>
+            </div>
+        </div>
+
+    </div>
+
 <script>
-// ============================================
-// المتغيرات وحالة اللعبة الأساسية
-// ============================================
 let user = null;
 let grid = Array(4).fill().map(() => Array(4).fill(0));
 let tempSyncGrid = Array(4).fill().map(() => Array(4).fill(0));
@@ -450,9 +381,6 @@ let activeTool = null;
 let wheelFirstCell = null;
 let currentStars = 5;
 
-// ============================================
-// التهيئة والدخول
-// ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     await loadSettings();
     initGridUI();
@@ -475,6 +403,14 @@ async function loadSettings() {
             document.getElementById('uiTitleSplash').textContent = settings.appName;
             document.getElementById('uiTitleLogin').textContent = settings.appName;
         }
+        
+        // تحميل مسميات الأدوات من الإعدادات إن وجدت
+        if(settings.toolsConfig) {
+            if(settings.toolsConfig.gem) { document.getElementById('iconGem').textContent = settings.toolsConfig.gem.icon; document.getElementById('nameGem').textContent = settings.toolsConfig.gem.name; }
+            if(settings.toolsConfig.upgrade) { document.getElementById('iconUpg').textContent = settings.toolsConfig.upgrade.icon; document.getElementById('nameUpg').textContent = settings.toolsConfig.upgrade.name; }
+            if(settings.toolsConfig.claw) { document.getElementById('iconClaw').textContent = settings.toolsConfig.claw.icon; document.getElementById('nameClaw').textContent = settings.toolsConfig.claw.name; }
+            if(settings.toolsConfig.wheel) { document.getElementById('iconWheel').textContent = settings.toolsConfig.wheel.icon; document.getElementById('nameWheel').textContent = settings.toolsConfig.wheel.name; }
+        }
     } catch (e) {
         animals = getDefaultAnimals();
     }
@@ -490,9 +426,7 @@ function getDefaultAnimals() {
 
 function renderIcon(iconStr) {
     if (!iconStr) return '';
-    if (iconStr.startsWith('/') || iconStr.startsWith('http') || iconStr.startsWith('data:')) {
-        return `<img src="${iconStr}">`;
-    }
+    if (iconStr.startsWith('/') || iconStr.startsWith('http') || iconStr.startsWith('data:')) return `<img src="${iconStr}">`;
     return iconStr;
 }
 
@@ -501,11 +435,7 @@ async function login() {
     const password = document.getElementById('loginPass').value;
     const errBox = document.getElementById('loginErr');
     
-    if (!username || !password) {
-        errBox.textContent = 'أدخل البيانات كاملة';
-        errBox.classList.remove('hidden');
-        return;
-    }
+    if (!username || !password) { errBox.textContent = 'أدخل البيانات كاملة'; errBox.classList.remove('hidden'); return; }
     
     try {
         const res = await fetch('/api/login', {
@@ -518,7 +448,6 @@ async function login() {
             user = { username, password, isAdmin: data.isAdmin, ...data.userData };
             if(user.grid && user.grid.length === 4) grid = user.grid;
             
-            // التأكد من وجود الأدوات والحدود الافتراضية
             if(!user.tools) user.tools = {};
             ['gem', 'upgrade', 'claw', 'wheel'].forEach(t => {
                 if(!user.tools[t]) user.tools[t] = { owned: 0, dailyLimit: (t==='gem'?999:20), used: 0 };
@@ -533,18 +462,13 @@ async function login() {
             startRegenTimer();
             startCountdownTimer();
         } else {
-            errBox.textContent = data.message || 'خطأ في بيانات الدخول';
-            errBox.classList.remove('hidden');
+            errBox.textContent = data.message || 'خطأ في بيانات الدخول'; errBox.classList.remove('hidden');
         }
     } catch (e) {
-        errBox.textContent = 'خطأ في الاتصال بالخادم!';
-        errBox.classList.remove('hidden');
+        errBox.textContent = 'خطأ في الاتصال بالخادم!'; errBox.classList.remove('hidden');
     }
 }
 
-// ============================================
-// اللوحة وتحديث الواجهة
-// ============================================
 function initGridUI() {
     const box = document.getElementById('gridBox');
     box.innerHTML = '';
@@ -561,8 +485,6 @@ function initGridUI() {
 
 function updateUI() {
     if(!user) return;
-    
-    // تحديث المربعات
     for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
             const val = grid[r][c];
@@ -571,8 +493,6 @@ function updateUI() {
             cell.innerHTML = val > 0 ? `${renderIcon(animals[val]?.icon)}<span class="lvl-num">${val}</span>` : '';
         }
     }
-
-    // تحديث النقاط والطاقة
     document.getElementById('uiScore').textContent = user.sessionScore || 0;
     const nrg = user.energy || 0;
     document.getElementById('uiEnergy').textContent = nrg;
@@ -580,11 +500,8 @@ function updateUI() {
     nrgBar.style.width = `${Math.min(100, (nrg/200)*100)}%`;
     nrgBar.className = nrg < 50 ? 'energy-fill low' : 'energy-fill';
 
-    // تحديث شريط الأدوات
-    updateToolUI('Gem', user.tools.gem);
-    updateToolUI('Upg', user.tools.upgrade);
-    updateToolUI('Claw', user.tools.claw);
-    updateToolUI('Wheel', user.tools.wheel);
+    updateToolUI('Gem', user.tools.gem); updateToolUI('Upg', user.tools.upgrade);
+    updateToolUI('Claw', user.tools.claw); updateToolUI('Wheel', user.tools.wheel);
 }
 
 function updateToolUI(idSuffix, toolObj) {
@@ -597,70 +514,45 @@ function updateToolUI(idSuffix, toolObj) {
     document.getElementById(`lim${idSuffix}`).textContent = `${used}/${limit}`;
     
     const btn = document.getElementById(`btn${idSuffix}`);
-    if (owned <= 0 || remain <= 0) {
-        btn.classList.add('empty');
-    } else {
-        btn.classList.remove('empty');
-    }
+    if (owned <= 0 || remain <= 0) btn.classList.add('empty'); else btn.classList.remove('empty');
 }
 
-// ============================================
-// منطق اللعبة والدمج
-// ============================================
 function spawnRandom() {
     let empty = [];
     for(let r=0; r<4; r++) for(let c=0; c<4; c++) if(grid[r][c] === 0) empty.push({r,c});
     if(empty.length > 0) {
         let spot = empty[Math.floor(Math.random() * empty.length)];
-        // الحيوان العشوائي من 1 إلى 7
         grid[spot.r][spot.c] = Math.floor(Math.random() * 7) + 1; 
     }
 }
 
-function calcScore(level) {
-    return Math.pow(2, level + 1); // 1+1=2(4 نقطة)، 10+10=11(2048 نقطة)
-}
+function calcScore(level) { return Math.pow(2, level + 1); }
 
 function manualMove(direction) {
     if(user.energy <= 0) { alert("الطاقة غير كافية! يرجى الانتظار أو استخدام جوهر."); return; }
     
-    let moved = false;
-    let gainedScore = 0;
+    let moved = false; let gainedScore = 0;
     const newGrid = JSON.parse(JSON.stringify(grid));
-    
-    const slide = (row) => {
-        let arr = row.filter(val => val);
-        let missing = 4 - arr.length;
-        let zeros = Array(missing).fill(0);
-        return arr.concat(zeros);
-    }
+    const slide = (row) => { let arr = row.filter(val => val); let zeros = Array(4 - arr.length).fill(0); return arr.concat(zeros); }
     const combine = (row) => {
         for (let i = 0; i < 3; i++) {
             if (row[i] !== 0 && row[i] === row[i + 1] && row[i] < 11) {
-                row[i]++;
-                gainedScore += calcScore(row[i]);
-                row[i + 1] = 0;
-                moved = true;
+                row[i]++; gainedScore += calcScore(row[i]); row[i + 1] = 0; moved = true;
             }
-        }
-        return row;
+        } return row;
     }
 
     if (direction === 'LEFT' || direction === 'RIGHT') {
         for (let r = 0; r < 4; r++) {
-            let row = newGrid[r];
-            if(direction === 'RIGHT') row.reverse();
-            let slid = slide(row);
-            let combined = slide(combine(slid));
-            if(direction === 'RIGHT') combined.reverse();
-            newGrid[r] = combined;
+            let row = newGrid[r]; if(direction === 'RIGHT') row.reverse();
+            let slid = slide(row); let combined = slide(combine(slid));
+            if(direction === 'RIGHT') combined.reverse(); newGrid[r] = combined;
         }
     } else if (direction === 'UP' || direction === 'DOWN') {
         for (let c = 0; c < 4; c++) {
             let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]];
             if(direction === 'DOWN') col.reverse();
-            let slid = slide(col);
-            let combined = slide(combine(slid));
+            let slid = slide(col); let combined = slide(combine(slid));
             if(direction === 'DOWN') combined.reverse();
             for(let r=0; r<4; r++) newGrid[r][c] = combined[r];
         }
@@ -669,31 +561,19 @@ function manualMove(direction) {
     if (JSON.stringify(grid) !== JSON.stringify(newGrid)) moved = true;
 
     if (moved) {
-        grid = newGrid;
-        user.sessionScore += gainedScore;
-        user.energy--;
-        spawnRandom();
-        checkForLevel11();
-        updateUI();
-        saveState();
+        grid = newGrid; user.sessionScore += gainedScore; user.energy--;
+        spawnRandom(); checkForLevel11(); updateUI(); saveState();
     }
 }
 
 function checkForLevel11() {
-    let found = false;
-    let iconHTML = '';
+    let found = false; let iconHTML = '';
     for(let r=0; r<4; r++){
         for(let c=0; c<4; c++){
             if(grid[r][c] === 11) {
-                found = true;
-                iconHTML = renderIcon(animals[11]?.icon) || '👑';
-                grid[r][c] = 0; // يختفي بعد الدمج كما طلبت
+                found = true; iconHTML = renderIcon(animals[11]?.icon) || '👑'; grid[r][c] = 0; 
                 user.sessionScore += 2048;
-                
-                // المكافأة: زيادة الحد اليومي لاستخدام الأدوات
-                user.tools.claw.dailyLimit += 20;
-                user.tools.wheel.dailyLimit += 20;
-                user.tools.upgrade.dailyLimit += 20;
+                user.tools.claw.dailyLimit += 20; user.tools.wheel.dailyLimit += 20; user.tools.upgrade.dailyLimit += 20;
             }
         }
     }
@@ -703,134 +583,84 @@ function checkForLevel11() {
     }
 }
 
-// ============================================
-// نظام الأدوات
-// ============================================
 function useTool(tool) {
     if (tool === 'free') {
-        if(confirm("تحذير: هذا الخيار سيصفر اللوحة والنقاط وتبدأ من جديد. هل أنت متأكد؟")) {
+        if(confirm("تحذير: هذا الخيار سيصفر اللوحة والنقاط. متأكد؟")) {
             grid = Array(4).fill().map(() => Array(4).fill(0));
-            user.sessionScore = 0;
-            updateUI();
-            saveState();
-        }
-        return;
+            user.sessionScore = 0; updateUI(); saveState();
+        } return;
     }
-
     let tData = user.tools[tool];
     if(tData.owned <= 0) { alert("لا تملك هذا العنصر في رصيدك!"); return; }
-    if(tData.used >= tData.dailyLimit) { alert("لقد استنفذت الحد اليومي لاستخدام هذا العنصر."); return; }
+    if(tData.used >= tData.dailyLimit) { alert("وصلت للحد اليومي للاستخدام."); return; }
 
     if (tool === 'gem') {
-        tData.owned--;
-        tData.used++;
-        user.energy = Math.min(200, user.energy + 15);
-        updateUI();
-        saveState();
-        return;
+        tData.owned--; tData.used++; user.energy = Math.min(200, user.energy + 15);
+        updateUI(); saveState(); return;
     }
 
-    // لأدوات اللوحة
-    if(activeTool === tool) {
-        deactivateTools();
-    } else {
-        deactivateTools();
-        activeTool = tool;
+    if(activeTool === tool) { deactivateTools(); } 
+    else {
+        deactivateTools(); activeTool = tool;
         document.getElementById(`btn${tool.charAt(0).toUpperCase() + tool.slice(1)}`).classList.add('active');
     }
 }
 
 function deactivateTools() {
-    activeTool = null;
-    wheelFirstCell = null;
+    activeTool = null; wheelFirstCell = null;
     document.querySelectorAll('.tool-item').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.cell').forEach(e => e.classList.remove('target-tool'));
 }
 
 function handleCellClick(r, c) {
     if(!activeTool) return;
-    const cellVal = grid[r][c];
-    let tData = user.tools[activeTool];
+    const cellVal = grid[r][c]; let tData = user.tools[activeTool];
 
     if (activeTool === 'upgrade') {
-        if (cellVal > 0 && cellVal < 7) {
-            grid[r][c]++;
-            tData.owned--; tData.used++;
-            deactivateTools();
-            updateUI(); saveState();
-        } else {
-            alert("لا يمكن ترقية هذا العنصر. الترقية للحيوانات الأقل من 7 فقط.");
-        }
-    } 
-    else if (activeTool === 'claw') {
+        if (cellVal > 0 && cellVal < 7) { grid[r][c]++; tData.owned--; tData.used++; deactivateTools(); updateUI(); saveState(); } 
+        else { alert("الترقية للحيوانات الأقل من 7 فقط."); }
+    } else if (activeTool === 'claw') {
+        if (cellVal > 0) { grid[r][c] = 0; tData.owned--; tData.used++; deactivateTools(); updateUI(); saveState(); }
+    } else if (activeTool === 'wheel') {
         if (cellVal > 0) {
-            grid[r][c] = 0;
-            tData.owned--; tData.used++;
-            deactivateTools();
-            updateUI(); saveState();
-        }
-    }
-    else if (activeTool === 'wheel') {
-        if (cellVal > 0) {
-            if (!wheelFirstCell) {
-                wheelFirstCell = {r, c};
-                document.getElementById(`cell_${r}_${c}`).classList.add('target-tool');
-            } else {
-                let temp = grid[r][c];
-                grid[r][c] = grid[wheelFirstCell.r][wheelFirstCell.c];
-                grid[wheelFirstCell.r][wheelFirstCell.c] = temp;
-                tData.owned--; tData.used++;
-                deactivateTools();
-                updateUI(); saveState();
+            if (!wheelFirstCell) { wheelFirstCell = {r, c}; document.getElementById(`cell_${r}_${c}`).classList.add('target-tool'); } 
+            else {
+                let temp = grid[r][c]; grid[r][c] = grid[wheelFirstCell.r][wheelFirstCell.c]; grid[wheelFirstCell.r][wheelFirstCell.c] = temp;
+                tData.owned--; tData.used++; deactivateTools(); updateUI(); saveState();
             }
         }
     }
 }
 
-// ============================================
-// المزامنة البصرية 🔄
-// ============================================
 function initVisualSyncGrid() {
     const cont = document.getElementById('syncVisualGrid');
     cont.innerHTML = '';
     for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'sync-cell';
-            cell.id = `syncCell_${r}_${c}`;
-            cell.onclick = (e) => openAnimalPicker(r, c, e);
-            cont.appendChild(cell);
+            const cell = document.createElement('div'); cell.className = 'sync-cell'; cell.id = `syncCell_${r}_${c}`;
+            cell.onclick = (e) => openAnimalPicker(r, c, e); cont.appendChild(cell);
         }
     }
 }
 
 function initAnimalPicker() {
-    const picker = document.getElementById('animalPicker');
-    picker.innerHTML = '';
+    const picker = document.getElementById('animalPicker'); picker.innerHTML = '';
     for (let i = 0; i <= 11; i++) {
-        const item = document.createElement('div');
-        item.className = 'picker-item';
+        const item = document.createElement('div'); item.className = 'picker-item';
         item.innerHTML = i === 0 ? `<span style="font-size:14px; margin:0;">❌</span>` : renderIcon(animals[i]?.icon);
         item.innerHTML += `<span>${i===0 ? 'فارغ' : i}</span>`;
-        item.onclick = () => selectSyncAnimal(i);
-        picker.appendChild(item);
+        item.onclick = () => selectSyncAnimal(i); picker.appendChild(item);
     }
 }
 
 function openSyncModal() {
-    // نسخ اللوحة الحالية
     tempSyncGrid = JSON.parse(JSON.stringify(grid));
     renderVisualSyncGrid();
-
-    // جلب باقي البيانات
-    document.getElementById('syncScore').value = user.sessionScore;
-    document.getElementById('syncEnergy').value = user.energy;
-    
+    document.getElementById('syncScore').value = user.sessionScore; document.getElementById('syncEnergy').value = user.energy;
     document.getElementById('syncGemO').value = user.tools.gem.owned; document.getElementById('syncGemU').value = user.tools.gem.used;
     document.getElementById('syncUpgO').value = user.tools.upgrade.owned; document.getElementById('syncUpgU').value = user.tools.upgrade.used;
     document.getElementById('syncClawO').value = user.tools.claw.owned; document.getElementById('syncClawU').value = user.tools.claw.used;
     document.getElementById('syncWheelO').value = user.tools.wheel.owned; document.getElementById('syncWheelU').value = user.tools.wheel.used;
-    
     document.getElementById('syncModal').classList.add('show');
 }
 
@@ -838,85 +668,53 @@ function renderVisualSyncGrid() {
     for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
             const val = tempSyncGrid[r][c];
-            const cell = document.getElementById(`syncCell_${r}_${c}`);
-            cell.innerHTML = val > 0 ? `${renderIcon(animals[val]?.icon)}<span class="lvl-num">${val}</span>` : '';
+            document.getElementById(`syncCell_${r}_${c}`).innerHTML = val > 0 ? `${renderIcon(animals[val]?.icon)}<span class="lvl-num">${val}</span>` : '';
         }
     }
 }
 
 function openAnimalPicker(r, c, event) {
-    syncTargetCell = {r, c};
-    const picker = document.getElementById('animalPicker');
-    picker.style.top = (event.clientY - 100) + 'px';
-    picker.style.left = (event.clientX - 100) + 'px';
-    picker.classList.add('show');
+    syncTargetCell = {r, c}; const picker = document.getElementById('animalPicker');
+    picker.style.top = (event.clientY - 100) + 'px'; picker.style.left = (event.clientX - 100) + 'px'; picker.classList.add('show');
 }
 
 function selectSyncAnimal(level) {
-    if(syncTargetCell) {
-        tempSyncGrid[syncTargetCell.r][syncTargetCell.c] = level;
-        renderVisualSyncGrid();
-    }
-    document.getElementById('animalPicker').classList.remove('show');
-    syncTargetCell = null;
+    if(syncTargetCell) { tempSyncGrid[syncTargetCell.r][syncTargetCell.c] = level; renderVisualSyncGrid(); }
+    document.getElementById('animalPicker').classList.remove('show'); syncTargetCell = null;
 }
 
-// إغلاق قائمة الحيوانات إذا تم النقر خارجها
 window.addEventListener('click', (e) => {
-    if (!e.target.closest('.sync-cell') && !e.target.closest('.animal-picker')) {
-        document.getElementById('animalPicker').classList.remove('show');
-    }
+    if (!e.target.closest('.sync-cell') && !e.target.closest('.animal-picker')) document.getElementById('animalPicker').classList.remove('show');
 });
 
 function applySync() {
     grid = JSON.parse(JSON.stringify(tempSyncGrid));
     user.sessionScore = parseInt(document.getElementById('syncScore').value) || 0;
     user.energy = Math.min(200, parseInt(document.getElementById('syncEnergy').value) || 0);
-    
     user.tools.gem.owned = parseInt(document.getElementById('syncGemO').value)||0; user.tools.gem.used = parseInt(document.getElementById('syncGemU').value)||0;
     user.tools.upgrade.owned = parseInt(document.getElementById('syncUpgO').value)||0; user.tools.upgrade.used = parseInt(document.getElementById('syncUpgU').value)||0;
     user.tools.claw.owned = parseInt(document.getElementById('syncClawO').value)||0; user.tools.claw.used = parseInt(document.getElementById('syncClawU').value)||0;
     user.tools.wheel.owned = parseInt(document.getElementById('syncWheelO').value)||0; user.tools.wheel.used = parseInt(document.getElementById('syncWheelU').value)||0;
-    
-    updateUI();
-    saveState();
-    closeModal('syncModal');
+    updateUI(); saveState(); closeModal('syncModal');
 }
 
-// ============================================
-// الذكاء الاصطناعي والخوارزميات (Expectimax)
-// ============================================
 function smartMerge() {
-    const box = document.getElementById('aiResponseBox');
-    const text = document.getElementById('aiResponseText');
-    box.classList.remove('hidden');
-    text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحساب الرياضي...';
+    const box = document.getElementById('aiResponseBox'); const text = document.getElementById('aiResponseText');
+    box.classList.remove('hidden'); text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحساب الرياضي...';
     
     setTimeout(() => {
-        // حساب الحركة الآمنة رياضياً
-        const depth = 4; // عمق البحث
-        let bestScore = -Infinity;
-        let bestMove = null;
-        const moves = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
-        
+        let bestScore = -Infinity; let bestMove = null; const moves = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
         for (let m of moves) {
             const simulated = simulateMove(grid, m);
             if (JSON.stringify(simulated) !== JSON.stringify(grid)) {
-                // تقييم النتيجة
                 let score = evaluateGrid(simulated);
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMove = m;
-                }
+                if (score > bestScore) { bestScore = score; bestMove = m; }
             }
         }
-        
         if (bestMove) {
             const dirHtml = { UP: '⬆️ أعلى', DOWN: '⬇️ أسفل', LEFT: '➡️ يمين', RIGHT: '⬅️ يسار' };
-            text.innerHTML = `✅ الخوارزمية تنصح بالحركة: <strong style="color:var(--gold); font-size:14px;">${dirHtml[bestMove]}</strong> <br><span style="color:#aaa; font-size:9px;">هذه الحركة توفر أعلى نسبة أمان لتجنب قفل اللوحة.</span>`;
-        } else {
-            text.innerHTML = `⚠️ تحذير: لا توجد حركات متاحة للدمج! استخدم (المخلب) فوراً لإنقاذ اللوحة.`;
-        }
+            text.innerHTML = `✅ الحركة الآمنة رياضياً: <strong style="color:var(--gold); font-size:14px;">${dirHtml[bestMove]}</strong> <br><span style="color:#aaa; font-size:9px;">هذه الحركة توفر أعلى نسبة أمان لتجنب قفل اللوحة.</span>`;
+        } else { text.innerHTML = `⚠️ تحذير: اللوحة مقفلة! استخدم (المخلب أو العجلة) فوراً لإنقاذ الجولة.`; }
     }, 100);
 }
 
@@ -927,263 +725,147 @@ function simulateMove(g, direction) {
 
     if (direction === 'LEFT' || direction === 'RIGHT') {
         for (let r = 0; r < 4; r++) {
-            let row = newGrid[r];
-            if(direction === 'RIGHT') row.reverse();
-            let combined = slide(combine(slide(row)));
-            if(direction === 'RIGHT') combined.reverse();
-            newGrid[r] = combined;
+            let row = newGrid[r]; if(direction === 'RIGHT') row.reverse();
+            let combined = slide(combine(slide(row))); if(direction === 'RIGHT') combined.reverse(); newGrid[r] = combined;
         }
     } else {
         for (let c = 0; c < 4; c++) {
-            let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]];
-            if(direction === 'DOWN') col.reverse();
-            let combined = slide(combine(slide(col)));
-            if(direction === 'DOWN') combined.reverse();
-            for(let r=0; r<4; r++) newGrid[r][c] = combined[r];
+            let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]]; if(direction === 'DOWN') col.reverse();
+            let combined = slide(combine(slide(col))); if(direction === 'DOWN') combined.reverse(); for(let r=0; r<4; r++) newGrid[r][c] = combined[r];
         }
-    }
-    return newGrid;
+    } return newGrid;
 }
 
 function evaluateGrid(g) {
-    let emptyCells = 0;
-    let smoothness = 0;
-    let monotonicity = 0;
-    
+    let emptyCells = 0; let smoothness = 0;
     for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
             if (g[r][c] === 0) emptyCells++;
-            else {
-                if (c < 3 && g[r][c] === g[r][c+1]) smoothness++;
-                if (r < 3 && g[r][c] === g[r+1][c]) smoothness++;
-            }
+            else { if (c < 3 && g[r][c] === g[r][c+1]) smoothness++; if (r < 3 && g[r][c] === g[r+1][c]) smoothness++; }
         }
-    }
-    // الوزن الأكبر للمربعات الفارغة لضمان الأمان
-    return (emptyCells * 100) + (smoothness * 10);
+    } return (emptyCells * 100) + (smoothness * 10);
 }
 
 async function askGemini() {
-    const box = document.getElementById('aiResponseBox');
-    const text = document.getElementById('aiResponseText');
-    box.classList.remove('hidden');
-    text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري استشارة الذكاء الاصطناعي للمخاطر...';
+    const box = document.getElementById('aiResponseBox'); const text = document.getElementById('aiResponseText');
+    box.classList.remove('hidden'); text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري استشارة الذكاء الاصطناعي...';
     
     try {
-        const prompt = `أنت مساعد استراتيجي في لعبة دمج حيوانات من 1 لـ 11.
-اللوحة الحالية: ${JSON.stringify(grid)}. الطاقة المتبقية: ${user.energy}.
-رصيد الأدوات الممتلكة: مخلب(${user.tools.claw.owned}) يزيل حيوان، ترقية(${user.tools.upgrade.owned}) يرفع رقم أقل من 7، عجلة(${user.tools.wheel.owned}) يبدل مكانين.
-حلل الموقف وأعطني خيارين فقط في سطرين: الخيار الأول (حركة عادية يمين/يسار ونسبة أمانها)، الخيار الثاني (استخدام أداة والسبب). كن دقيقاً جداً.`;
-        
-        const res = await fetch('/api/ai/analyze', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: prompt, username: user.username, password: user.password })
-        });
+        let toolsInfo = `مخلب: ${user.tools.claw.owned}, ترقية: ${user.tools.upgrade.owned}, عجلة: ${user.tools.wheel.owned}`;
+        let aiPrompt = `أنت مستشار للعبة دمج حيوانات 4x4.
+اللوحة الحالية: ${JSON.stringify(grid)}. الطاقة: ${user.energy}.
+رصيد أدواته: ${toolsInfo}.
+**تعليمات صارمة جداً:**
+1. إذا كان رصيد الأدوات 0، أعطه خطة تعتمد على أسهم التحريك فقط.
+2. الأدوات نادرة، لا تقترح استخدامها إلا في الطوارئ (اللوحة مقفلة) أو فرصة ذهبية لدمج 11.
+أعطني الخطة في سطرين بحد أقصى بالعربية.`;
+
+        const res = await fetch('/api/ai/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: aiPrompt, username: user.username, password: user.password }) });
         const data = await res.json();
-        
-        if (data.success && data.response) {
-            text.innerHTML = data.response.replace(/\n/g, '<br><br>');
-        } else {
-            box.classList.add('hidden'); // إخفاء صامت في حالة الخطأ
-        }
-    } catch (e) {
-        box.classList.add('hidden'); // الاعتمادية الصامتة
-    }
+        if (data.success && data.response) { text.innerHTML = data.response.replace(/\n/g, '<br>'); } 
+        else { box.classList.add('hidden'); }
+    } catch (e) { box.classList.add('hidden'); }
 }
 
-// ============================================
-// النوافذ والتقييمات والملف الشخصي
-// ============================================
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-function closeCelebAndShowReview() {
-    closeModal('celebModal');
-    document.getElementById('reviewModal').classList.add('show');
-}
-
-function setStars(n) {
-    currentStars = n;
-    const stars = document.getElementById('starRating').children;
-    for(let i=0; i<5; i++) stars[i].style.color = i < n ? '#FFD700' : '#444';
-}
+function closeCelebAndShowReview() { closeModal('celebModal'); document.getElementById('reviewModal').classList.add('show'); }
+function setStars(n) { currentStars = n; const stars = document.getElementById('starRating').children; for(let i=0; i<5; i++) stars[i].style.color = i < n ? '#FFD700' : '#444'; }
 
 async function submitReview() {
     const text = document.getElementById('reviewText').value;
-    try {
-        await fetch('/api/review/add', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username: user.username, rating: currentStars, text: text })
-        });
-    } catch(e) {}
+    try { await fetch('/api/review/add', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: user.username, rating: currentStars, text: text }) }); } catch(e) {}
     closeModal('reviewModal');
 }
 
 function openProfile() {
-    document.getElementById('profName').value = user.displayName || user.username;
-    document.getElementById('profKingdom').value = user.kingdom || '';
-    document.getElementById('profAlliance').value = user.alliance || '';
+    document.getElementById('profName').value = user.displayName || user.username; document.getElementById('profKingdom').value = user.kingdom || ''; document.getElementById('profAlliance').value = user.alliance || '';
     document.getElementById('profileModal').classList.add('show');
 }
-
 async function saveProfile() {
-    user.displayName = document.getElementById('profName').value;
-    user.kingdom = document.getElementById('profKingdom').value;
-    user.alliance = document.getElementById('profAlliance').value;
-    await saveState();
-    closeModal('profileModal');
+    user.displayName = document.getElementById('profName').value; user.kingdom = document.getElementById('profKingdom').value; user.alliance = document.getElementById('profAlliance').value;
+    await saveState(); closeModal('profileModal');
 }
 
-// ============================================
-// لوحة الإدارة الشاملة (Admin Panel)
-// ============================================
 function openAdmin() {
-    document.getElementById('admAppName').value = settings.appName || '';
-    document.getElementById('admLogo').value = settings.logoUrl || '';
+    document.getElementById('admAppName').value = settings.appName || ''; document.getElementById('admLogo').value = settings.logoUrl || '';
     if(settings.eventEndTime) document.getElementById('admEventTime').value = new Date(settings.eventEndTime).toISOString().slice(0,16);
     
-    // إعدادات الأدوات
-    // (يمكن استرجاعها من settings إذا تم حفظها مستقبلاً، هنا مثال افتراضي)
-    document.getElementById('admIconGem').value = "💎"; document.getElementById('admNameGem').value = "جوهر";
+    document.getElementById('admIconGem').value = document.getElementById('iconGem').textContent; document.getElementById('admNameGem').value = document.getElementById('nameGem').textContent;
+    document.getElementById('admIconUpg').value = document.getElementById('iconUpg').textContent; document.getElementById('admNameUpg').value = document.getElementById('nameUpg').textContent;
+    document.getElementById('admIconClaw').value = document.getElementById('iconClaw').textContent; document.getElementById('admNameClaw').value = document.getElementById('nameClaw').textContent;
+    document.getElementById('admIconWheel').value = document.getElementById('iconWheel').textContent; document.getElementById('admNameWheel').value = document.getElementById('nameWheel').textContent;
     
-    renderAdminAnimals();
-    document.getElementById('adminModal').classList.add('show');
+    renderAdminAnimals(); document.getElementById('adminModal').classList.add('show');
 }
 
 function switchAdminTab(tabName) {
-    document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById(`admin-${tabName}`).classList.add('active');
-    
+    document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    event.target.classList.add('active'); document.getElementById(`admin-${tabName}`).classList.add('active');
     if(tabName === 'users') fetchAdminUsers();
 }
 
 function renderAdminAnimals() {
-    const list = document.getElementById('adminAnimalsList');
-    list.innerHTML = '';
+    const list = document.getElementById('adminAnimalsList'); list.innerHTML = '';
     for(let i=1; i<=11; i++) {
-        let html = `
-        <div class="admin-animal-edit">
-            <span style="font-size:14px; font-weight:bold; color:var(--gold); width:20px;">${i}</span>
-            <input type="text" id="admAn_icon_${i}" value="${animals[i]?.icon || ''}" placeholder="أيقونة/رابط">
-            <input type="text" id="admAn_name_${i}" value="${animals[i]?.name || ''}" placeholder="الاسم">
-        </div>`;
-        list.innerHTML += html;
+        list.innerHTML += `<div class="admin-animal-edit"><span style="font-size:14px; font-weight:bold; color:var(--gold); width:20px;">${i}</span><input type="text" id="admAn_icon_${i}" value="${animals[i]?.icon || ''}" placeholder="أيقونة/رابط"><input type="text" id="admAn_name_${i}" value="${animals[i]?.name || ''}" placeholder="الاسم"></div>`;
     }
 }
 
 async function saveAdminGeneral() {
-    const newSets = {
-        appName: document.getElementById('admAppName').value,
-        logoUrl: document.getElementById('admLogo').value,
-        eventEndTime: document.getElementById('admEventTime').value
-    };
-    const key = document.getElementById('admGemini').value;
-    if(key) newSets.geminiApiKey = key;
-    
+    const newSets = { appName: document.getElementById('admAppName').value, logoUrl: document.getElementById('admLogo').value, eventEndTime: document.getElementById('admEventTime').value };
+    const key = document.getElementById('admGemini').value; if(key) newSets.geminiApiKey = key;
     await sendAdminSave(newSets);
 }
-
 async function saveAdminAnimals() {
     let newAnimals = JSON.parse(JSON.stringify(animals));
-    for(let i=1; i<=11; i++) {
-        newAnimals[i] = {
-            icon: document.getElementById(`admAn_icon_${i}`).value,
-            name: document.getElementById(`admAn_name_${i}`).value
-        };
-    }
+    for(let i=1; i<=11; i++) newAnimals[i] = { icon: document.getElementById(`admAn_icon_${i}`).value, name: document.getElementById(`admAn_name_${i}`).value };
     await sendAdminSave({ animals: newAnimals });
 }
-
 async function saveAdminTools() {
-    alert("سيتم تطبيق مسميات وأيقونات الأدوات في التحديث القادم للسيرفر!");
+    let tConfig = {
+        gem: { icon: document.getElementById('admIconGem').value, name: document.getElementById('admNameGem').value },
+        upgrade: { icon: document.getElementById('admIconUpg').value, name: document.getElementById('admNameUpg').value },
+        claw: { icon: document.getElementById('admIconClaw').value, name: document.getElementById('admNameClaw').value },
+        wheel: { icon: document.getElementById('admIconWheel').value, name: document.getElementById('admNameWheel').value }
+    };
+    await sendAdminSave({ toolsConfig: tConfig });
 }
-
 async function sendAdminSave(newSettingsData) {
     try {
-        await fetch('/api/settings', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ adminUser: user.username, adminPass: user.password, newSettings: newSettingsData })
-        });
-        alert('تم حفظ التعديلات بنجاح!');
-        loadSettings(); // إعادة تحميل
+        await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: user.username, adminPass: user.password, newSettings: newSettingsData }) });
+        alert('تم الحفظ! سيتم تطبيق التعديلات عند تحديث الصفحة.'); loadSettings();
     } catch (e) { alert('حدث خطأ'); }
 }
 
 async function fetchAdminUsers() {
-    const list = document.getElementById('adminUsersList');
-    list.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري جلب اللاعبين...';
+    const list = document.getElementById('adminUsersList'); list.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الجلب...';
     try {
-        const res = await fetch('/api/admin/users', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ adminUser: user.username, adminPass: user.password })
-        });
+        const res = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminUser: user.username, adminPass: user.password }) });
         const data = await res.json();
-        if(data.success) {
-            list.innerHTML = data.users.map(u => `
-                <div class="admin-item-row">
-                    <div>
-                        <div style="font-size: 11px; font-weight: bold;">${u.displayName || u.username}</div>
-                        <div style="font-size: 9px; color: var(--muted);">طاقة: ${u.energy} | جوهر: ${u.tools?.gem?.owned||0}</div>
-                    </div>
-                    <div style="color: var(--gold); font-weight: 900;">${u.sessionScore || 0}</div>
-                </div>
-            `).join('');
-        }
+        if(data.success) { list.innerHTML = data.users.map(u => `<div class="admin-item-row"><div><div style="font-size: 11px; font-weight: bold;">${u.displayName || u.username}</div><div style="font-size: 9px; color: var(--muted);">طاقة: ${u.energy} | جوهر: ${u.tools?.gem?.owned||0}</div></div><div style="color: var(--gold); font-weight: 900;">${u.sessionScore || 0}</div></div>`).join(''); }
     } catch(e) { list.innerHTML = 'فشل في الجلب'; }
 }
 
-// ============================================
-// الحفظ في الخلفية والعدادات الزمنية
-// ============================================
 async function saveState() {
     if(!user) return;
-    try {
-        await fetch('/api/user/save', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: user.username, password: user.password,
-                grid: grid, energy: user.energy, sessionScore: user.sessionScore, tools: user.tools
-            })
-        });
-    } catch(e) {}
+    try { await fetch('/api/user/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user.username, password: user.password, grid: grid, energy: user.energy, sessionScore: user.sessionScore, tools: user.tools }) }); } catch(e) {}
 }
 
-function startRegenTimer() {
-    setInterval(() => {
-        if(user && user.energy < 200) {
-            user.energy++;
-            updateUI();
-            saveState();
-        }
-    }, 72000); // 72 ثانية (دقيقة و 12 ثانية)
-}
+function startRegenTimer() { setInterval(() => { if(user && user.energy < 200) { user.energy++; updateUI(); saveState(); } }, 72000); }
 
 function startCountdownTimer() {
     setInterval(() => {
-        const now = new Date();
-        let target;
-        if(settings.eventEndTime) {
-            target = new Date(settings.eventEndTime);
-        } else {
-            target = new Date(now);
-            target.setHours(2, 0, 0, 0); // الافتراضي 2:00 صباحاً
-            if(now.getHours() >= 2) target.setDate(target.getDate() + 1);
-        }
-        
+        const now = new Date(); let target;
+        if(settings.eventEndTime) target = new Date(settings.eventEndTime);
+        else { target = new Date(now); target.setHours(2, 0, 0, 0); if(now.getHours() >= 2) target.setDate(target.getDate() + 1); }
         let diff = target - now;
         if(diff > 0) {
-            document.getElementById('tDay').textContent = Math.floor(diff / (1000 * 60 * 60 * 24));
-            document.getElementById('tHour').textContent = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
-            document.getElementById('tMin').textContent = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
-            document.getElementById('tSec').textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+            document.getElementById('tDay').textContent = Math.floor(diff / (1000 * 60 * 60 * 24)); document.getElementById('tHour').textContent = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+            document.getElementById('tMin').textContent = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0'); document.getElementById('tSec').textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
         }
     }, 1000);
 }
-
-function goTab(tab) {
-    // تجهيز لتبويبات مستقبلية مثل المتصدرين (الأوائل)
-}
+function goTab(tab) { /* Placeholder for future tabs */ }
 </script>
 </body>
 </html>
