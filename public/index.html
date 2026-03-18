@@ -450,7 +450,7 @@
                     <span id="tSec" class="timer-val">00</span>ث
                 </div>
                 <div class="top-actions">
-                    <button class="top-mini-btn" id="editModeBtn" onclick="toggleEditMode()"><i class="fas fa-pen"></i> تحرير</button>
+                    <button class="top-mini-btn" id="editModeBtn" onclick="toggleEditMode()"><i class="fas fa-pen"></i> تمييز التحرير</button>
                     <button class="top-mini-btn" onclick="openSyncModal()"><i class="fas fa-sync-alt"></i> مزامنة</button>
                 </div>
             </div>
@@ -606,7 +606,10 @@
 
             <label style="font-size:10px; color:var(--gold);">الصورة الشخصية:</label>
             <div class="avatar-grid" id="avatarGrid"></div>
-            <input type="text" id="profAvatarCustom" class="input" placeholder="أو ضع Emoji / رابط صورة للصورة الشخصية">
+            <div style="display:flex; gap:8px; margin-bottom:8px; align-items:stretch;">
+                <input type="text" id="profAvatarCustom" class="input" style="margin:0; flex:1;" placeholder="Emoji / رابط / سيتم تعبئته عند رفع صورة">
+                <button class="btn btn-dark" type="button" onclick="pickImageToInput('profAvatarCustom', true)" style="min-width:84px;">رفع صورة</button>
+            </div>
 
             <label style="font-size:10px; color:var(--gold);">الاسم الظاهري:</label>
             <input type="text" id="profName" class="input">
@@ -655,7 +658,10 @@
                 <label style="font-size:10px; color:var(--gold);">اسم البرنامج:</label>
                 <input type="text" id="admAppName" class="input">
                 <label style="font-size:10px; color:var(--gold);">رابط اللوجو:</label>
-                <input type="text" id="admLogo" class="input" placeholder="رابط URL للوجو">
+                <div style="display:flex; gap:8px; margin-bottom:8px; align-items:stretch;">
+                    <input type="text" id="admLogo" class="input" style="margin:0; flex:1;" placeholder="رابط URL أو سيتم تعبئته عند رفع صورة">
+                    <button class="btn btn-dark" type="button" onclick="pickImageToInput('admLogo')" style="min-width:84px;">رفع</button>
+                </div>
                 <label style="font-size:10px; color:var(--gold);">هدف دمج 11 اليومي:</label>
                 <input type="number" id="admDailyGoal" class="input" min="1" max="20">
                 <label style="font-size:10px; color:var(--gold);">Gemini API Key:</label>
@@ -672,10 +678,10 @@
             </div>
 
             <div id="admin-tools" class="admin-section">
-                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">جوهر:</span><input type="text" id="admIconGem" placeholder="أيقونة"><input type="text" id="admNameGem" placeholder="الاسم"></div>
-                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">ترقية:</span><input type="text" id="admIconUpg" placeholder="أيقونة"><input type="text" id="admNameUpg" placeholder="الاسم"></div>
-                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">مخلب:</span><input type="text" id="admIconClaw" placeholder="أيقونة"><input type="text" id="admNameClaw" placeholder="الاسم"></div>
-                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">عجلة:</span><input type="text" id="admIconWheel" placeholder="أيقونة"><input type="text" id="admNameWheel" placeholder="الاسم"></div>
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">جوهر:</span><input type="text" id="admIconGem" placeholder="أيقونة"><input type="text" id="admNameGem" placeholder="الاسم"><button class="btn btn-dark" type="button" onclick="pickImageToInput('admIconGem')" style="padding:8px 10px; min-width:56px;">رفع</button></div>
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">ترقية:</span><input type="text" id="admIconUpg" placeholder="أيقونة"><input type="text" id="admNameUpg" placeholder="الاسم"><button class="btn btn-dark" type="button" onclick="pickImageToInput('admIconUpg')" style="padding:8px 10px; min-width:56px;">رفع</button></div>
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">مخلب:</span><input type="text" id="admIconClaw" placeholder="أيقونة"><input type="text" id="admNameClaw" placeholder="الاسم"><button class="btn btn-dark" type="button" onclick="pickImageToInput('admIconClaw')" style="padding:8px 10px; min-width:56px;">رفع</button></div>
+                <div class="admin-animal-edit"><span style="font-size:12px; font-weight:bold; color:var(--gold); width:40px;">عجلة:</span><input type="text" id="admIconWheel" placeholder="أيقونة"><input type="text" id="admNameWheel" placeholder="الاسم"><button class="btn btn-dark" type="button" onclick="pickImageToInput('admIconWheel')" style="padding:8px 10px; min-width:56px;">رفع</button></div>
                 <button class="btn btn-red" onclick="saveAdminTools()" style="width:100%; margin-top:10px;">حفظ الأدوات</button>
             </div>
 
@@ -970,6 +976,7 @@ function updateUI() {
     document.getElementById('uiMovesNow').textContent = user.movesThisRound || 0;
     document.getElementById('uiBoardMax').textContent = getMaxLevel(grid);
     document.getElementById('uiLevel11Today').textContent = `${user.level11Today || 0}/${settings.dailyLevel11Goal || 3}`;
+    document.getElementById('editModeBtn').classList.toggle('active', !!editMode);
 
     const nrg = user.energy || 0;
     document.getElementById('uiEnergy').textContent = nrg;
@@ -1179,18 +1186,17 @@ function deactivateTools() {
 function toggleEditMode() {
     editMode = !editMode;
     if (editMode) deactivateTools();
+    document.getElementById('editModeBtn').classList.toggle('active', editMode);
     updateUI();
 }
 
 function handleCellClick(r, c, event) {
     if (!user) return;
 
-    if (editMode) {
+    if (editMode || !activeTool) {
         openAnimalPicker(r, c, event, 'board');
         return;
     }
-
-    if (!activeTool) return;
     const cellVal = grid[r][c];
     const tData = user.tools[activeTool];
 
@@ -1473,9 +1479,11 @@ async function saveProfile() {
     user.alliance = document.getElementById('profAlliance').value.trim();
     user.avatar = document.getElementById('profAvatarCustom').value.trim() || selectedAvatar || '🦂';
     selectedAvatar = user.avatar;
-    await saveState();
+    const ok = await saveState(true);
+    if (!ok) return;
     closeModal('profileModal');
     updateUI();
+    alert('تم حفظ الملف الشخصي.');
 }
 
 function openAdmin() {
@@ -1519,6 +1527,7 @@ function renderAdminAnimals() {
                 <span style="font-size:14px; font-weight:bold; color:var(--gold); width:20px;">${i}</span>
                 <input type="text" id="admAn_icon_${i}" value="${escapeAttr(animals[i]?.icon || '')}" placeholder="أيقونة/رابط">
                 <input type="text" id="admAn_name_${i}" value="${escapeAttr(animals[i]?.name || '')}" placeholder="الاسم">
+                <button class="btn btn-dark" type="button" onclick="pickImageToInput('admAn_icon_${i}')" style="padding:8px 10px; min-width:56px;">رفع</button>
             </div>
         `;
     }
@@ -1565,7 +1574,7 @@ async function sendAdminSave(newSettings) {
             body: JSON.stringify({ adminUser: user.username, adminPass: user.password, newSettings })
         });
         const data = await res.json();
-        if (!data.success) throw new Error('save failed');
+        if (!data.success) throw new Error(data.message || 'save failed');
         await loadSettings();
         updateUI();
         alert('تم الحفظ بنجاح.');
@@ -1627,8 +1636,8 @@ async function toggleUserAdmin(targetUsername, makeAdmin) {
     }
 }
 
-async function saveState() {
-    if (!user) return;
+async function saveState(showError = false) {
+    if (!user) return false;
     user.highestLevel = Math.max(user.highestLevel || 0, getMaxLevel(grid));
     const payload = {
         username: user.username,
@@ -1655,10 +1664,18 @@ async function saveState() {
             body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (data.success && data.user) {
+        if (!data.success) {
+            if (showError) alert(data.message || 'تعذر حفظ البيانات.');
+            return false;
+        }
+        if (data.user) {
             user = { ...user, ...data.user, password: user.password };
         }
-    } catch {}
+        return true;
+    } catch (err) {
+        if (showError) alert('تعذر حفظ البيانات.');
+        return false;
+    }
 }
 
 let regenTimerStarted = false;
@@ -1703,6 +1720,38 @@ function closeModal(id) {
     if (id !== 'leaderboardModal' && id !== 'supportModal' && id !== 'profileModal' && id !== 'adminModal') return;
     setActiveNav('play');
 }
+
+function pickImageToInput(inputId, updateAvatarPreview = false) {
+    const picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = 'image/*';
+    picker.onchange = () => {
+        const file = picker.files && picker.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const value = String(reader.result || '');
+            const target = document.getElementById(inputId);
+            if (!target) return;
+            target.value = value;
+            if (updateAvatarPreview) {
+                selectedAvatar = value;
+                document.getElementById('profileAvatarPreview').innerHTML = renderAvatar(value);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+    picker.click();
+}
+
+document.addEventListener('input', (event) => {
+    if (event.target && event.target.id === 'profAvatarCustom') {
+        const value = event.target.value.trim() || '🦂';
+        selectedAvatar = value;
+        const preview = document.getElementById('profileAvatarPreview');
+        if (preview) preview.innerHTML = renderAvatar(value);
+    }
+});
 
 function escapeHtml(str) {
     return String(str ?? '')
